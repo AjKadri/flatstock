@@ -217,7 +217,7 @@ reduces total supply by exactly `1e18` WIF.
 
 ## Check 1: free gas through our own relayer
 
-Verdict: pending.
+Verdict: pass.
 
 Preferred route: EIP-7702 delegation plus the own relayer. The user wallet is
 the delegated account and holds 0 ETH. The relayer wallet submits the
@@ -233,7 +233,7 @@ it can be added without a paid service. Normal wallet signing is the fallback.
 | Action | Verdict | Tx hash | Gas used | Gas cost in USD | Observed output |
 |---|---|---|---:|---:|---|
 | Deploy relayer delegate | pass | `0xdd9de9ef162c8a7b61806f9695ff8e53c9d6941cece688716afaff926c189472` | `985879` | `$0.0439` | Deployed at `0x8BDD498234E2272c97ACb1aA19Dc136BE8B2914C`; status `0x1` |
-| Delegated user buy | pending | — | — | — | User ETH must remain 0; relayer pays |
+| Delegated user buy | pass | `0x8285a2ad524a864cf93bc2f575b7db79ddf3ad0dc07ec6ab9313587f049e8d5a` | `707756` | `$0.0320` | User ETH remained `0`; relayer paid; one batch delivered three Stock Tokens |
 | Optional WIF gas reimbursement path | pending | — | — | — | Same-tx WIF transfer only if tested |
 
 The first delegated approval attempt was broadcast with `approve(...)` sent
@@ -297,9 +297,26 @@ Gas USD calculation will use the receipt's `gasUsed * effectiveGasPrice` and
 the ETH/USD price observed at the receipt timestamp. The relayer sender and
 user balance before each operation will be recorded.
 
+Basket receipt details for the Check 1 buy:
+
+```text
+status: 0x1
+block: 0x610f3df
+block timestamp: 2026-10-30 14:50:44 WAT +0100
+from: 0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+to: 0x3554121694a2472300f079Afa4B1fC7F9aAFac01
+gasUsed: 707756
+effectiveGasPrice: 20384000 wei
+gasCost: 14426898304000 wei = 0.000014426898304 ETH
+ETH/USD observation: $2216.30
+gasCostUSD: approximately $0.03197
+user ETH after receipt: 0
+relayer ETH after receipt: 0.000425405094978223
+```
+
 ## Check 2: one-action basket buy and sell
 
-Verdict: pending.
+Verdict: pending. Buy leg passed; sell-back still requires user approval.
 
 The planned one-action basket uses one EIP-7702 relayed batch with three
 USDG approvals and three direct-to-user Uniswap v3 swaps. The recipient for
@@ -327,8 +344,32 @@ estimate is lower, approximately `0.0000145 ETH` before buffer.
 
 | Action | Verdict | Tx hash | Fill vs Chainlink | Gas cost in USD | Observed output |
 |---|---|---|---:|---:|---|
-| One-action basket buy | pending | — | — | — | Planned split: AAPL, NVDA, MSFT |
+| One-action basket buy | pass | `0x8285a2ad524a864cf93bc2f575b7db79ddf3ad0dc07ec6ab9313587f049e8d5a` | within 2% for all three | `$0.0320` | 5 USDG spent, tokens arrived in user wallet |
 | Sell one Stock Token back | pending | — | — | — | — |
+
+Executed buy amounts and final user balances:
+
+```text
+USDG spent: 5000000 base units = 5 USDG
+USDG remaining: 3000000 base units = 3 USDG
+AAPL received: 4825632685056768
+NVDA received: 8051402067604444
+MSFT received: 3182819985632601
+user ETH: 0
+```
+
+Fill verification using receipt balances and the market-hours Chainlink
+answers:
+
+| Token | Amount in USDG | Amount out | Chainlink | Actual fill | Difference |
+|---|---:|---:|---:|---:|---:|
+| AAPL | `1666667` | `4825632685056768` | `$345.0557` | `$345.3779` | `+0.093%` |
+| NVDA | `1666667` | `8051402067604444` | `$206.2713` | `$207.0033` | `+0.355%` |
+| MSFT | `1666666` | `3182819985632601` | `$522.9949` | `$523.6444` | `+0.124%` |
+
+Selected routes were Uniswap v3 for AAPL and NVDA, and LiFi's SushiSwap
+route for MSFT. All recipients were the user wallet. No Stock Token was sent
+to this repository's contracts.
 
 ## Check 3: WIF vote count, burn, and close
 
