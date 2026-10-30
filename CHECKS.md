@@ -160,6 +160,19 @@ Uniswap is therefore the selected route for the live basket. LiFi's live quote
 was still within 2% of Chainlink for each asset, but 1inch was unavailable
 without an API key.
 
+Market-hours refresh at `2026-10-30 14:48:17 WAT`, block `101772911`, using a
+5 USDG basket split as `1666667/1666667/1666666` base units:
+
+| Token | Chainlink | Uniswap output / fill | LiFi output / fill | Selected route |
+|---|---:|---:|---:|---|
+| AAPL | `$345.0557` | `4818007772904506` / `$345.9245` | `4810930438175844` / `$346.4334` | Uniswap |
+| NVDA | `$206.2713` | `8058925493049346` / `$206.8101` | `8034550223516951` / `$207.4375` | Uniswap |
+| MSFT | `$522.9949` | `3180740550982840` / `$523.9868` | `3182819985632601` / `$523.6444` | LiFi |
+
+Uniswap was better by `0.147%` for AAPL and `0.303%` for NVDA. LiFi was
+better by `0.065%` for MSFT. The planned one-action batch will use the best
+read-only route per token, with every recipient set to the user wallet.
+
 ## Fork and local checks
 
 Source files:
@@ -378,6 +391,6 @@ WIF totalSupply: 999998683260000000000000000
 
 1. The required market-hours window has not started for Check 2.
 2. Each remaining mainnet transaction requires a fresh user approval immediately before submission.
-3. The user wallet currently has 2 USDG, below the approximately 5 USDG basket target. The user plans to top it up before Check 2.
+3. The user wallet now has 8 USDG and 0 ETH. The planned live basket uses 5 USDG, leaving approximately 3 USDG unused.
 4. EIP-7702 delegate and vote contract deployments are complete.
 5. The product name, logo, subdomain, and licence remain unchosen.
