@@ -1,7 +1,6 @@
 # M1 mainnet checks
 
-Status: M1 in progress. Mainnet deployment and Check 3 are complete; no user
-Stock Token buy has been submitted.
+Status: M1 complete. All three PLAN-v3 checks pass. No M2 work has started.
 
 Scope follows `PLAN-v3.md` section 3. `PLAN-v3.md` replaces the v2 plan. The
 tipster-specific contract section in `AGENTS.md` is out of scope.
@@ -10,19 +9,20 @@ tipster-specific contract section in `AGENTS.md` is out of scope.
 
 - Date: 2026-10-30 Lagos time.
 - Required execution window: 14:30 to 21:00 Lagos.
-- Latest read-only preflight: `2026-10-30 09:36:05 WAT +0100`, before the window.
+- Live basket receipt: `2026-10-30 14:50:44 WAT +0100`, inside the required window.
 - Chain: Robinhood Chain mainnet, chain ID `4663`.
 - Public RPC: `https://rpc.mainnet.chain.robinhood.com`.
 - `$WIF`: `0x5173b8eA6923c2d40267890D45C46a3480954773`, 18 decimals.
 - `USDG`: `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168`, 6 decimals.
 - User wallet: `0x3554121694a2472300f079Afa4B1fC7F9aAFac01`.
 - Relayer wallet: `0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4`.
-- The user wallet has 0 ETH, 1,000 WIF, and 2 USDG.
-- The relayer wallet has `0.000344994444245313` native ETH.
+- The user wallet has 0 ETH, `999` WIF after the approved vote, and `4.667257` USDG after the basket and AAPL sell-back.
+- The relayer wallet has `0.000421954759746223` native ETH after all approved M1 transactions.
 - No key values were printed. Secrets remain in the ignored `.env` file.
 
-The user approved the EIP-7702 delegate deployment and the tiny mainnet vote
-round before submission. Other mainnet transactions still require approval.
+The user approved the EIP-7702 delegate deployment, the tiny mainnet vote
+round, the market-hours basket buy, and the AAPL sell-back. No further
+mainnet transaction was sent.
 
 ## Read-only mainnet preflight
 
@@ -234,7 +234,7 @@ it can be added without a paid service. Normal wallet signing is the fallback.
 |---|---|---|---:|---:|---|
 | Deploy relayer delegate | pass | `0xdd9de9ef162c8a7b61806f9695ff8e53c9d6941cece688716afaff926c189472` | `985879` | `$0.0439` | Deployed at `0x8BDD498234E2272c97ACb1aA19Dc136BE8B2914C`; status `0x1` |
 | Delegated user buy | pass | `0x8285a2ad524a864cf93bc2f575b7db79ddf3ad0dc07ec6ab9313587f049e8d5a` | `707756` | `$0.0320` | User ETH remained `0`; relayer paid; one batch delivered three Stock Tokens |
-| Optional WIF gas reimbursement path | pending | — | — | — | Same-tx WIF transfer only if tested |
+| WIF gas reimbursement path | deferred | — | — | — | Not required by PLAN-v3 M1; no extra mainnet transaction sent |
 
 The first delegated approval attempt was broadcast with `approve(...)` sent
 directly to the delegated account. It reverted because the delegate exposes
@@ -316,12 +316,12 @@ relayer ETH after receipt: 0.000425405094978223
 
 ## Check 2: one-action basket buy and sell
 
-Verdict: pending. Buy leg passed; sell-back still requires user approval.
+Verdict: pass.
 
-The planned one-action basket uses one EIP-7702 relayed batch with three
-USDG approvals and three direct-to-user Uniswap v3 swaps. The recipient for
-each swap is the user wallet, never this repository's contract. The live
-amount will be the smallest amount supported by the available USDG balance.
+The executed one-action basket used one EIP-7702 relayed batch. Two swaps used
+Uniswap v3 and the MSFT swap used LiFi's SushiSwap route. Every recipient was
+the user wallet, never this repository's contract. The executed amount was the
+smallest practical basket target, 5 USDG.
 
 Read-only gas estimates at the current state:
 
@@ -345,7 +345,7 @@ estimate is lower, approximately `0.0000145 ETH` before buffer.
 | Action | Verdict | Tx hash | Fill vs Chainlink | Gas cost in USD | Observed output |
 |---|---|---|---:|---:|---|
 | One-action basket buy | pass | `0x8285a2ad524a864cf93bc2f575b7db79ddf3ad0dc07ec6ab9313587f049e8d5a` | within 2% for all three | `$0.0320` | 5 USDG spent, tokens arrived in user wallet |
-| Sell one Stock Token back | pending | — | — | — | — |
+| Sell one Stock Token back | pass | `0x2eeafc82e1e87f3518bc92248bc992ae545b07cdfc29d8bed929b6a4479b6353` | `+0.129%` vs Chainlink | `$0.00765` | AAPL balance returned to `0`; user received `1667257` USDG base units |
 
 Executed buy amounts and final user balances:
 
@@ -370,6 +370,29 @@ answers:
 Selected routes were Uniswap v3 for AAPL and NVDA, and LiFi's SushiSwap
 route for MSFT. All recipients were the user wallet. No Stock Token was sent
 to this repository's contracts.
+
+Sell-back receipt and final balances:
+
+```text
+status: 0x1
+block: 0x610f96a
+gasUsed: 169984
+effectiveGasPrice: 20298000 wei
+gasCost: 3450335232000 wei = 0.000003450335232 ETH
+ETH/USD observation: $2212.92
+gasCostUSD: approximately $0.00765
+AAPL sold: 4825632685056768
+USDG received: 1667257 base units = 1.667257 USDG
+user USDG after sell: 4667257 base units = 4.667257 USDG
+user AAPL after sell: 0
+user NVDA after sell: 8051402067604444
+user MSFT after sell: 3182819985632601
+user ETH after sell: 0
+relayer ETH after sell: 0.000421954759746223
+```
+
+The sell fill was approximately `$345.5002` against the AAPL Chainlink answer
+of `$345.0557`, a `+0.129%` difference.
 
 ## Check 3: WIF vote count, burn, and close
 
@@ -428,10 +451,51 @@ user WIF: 999000000000000000000
 WIF totalSupply: 999998683260000000000000000
 ```
 
-## Current blockers
+## Final M1 acceptance verification
 
-1. The required market-hours window has not started for Check 2.
-2. Each remaining mainnet transaction requires a fresh user approval immediately before submission.
-3. The user wallet now has 8 USDG and 0 ETH. The planned live basket uses 5 USDG, leaving approximately 3 USDG unused.
-4. EIP-7702 delegate and vote contract deployments are complete.
-5. The product name, logo, subdomain, and licence remain unchosen.
+These commands were run after the live receipts were recorded:
+
+```sh
+git diff --check
+forge fmt --check
+forge test -vv
+```
+
+Observed output:
+
+```text
+git diff --check: exit 0, no output
+forge fmt --check: exit 0, no output
+Compiler run successful!
+Ran 3 test suites in 30.80ms: 5 tests passed; 0 failed; 0 skipped
+```
+
+The chain-dependent acceptance command was:
+
+```sh
+set -a
+source .env
+set +a
+forge test --fork-url "$RPC_URL" -vv
+```
+
+Observed output:
+
+```text
+No files changed, compilation skipped
+Ran 2 tests for FlatIndexVotesTest: 2 passed; 0 failed; 0 skipped
+Ran 1 test for FlatIndexVotesForkTest: 1 passed; 0 failed; 0 skipped
+Ran 2 tests for M1RelayerDelegateTest: 2 passed; 0 failed; 0 skipped
+Ran 3 test suites in 5.46s: 5 tests passed; 0 failed; 0 skipped
+```
+
+The fork run emitted only cache and Etherscan-config warnings. It completed
+successfully and used the real WIF fork test.
+
+## M1 completion notes
+
+- Check 1: pass. Own EIP-7702 relayer sponsored the delegated user buy while the user held 0 ETH.
+- Check 2: pass. One 5 USDG action bought three Stock Tokens, all fills were within 2% of Chainlink, tokens arrived in the user wallet, and AAPL sold back within 2%.
+- Check 3: pass. The fork and tiny mainnet round proved the 1 WIF burn, duplicate-vote rejection, close-time weight freeze, and post-close rejection.
+- M2 has not started.
+- The product name, logo, subdomain, and licence remain unchosen.
