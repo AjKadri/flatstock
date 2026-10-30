@@ -31,9 +31,18 @@ Builder: solo with AI coding agents (Codex). Read RULES.md and ECOSYSTEM.md in r
 ## 3. The three checks (run FIRST, Fri 30 Oct, during US market hours 14:30–21:00 Lagos)
 Only behaviour observed on mainnet passes. Use tiny amounts. **Ask the user before every mainnet transaction.**
 
+M1 implementation update, 30 Oct 2026: do not use Alchemy Gas Manager. Check 1
+uses self-funded sponsorship in this order: (1) an own relayer submitting a
+user-signed EIP-7702 delegation or EIP-712 meta-transaction, (2) an own
+ERC-4337 paymaster with a free bundler, then (3) a free ZeroDev or Pimlico
+mainnet service if chain 4663 is covered without payment. Passkey sign-up is a
+stretch goal. If it requires a paid service, use normal wallet connect and
+label the result accordingly. Testnet is for development only; M1 evidence is
+mainnet evidence.
+
 **Check 1: Sponsored gas works, and what it costs**
-- *Pass:* a passkey smart account on Robinhood Chain mainnet (4663) sends a transaction whose gas is paid by an Alchemy Gas Manager policy (or ZeroDev). The user's account holds zero ETH. Record the gas cost per transaction in USD for a token approve + a swap.
-- *Also:* gas paid in $WIF works. This uses an ERC-20 paymaster if Alchemy or ZeroDev supports $WIF; otherwise the app takes $WIF from the user in the same batch and sponsors the gas itself.
+- *Pass:* a smart account on Robinhood Chain mainnet (4663) sends a transaction whose gas is paid by our own relayer, our own ERC-4337 paymaster, or a free ZeroDev/Pimlico service. The user's account holds zero ETH. Record the gas cost per transaction in USD for a token approve + a swap.
+- *Also:* gas paid in $WIF works. This uses our own ERC-20 paymaster if possible; otherwise the app takes $WIF from the user in the same batch and our relayer sponsors the gas itself.
 
 **Check 2: A small Stock Token buy fills fairly, into a smart account**
 - *Pass:* buy about $5 of one Stock Token (e.g. NVDA) with USDG through an aggregator (0x / LiFi / 1inch RFQ, with Uniswap as fallback). The fill is within 2% of that token's Chainlink price. The tokens arrive in the **smart account**, so any transfer restrictions don't block smart accounts.
