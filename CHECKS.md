@@ -1,152 +1,137 @@
 # M1 mainnet checks
 
-Status: pending. No mainnet transaction has been submitted.
+Status: pending. No mainnet transaction or wallet signature has been submitted.
 
-Scope follows `PLAN-v2.md` section 3. The tipster-specific contract section in `AGENTS.md` is out of scope.
+Scope follows `PLAN-v3.md` section 3. `PLAN-v3.md` replaces the v2 plan. The
+tipster-specific contract section in `AGENTS.md` is out of scope.
 
 ## Preconditions
 
 - Date: 2026-10-30 Lagos time.
-- Required execution window: 14:30–21:00 Lagos.
-- Initial local time observed: `2026-10-30 00:29:40 WAT +0100`, before the window.
+- Required execution window: 14:30 to 21:00 Lagos.
+- Latest read-only preflight: `2026-10-30 09:36:05 WAT +0100`, before the window.
 - Chain: Robinhood Chain mainnet, chain ID `4663`.
 - Public RPC: `https://rpc.mainnet.chain.robinhood.com`.
 - `$WIF`: `0x5173b8eA6923c2d40267890D45C46a3480954773`, 18 decimals.
 - `USDG`: `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168`, 6 decimals.
-- NVDA Stock Token: `0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC`, 18 decimals.
-- NVDA Chainlink feed: `0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15`, 8 decimals.
-- User signer, relayer signer, and 0x API key are present in the local environment. The EIP-7702 implementation is still undeployed. The user account has USDG and `$WIF`; the relayer account has native ETH for sponsorship.
+- User wallet: `0x3554121694a2472300f079Afa4B1fC7F9aAFac01`.
+- Relayer wallet: `0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4`.
+- The user wallet has 0 ETH, 1,000 WIF, and 2 USDG.
+- The relayer wallet has `0.000344994444245313` native ETH.
+- No key values were printed. Secrets remain in the ignored `.env` file.
 
-## Read-only preflight
+The user has required that every mainnet transaction receive approval immediately
+before submission. The market-hours window had not started at the latest
+preflight, so all mainnet rows below remain pending.
 
-Exact command:
-
-```sh
-rpc='https://rpc.mainnet.chain.robinhood.com'
-wif='0x5173b8eA6923c2d40267890D45C46a3480954773'
-usdg='0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168'
-nvda='0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC'
-feed='0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15'
-cast chain-id --rpc-url "$rpc"
-cast block-number --rpc-url "$rpc"
-cast call "$wif" 'symbol()(string)' --rpc-url "$rpc"
-cast call "$wif" 'decimals()(uint8)' --rpc-url "$rpc"
-cast call "$usdg" 'symbol()(string)' --rpc-url "$rpc"
-cast call "$usdg" 'decimals()(uint8)' --rpc-url "$rpc"
-cast call "$nvda" 'symbol()(string)' --rpc-url "$rpc"
-cast call "$nvda" 'decimals()(uint8)' --rpc-url "$rpc"
-cast call "$feed" 'decimals()(uint8)' --rpc-url "$rpc"
-cast call "$feed" 'latestRoundData()(uint80,int256,uint256,uint256,uint80)' --rpc-url "$rpc"
-```
-
-Observed output at block `101282322`:
-
-```text
-4663
-101282322
-"WIF"
-18
-"USDG"
-6
-"NVDA"
-18
-8
-18446744073709553000 [1.844e19]
-20965499010 [2.096e10]
-1793313624 [1.793e9]
-1793313637 [1.793e9]
-18446744073709553000 [1.844e19]
-```
-
-## ERC-4337 read-only preflight
+## Read-only mainnet preflight
 
 Exact command:
 
 ```sh
-rpc='https://rpc.mainnet.chain.robinhood.com'
-ep06='0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789'
-ep07='0x0000000071727De22E5E9d8BAf0edAc6f37da032'
-cast rpc eth_supportedEntryPoints --rpc-url "$rpc"
-cast codesize "$ep06" --rpc-url "$rpc"
-cast codesize "$ep07" --rpc-url "$rpc"
+set -a; source .env; set +a
+date '+%Y-%m-%d %H:%M:%S %Z %z'
+cast chain-id --rpc-url "$RPC_URL"
+cast block-number --rpc-url "$RPC_URL"
+cast gas-price --rpc-url "$RPC_URL"
+cast balance 0x3554121694a2472300f079Afa4B1fC7F9aAFac01 --ether --rpc-url "$RPC_URL"
+cast balance 0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4 --ether --rpc-url "$RPC_URL"
+cast call "$WIF_ADDRESS" 'balanceOf(address)(uint256)' 0x3554121694a2472300f079Afa4B1fC7F9aAFac01 --rpc-url "$RPC_URL"
+cast call "$USDG_ADDRESS" 'balanceOf(address)(uint256)' 0x3554121694a2472300f079Afa4B1fC7F9aAFac01 --rpc-url "$RPC_URL"
+cast call "$STOCK_FEED_ADDRESS" 'latestRoundData()(uint80,int256,uint256,uint256,uint80)' --rpc-url "$RPC_URL"
+cast call "$AAPL_FEED_ADDRESS" 'latestRoundData()(uint80,int256,uint256,uint256,uint80)' --rpc-url "$RPC_URL"
+cast call "$MSFT_FEED_ADDRESS" 'latestRoundData()(uint80,int256,uint256,uint256,uint80)' --rpc-url "$RPC_URL"
 ```
 
 Observed output:
 
 ```text
-Error: server returned an error response: error code -32601: the method eth_supportedEntryPoints does not exist/is not available
-23689
-16035
+2026-10-30 09:36:05 WAT +0100
+4663
+101593426
+20152000
+0.000000000000000000
+0.000344994444245313
+1000000000000000000000
+2000000
+NVDA answer 20748570987, updatedAt 1793349107
+AAPL answer 35099042627, updatedAt 1793304198
+MSFT answer 52529528800, updatedAt 1793323143
 ```
 
-The direct bytecode checks confirm deployed code at the canonical v0.6 and
-v0.7 EntryPoint addresses. The RPC method failure is recorded rather than
-treated as proof that the EntryPoints are absent.
-
-## Account and route preflight
-
-Credential presence was checked by variable name only. Private-key values were
-not printed. The configured public addresses are:
+The three canonical token addresses are:
 
 ```text
-M1 user:    0x3554121694a2472300f079Afa4B1fC7F9aAFac01
-M1 relayer: 0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+AAPL  0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9
+NVDA  0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC
+MSFT  0xe93237C50D904957Cf27E7B1133b510C669c2e74
 ```
 
-Read-only balances observed before the market-hours window:
+They were read from the official public asset registry and verified with
+`symbol()` and `decimals()` on mainnet. The feeds used above are:
 
 ```text
-user ETH:     0
-relayer ETH:  344994444245313 wei
-user WIF:     1000000000000000000000
-user USDG:    2000000
+AAPL  0x6B22A786bAa607d76728168703a39Ea9C99f2cD0
+NVDA  0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15
+MSFT  0x45C3C877C15E6BA2EBB19eA114Ea508d14C1Af2E
 ```
 
-The 0x read-only quote attempt for `1 USDG` returned:
+## Aggregator route preflight
+
+The configured 0x key is present, but the read-only 0x quote for NVDA returned:
 
 ```text
 HTTP 422 BUY_TOKEN_NOT_AUTHORIZED_FOR_TRADE
 message: The buy token is not authorized for trade due to legal restrictions
 ```
 
-The route therefore falls back to Uniswap v3. Read-only on-chain checks found
-the verified `SwapRouter02` at
-`0xCaf681a66D020601342297493863E78C959E5cb2`, the v3 QuoterV2 at
-`0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7`, and the USDG/NVDA 500-fee pool
-at `0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3`.
+The fallback is Uniswap v3 `SwapRouter02` at
+`0xCaf681a66D020601342297493863E78C959E5cb2`, with QuoterV2 at
+`0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7`.
 
-Exact read-only quote command:
+Verified pools and fees:
+
+```text
+USDG/NVDA  0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3  fee 500
+USDG/AAPL  0xAae0d815EE56e4092a5E5C2911E676Fea50B2d6D  fee 500
+USDG/MSFT  0xeb60bCD1D920ad6E102690CCFC6fB488899E1510  fee 3000
+```
+
+Exact quote command shape:
 
 ```sh
 set -a; source .env; set +a
-quoter='0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7'
 path="0x${USDG_ADDRESS#0x}0001f4${STOCK_TOKEN_ADDRESS#0x}"
-cast call "$quoter" \
+cast call "$UNISWAP_QUOTER_ADDRESS" \
   'quoteExactInput(bytes,uint256)(uint256,uint160[],uint32[],uint256)' \
-  "$path" 1000000 --rpc-url "$RPC_URL"
+  "$path" 666667 --rpc-url "$RPC_URL"
 ```
 
-Observed output:
+For the same `0.666667 USDG` input per asset, observed quote outputs and
+Chainlink comparisons were:
 
-```text
-amountOut: 4807329051161303
-sqrtPriceAfter: 5494650763334067884325841220440472
-initializedTicksCrossed: 1
-gasEstimate: 109086
-```
+| Token | Quote output | Chainlink price | Quote fill price | Difference |
+|---|---:|---:|---:|---:|
+| NVDA | `3206606898386680` | `$207.4857` | `$207.9042` | `+0.202%` |
+| AAPL | `1905606362419840` | `$350.9904` | `$349.8451` | `-0.326%` |
+| MSFT | `1265439674886963` | `$525.2953` | `$526.8264` | `+0.291%` |
 
-At the same read-only window, the Chainlink answer was `20854808058` with 8
-decimals, or `$208.54808058` per NVDA. The quoted fill is approximately
-`$208.0157`, or about `0.255%` below Chainlink before slippage. This is a
-preflight quote, not an executed fill.
+All three read-only quotes were within 2% of their Chainlink answers. The
+available 2 USDG is below the approximately 5 USDG target, so an executed
+2 USDG basket will be labelled `pass with limits` unless the user supplies
+additional USDG before the check.
 
-## Local relayer delegate checks
+## Fork and local checks
 
-The own-relayer implementation is in `src/M1RelayerDelegate.sol`. It is not
-deployed. Local checks only verify the delegation logic and the on-chain policy
-counterexamples in a local EVM.
+Source files:
 
-Exact commands:
+- `src/M1RelayerDelegate.sol`
+- `src/FlatIndexVotes.sol`
+- `test/M1RelayerDelegate.t.sol`
+- `test/FlatIndexVotes.t.sol`
+- `test/FlatIndexVotesFork.t.sol`
+
+Exact local command:
 
 ```sh
 forge fmt --check
@@ -157,89 +142,96 @@ Observed output:
 
 ```text
 Compiler run successful!
-Ran 2 tests ...
-[PASS] testRelayerExecuteUsesDelegatedUserAsTokenOwner()
-[PASS] testWeeklyLimitAndRevocation()
-Suite result: ok. 2 passed; 0 failed; 0 skipped
+Ran 3 test suites: 5 tests passed; 0 failed; 0 skipped
 ```
 
-These local tests do not satisfy the M1 acceptance check. Mainnet deployment,
-delegation, approve, swap, buy, revoke, and receipt evidence remain pending.
+Exact fork command:
 
-## Check 1: self-sponsored gas and `$WIF` gas
+```sh
+set -a; source .env; set +a
+forge test --fork-url "$RPC_URL" --match-contract FlatIndexVotesForkTest -vv
+```
+
+Observed output:
+
+```text
+[PASS] testRealWifTransfersAndBurnsOnFork()
+Suite result: ok. 1 passed; 0 failed; 0 skipped
+```
+
+The fork test used the real WIF token and the configured user wallet. It
+verified that a vote reduces the user's balance by exactly `1e18` WIF and
+reduces total supply by exactly `1e18` WIF.
+
+## Check 1: free gas through our own relayer
 
 Verdict: pending.
 
-Required evidence:
+Preferred route: EIP-7702 delegation plus the own relayer. The user wallet is
+the delegated account and holds 0 ETH. The relayer wallet submits the
+transaction and pays native gas. If 7702 is rejected by the chain or client,
+the fallback order is EIP-712 through an own router, then an own paymaster
+with a free bundler.
 
-- Sponsorship option used, in the configured preference order.
-- Smart-account address and zero ETH balance immediately before the first user operation.
-- Approve transaction hash and receipt.
-- Swap transaction hash and receipt.
-- Relayer or paymaster evidence and measured gas cost per transaction in USD.
-- `$WIF` gas transaction hash, or a documented fail with the exact provider response.
-- Passkey result, or an explicit normal-wallet fallback label if passkeys required a paid service.
+No paid gas service is used. Passkey sign-up is not part of this check unless
+it can be added without a paid service. Normal wallet signing is the fallback.
 
-Transaction approvals: ask the user immediately before each mainnet transaction.
+### Mainnet transactions
 
-### Transactions
+| Action | Verdict | Tx hash | Gas used | Gas cost in USD | Observed output |
+|---|---|---|---:|---:|---|
+| Deploy relayer delegate | pending | — | — | — | Awaiting user approval and market window |
+| Delegated user buy | pending | — | — | — | User ETH must remain 0; relayer pays |
+| Optional WIF gas reimbursement path | pending | — | — | — | Same-tx WIF transfer only if tested |
 
-| Action | Verdict | Tx hash | Gas measured | Observed output |
+Gas USD calculation will use the receipt's `gasUsed * effectiveGasPrice` and
+the ETH/USD price observed at the receipt timestamp. The relayer sender and
+user balance before each operation will be recorded.
+
+## Check 2: one-action basket buy and sell
+
+Verdict: pending.
+
+The planned one-action basket uses one EIP-7702 relayed batch with three
+USDG approvals and three direct-to-user Uniswap v3 swaps. The recipient for
+each swap is the user wallet, never this repository's contract. The live
+amount will be the smallest amount supported by the available USDG balance.
+
+### Mainnet transactions
+
+| Action | Verdict | Tx hash | Fill vs Chainlink | Gas cost in USD | Observed output |
+|---|---|---|---:|---:|---|
+| One-action basket buy | pending | — | — | — | Planned split: AAPL, NVDA, MSFT |
+| Sell one Stock Token back | pending | — | — | — | — |
+
+## Check 3: WIF vote count, burn, and close
+
+Fork verdict: pass. Mainnet verdict: pending.
+
+The fork implementation proves:
+
+- vote cost is exactly 1 WIF;
+- the 1 WIF is burned from total supply;
+- a second vote by the same wallet in the same round reverts;
+- weight basis points match vote counts;
+- a vote after close reverts and cannot change weights.
+
+### Mainnet transactions
+
+| Action | Verdict | Tx hash / error | Gas cost in USD | Observed output |
 |---|---|---|---:|---|
-| Self-sponsored approve | pending | — | — | — |
-| Self-sponsored swap | pending | — | — | — |
-| `$WIF` gas path | pending | — | — | — |
-
-## Check 2: Stock Token buy and sell
-
-Verdict: pending.
-
-Required evidence:
-
-- Aggregator and route used.
-- USDG amount and Stock Token amount.
-- Smart account address and balance deltas.
-- Chainlink answer and scaled price read in the same evidence window.
-- Fill price, percentage difference from Chainlink, and sell-back result.
-
-Transaction approvals: ask the user immediately before every buy, approval, and sell transaction.
-
-### Transactions
-
-| Action | Verdict | Tx hash | Fill vs Chainlink | Observed output |
-|---|---|---|---:|---|
-| USDG approval | pending | — | — | — |
-| Buy | pending | — | — | — |
-| Sell back to USDG | pending | — | — | — |
-
-## Check 3: limited permission
-
-Verdict: pending.
-
-Required evidence:
-
-- Permission or session configuration: approved router, chosen Stock Token, weekly limit, expiry, and revoke mechanism.
-- One keeper buy within the limit succeeds.
-- A second buy over the limit fails with the observed revert or provider error.
-- A buy after revoke fails with the observed revert or provider error.
-
-Transaction approvals: ask the user immediately before every permission grant, keeper buy, revoke, and other mainnet transaction.
-
-### Transactions
-
-| Action | Verdict | Tx hash / error | Observed output |
-|---|---|---|---|
-| Grant permission | pending | — | — |
-| Keeper buy within limit | pending | — | — |
-| Over-limit buy | pending | — | — |
-| Revoke permission | pending | — | — |
-| Post-revoke buy | pending | — | — |
+| Deploy vote contract | pending | — | — | Awaiting user approval and market window |
+| Approve exactly 1 WIF | pending | — | — | — |
+| Open tiny round | pending | — | — | — |
+| Vote once | pending | — | — | Must burn exactly 1 WIF |
+| Same-wallet second vote | pending | — | — | Must revert |
+| Close round | pending | — | — | Weights become fixed |
+| Post-close vote | pending | — | — | Must revert |
 
 ## Current blockers
 
 1. The required market-hours window has not started.
-2. The EIP-7702 implementation still needs a mainnet deployment transaction.
-3. No free ZeroDev or Pimlico mainnet configuration has been supplied. The own-relayer path is preferred.
-4. 0x rejected the NVDA buy token for legal restrictions, so the configured Uniswap v3 fallback is required.
-5. Secrets remain in environment variables and are not printed or committed.
-
+2. Each mainnet transaction requires a fresh user approval immediately before submission.
+3. The user wallet currently has 2 USDG, below the approximately 5 USDG basket target.
+4. EIP-7702 delegate and vote contract deployment transactions are not yet submitted.
+5. The product name, logo, subdomain, and licence remain unchosen.
