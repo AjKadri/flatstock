@@ -135,7 +135,7 @@ contract M1RelayerDelegate {
         if (block.timestamp > current.expiresAt) revert PolicyExpired();
         if (router != current.router) revert WrongRouter();
         if (sellToken != current.sellToken || buyToken != current.buyToken) revert WrongToken();
-        if (amountIn == 0 || amountIn > current.weeklyLimit - current.spent) revert WeeklyLimitExceeded();
+        if (amountIn == 0) revert WeeklyLimitExceeded();
 
         if (block.timestamp >= current.weekStart + 7 days) {
             current.weekStart = block.timestamp;
