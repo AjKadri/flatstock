@@ -1,6 +1,7 @@
 # M1 mainnet checks
 
-Status: pending. No mainnet transaction or wallet signature has been submitted.
+Status: M1 in progress. Mainnet deployment and Check 3 are complete; no user
+Stock Token buy has been submitted.
 
 Scope follows `PLAN-v3.md` section 3. `PLAN-v3.md` replaces the v2 plan. The
 tipster-specific contract section in `AGENTS.md` is out of scope.
@@ -20,9 +21,8 @@ tipster-specific contract section in `AGENTS.md` is out of scope.
 - The relayer wallet has `0.000344994444245313` native ETH.
 - No key values were printed. Secrets remain in the ignored `.env` file.
 
-The user has required that every mainnet transaction receive approval immediately
-before submission. The market-hours window had not started at the latest
-preflight, so all mainnet rows below remain pending.
+The user approved the EIP-7702 delegate deployment and the tiny mainnet vote
+round before submission. Other mainnet transactions still require approval.
 
 ## Read-only mainnet preflight
 
@@ -121,6 +121,45 @@ available 2 USDG is below the approximately 5 USDG target, so an executed
 2 USDG basket will be labelled `pass with limits` unless the user supplies
 additional USDG before the check.
 
+LiFi and 1inch comparison commands were also run read-only for the same
+`666667` USDG slice per asset:
+
+```sh
+curl -G 'https://li.quest/v1/quote' \
+  --data-urlencode 'fromChain=4663' --data-urlencode 'toChain=4663' \
+  --data-urlencode "fromToken=$USDG_ADDRESS" \
+  --data-urlencode "toToken=$TOKEN_ADDRESS" \
+  --data-urlencode 'fromAmount=666667' \
+  --data-urlencode 'fromAddress=0x3554121694a2472300f079Afa4B1fC7F9aAFac01' \
+  --data-urlencode 'toAddress=0x3554121694a2472300f079Afa4B1fC7F9aAFac01' \
+  --data-urlencode 'slippage=0.02'
+
+curl -G 'https://api.1inch.dev/swap/v6.0/4663/quote' \
+  --data-urlencode "src=$USDG_ADDRESS" \
+  --data-urlencode "dst=$TOKEN_ADDRESS" \
+  --data-urlencode 'amount=666667'
+```
+
+Observed LiFi output:
+
+```text
+AAPL tool=sushiswap amountOut=1895416606700693 gasUSD=0.0197
+NVDA tool=sushiswap amountOut=3190304270979797 gasUSD=0.0198
+MSFT tool=sushiswap amountOut=1261997648052777 gasUSD=0.0197
+```
+
+Observed 1inch output for AAPL, NVDA, and MSFT:
+
+```text
+Unauthorized
+```
+
+Uniswap v3 returned the higher output for all three assets, by approximately
+`0.538%` for AAPL, `0.511%` for NVDA, and `0.273%` for MSFT versus LiFi.
+Uniswap is therefore the selected route for the live basket. LiFi's live quote
+was still within 2% of Chainlink for each asset, but 1inch was unavailable
+without an API key.
+
 ## Fork and local checks
 
 Source files:
@@ -180,9 +219,66 @@ it can be added without a paid service. Normal wallet signing is the fallback.
 
 | Action | Verdict | Tx hash | Gas used | Gas cost in USD | Observed output |
 |---|---|---|---:|---:|---|
-| Deploy relayer delegate | pending | — | — | — | Awaiting user approval and market window |
+| Deploy relayer delegate | pass | `0xdd9de9ef162c8a7b61806f9695ff8e53c9d6941cece688716afaff926c189472` | `985879` | `$0.0439` | Deployed at `0x8BDD498234E2272c97ACb1aA19Dc136BE8B2914C`; status `0x1` |
 | Delegated user buy | pending | — | — | — | User ETH must remain 0; relayer pays |
 | Optional WIF gas reimbursement path | pending | — | — | — | Same-tx WIF transfer only if tested |
+
+The first delegated approval attempt was broadcast with `approve(...)` sent
+directly to the delegated account. It reverted because the delegate exposes
+`execute(...)`, not a fallback. The authorization itself persisted and the
+user nonce advanced to 1. Receipt:
+
+```text
+tx: 0x4578dade532e69f7d754c69f6265a07228d53ff7622137868a83459aff726343
+status: 0x0
+gasUsed: 47124
+revert: empty at the RPC, local replay showed the direct approve call reverted
+gasCostUSD: approximately $0.0021
+```
+
+The corrected delegated approval call succeeded:
+
+```sh
+approve_data=$(cast calldata 'approve(address,uint256)' "$VOTE_CONTRACT_ADDRESS" 1000000000000000000)
+execute_data=$(cast calldata 'execute(address,uint256,bytes)' "$WIF_ADDRESS" 0 "$approve_data")
+cast send 0x3554121694a2472300f079Afa4B1fC7F9aAFac01 \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
+  --data "$execute_data" --force --json
+```
+
+```text
+tx: 0x6d3dd259a3456edba2a65467a4c9bc5153014b55336d72eef2b84645f4159754
+status: 0x1
+gasUsed: 54777
+effectiveGasPrice: 20030000 wei
+gasCost: 1097183310000 wei = 0.00000109718331 ETH
+ETH/USD observation: $2226.92
+gasCostUSD: approximately $0.0024
+WIF allowance after receipt: 1000000000000000000
+```
+
+Deployment command and observed output:
+
+```sh
+set -a; source .env; set +a
+relayer=$(cast wallet address --private-key "$M1_RELAYER_PRIVATE_KEY")
+forge create src/M1RelayerDelegate.sol:M1RelayerDelegate \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
+  --broadcast --json --constructor-args "$relayer"
+```
+
+```text
+deployer: 0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+deployedTo: 0x8BDD498234E2272c97ACb1aA19Dc136BE8B2914C
+transactionHash: 0xdd9de9ef162c8a7b61806f9695ff8e53c9d6941cece688716afaff926c189472
+status: 0x1
+block: 101593767
+gasUsed: 985879
+effectiveGasPrice: 20050000 wei
+gasCost: 19766873950000 wei = 0.00001976687395 ETH
+ETH/USD observation: $2222.67
+gasCostUSD: approximately $0.0439
+```
 
 Gas USD calculation will use the receipt's `gasUsed * effectiveGasPrice` and
 the ETH/USD price observed at the receipt timestamp. The relayer sender and
@@ -197,6 +293,23 @@ USDG approvals and three direct-to-user Uniswap v3 swaps. The recipient for
 each swap is the user wallet, never this repository's contract. The live
 amount will be the smallest amount supported by the available USDG balance.
 
+Read-only gas estimates at the current state:
+
+```text
+One-token approve + swap through executeBatch: 209294 gas
+Three-token approve + swap batch: 518659 gas
+Planned sell-back allowance: approximately 200000 gas
+```
+
+The remaining hard estimate is approximately `927953` gas if a separate
+one-token Check 1 buy is kept. At approximately 20.2 million wei per gas this
+is about `0.0000188 ETH`, or `$0.0418` at the `$2226.92` ETH/USD observation.
+The practical minimum with a 3x safety buffer is `0.00006 ETH`. The relayer
+balance after the approved deployment and vote round was
+`0.000439831993282223 ETH`, so no top-up is currently required for gas if the
+balance does not change. If the basket buy also serves as Check 1, the hard
+estimate is lower, approximately `0.0000145 ETH` before buffer.
+
 ### Mainnet transactions
 
 | Action | Verdict | Tx hash | Fill vs Chainlink | Gas cost in USD | Observed output |
@@ -206,7 +319,7 @@ amount will be the smallest amount supported by the available USDG balance.
 
 ## Check 3: WIF vote count, burn, and close
 
-Fork verdict: pass. Mainnet verdict: pending.
+Fork verdict: pass. Mainnet verdict: pass.
 
 The fork implementation proves:
 
@@ -220,18 +333,51 @@ The fork implementation proves:
 
 | Action | Verdict | Tx hash / error | Gas cost in USD | Observed output |
 |---|---|---|---:|---|
-| Deploy vote contract | pending | — | — | Awaiting user approval and market window |
-| Approve exactly 1 WIF | pending | — | — | — |
-| Open tiny round | pending | — | — | — |
-| Vote once | pending | — | — | Must burn exactly 1 WIF |
-| Same-wallet second vote | pending | — | — | Must revert |
-| Close round | pending | — | — | Weights become fixed |
-| Post-close vote | pending | — | — | Must revert |
+| Deploy vote contract | pass | `0x84c01f06902ced5af721a05b6096f1a332b53ad4729f01b16db7364bc3373501` | `$0.0276` | Deployed at `0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9`; status `0x1`; gas `614517` |
+| Approve exactly 1 WIF | pass | `0x6d3dd259a3456edba2a65467a4c9bc5153014b55336d72eef2b84645f4159754` | `$0.0024` | Delegated approval succeeded; allowance `1e18` |
+| Open tiny round | pass | `0xd72cea1df3f49e0bc3e32d93c846c9e4928c5c3f5cf043df5219000329c7f591` | `$0.0021` | Round 1, 3 assets, closes at `1793350406`; gas `46768` |
+| Vote once | pass | `0x863a7334f138fb061596cf9b2f1ef30218348e9ad0b594fd60ef90ef6c787d07` | `$0.0056` | User WIF and total supply each decreased by `1e18`; gas `125198` |
+| Same-wallet second vote | pass | `0xa3ee0c11c835496e3096c0437b5ff7c92ea0dee1af0c000a3e0e825857c7af1a` | `$0.0015` | Reverted; local replay decoded `AlreadyVoted()`; gas `34271` |
+| Close round | pass | `0xdd1b21fa64e9424054cf52c23e33acaf40b65f6d9e5cac19245941e9be5e79f8` | `$0.0022` | Status `0x1`; total votes `1`; gas `49878` |
+| Post-close vote | pass | `0x07cdee30d4be1850d10347ecf7aa0fb7d6ac3441514d5cd6066411d7e8761510` | `$0.0014` | Reverted; local replay decoded `RoundNotOpen()`; gas `31720` |
+
+Vote contract deployment command:
+
+```sh
+forge create src/FlatIndexVotes.sol:FlatIndexVotes \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
+  --broadcast --json --constructor-args "$WIF_ADDRESS"
+```
+
+Round and vote commands used the deployed address from `.env`:
+
+```sh
+cast send "$VOTE_CONTRACT_ADDRESS" 'openRound(uint256,uint8,uint64)' 1 3 1793350406 \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" --force --json
+vote_data=$(cast calldata 'vote(uint256,uint8)' 1 0)
+execute_data=$(cast calldata 'execute(address,uint256,bytes)' "$VOTE_CONTRACT_ADDRESS" 0 "$vote_data")
+cast send 0x3554121694a2472300f079Afa4B1fC7F9aAFac01 \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
+  --data "$execute_data" --force --json
+cast send "$VOTE_CONTRACT_ADDRESS" 'closeRound(uint256)' 1 \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" --force --json
+```
+
+Final read-only state:
+
+```text
+round: opensAt 1793350301, closesAt 1793350406, assetCount 3, totalVotes 1, closed true
+hasVoted(user): true
+votesFor[1][0]: 1
+weightBps[1][0..2]: 10000, 0, 0
+user WIF: 999000000000000000000
+WIF totalSupply: 999998683260000000000000000
+```
 
 ## Current blockers
 
-1. The required market-hours window has not started.
-2. Each mainnet transaction requires a fresh user approval immediately before submission.
-3. The user wallet currently has 2 USDG, below the approximately 5 USDG basket target.
-4. EIP-7702 delegate and vote contract deployment transactions are not yet submitted.
+1. The required market-hours window has not started for Check 2.
+2. Each remaining mainnet transaction requires a fresh user approval immediately before submission.
+3. The user wallet currently has 2 USDG, below the approximately 5 USDG basket target. The user plans to top it up before Check 2.
+4. EIP-7702 delegate and vote contract deployments are complete.
 5. The product name, logo, subdomain, and licence remain unchosen.
