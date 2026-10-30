@@ -1,6 +1,6 @@
 # M1 mainnet checks
 
-Status: M1 complete. All three PLAN-v3 checks pass. No M2 work has started.
+Status: M1 complete. M2 complete with limits. No M3 work has started.
 
 Scope follows `PLAN-v3.md` section 3. `PLAN-v3.md` replaces the v2 plan. The
 tipster-specific contract section in `AGENTS.md` is out of scope.
@@ -497,5 +497,128 @@ successfully and used the real WIF fork test.
 - Check 1: pass. Own EIP-7702 relayer sponsored the delegated user buy while the user held 0 ETH.
 - Check 2: pass. One 5 USDG action bought three Stock Tokens, all fills were within 2% of Chainlink, tokens arrived in the user wallet, and AAPL sold back within 2%.
 - Check 3: pass. The fork and tiny mainnet round proved the 1 WIF burn, duplicate-vote rejection, close-time weight freeze, and post-close rejection.
-- M2 has not started.
+- M2 evidence is documented below.
 - The product name, logo, subdomain, and licence remain unchosen.
+
+## M2 mainnet acceptance
+
+M2 verdict: pass with limits.
+
+The own EIP-7702 relayer, lock contract, buy router, and first live round are
+deployed on chain `4663`:
+
+```text
+FlatIndexLock       0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121
+FlatIndexBuyRouter  0x5B08a91F8C8666C85e636bbE61Aed3b059B61FfA
+Vote contract       0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9
+EIP-7702 delegate   0x8BDD498234E2272c97ACb1aA19Dc136BE8B2914C
+```
+
+The lock minimum is `10 WIF`. An unlocked buy burns `0.01 WIF`. All M2
+transactions below were paid by the relayer, and the user wallet held `0 ETH`
+throughout.
+
+### Mainnet transactions
+
+ETH/USD conversion uses the `$2212.92` observation recorded for the same M1
+execution session.
+
+| Action | Verdict | Tx hash | Gas used | Gas cost in USD | Observed output |
+|---|---|---|---:|---:|---|
+| Deploy lock contract | pass | `0x9bc21365bdce6e760b324d79bae09c0d3353c2d3e8eae3adc193215acd6ad9a4` | `347167` | `$0.01614` | Status `0x1`; deployed at `0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121`; minimum `10 WIF` |
+| Deploy buy router | pass | `0x7e62da92bbcbf377f7d2321b6cbb8b0948aa346dd7aa8d5896cfc9047564f703` | `479671` | `$0.02176` | Status `0x1`; deployed at `0x5B08a91F8C8666C85e636bbE61Aed3b059B61FfA` |
+| Open round 2 | pass | `0x52e69220f6c5f4e91b83357bcb26dfeccb0f70a96403922ca8f0f51f21e1659f` | `46539` | `$0.00209` | Three assets; closes at `1793455958` |
+| Unlocked buy | pass | `0x5aca7762b3e81a84ea88dc1a4c93d5679126a29f56422e127602adc6b5dbb89f` | `267091` | `$0.01200` | `0.1 USDG` spent; `0.01 WIF` burned; `0.482897403598453` NVDA received |
+| Lock user | pass | `0xb54a7b06bd16daca94b8e92f49d8bde3449d6a80d46a5b32f899b2eaf393e512` | `98644` | `$0.00452` | `10 WIF` locked; `isLocked(user)=true` |
+| Single locked buy | pass | `0xabe56d3ef29b0839432c8c2b0e5fb3e0806b8e09ef2773837268adb221eaff76` | `222032` | `$0.01001` | `0.1 USDG` spent; `0 WIF` burned; `0.288893162261309` AAPL received |
+| Round-2 vote | pass | `0x9580f2321f692dbdf8dc51fa4648e347ed81c7f00002622982f3d436db4a67c8` | `141208` | `$0.00639` | Exactly `1 WIF` burned; `votesFor[2][0]=1` |
+| Three-token locked mix | pass with limits | `0x62a8604c341ce3437af110bab648e510d215860ca51b67187629b87773cfa256` | `470311` | `$0.02155` | `0.3 USDG` spent across AAPL/NVDA/MSFT; no WIF burned; all outputs went to user |
+
+Deployment commands:
+
+```sh
+set -a; source .env; set +a
+forge create src/FlatIndexLock.sol:FlatIndexLock \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
+  --broadcast --json --constructor-args "$WIF_ADDRESS" 10000000000000000000
+forge create src/FlatIndexBuyRouter.sol:FlatIndexBuyRouter \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
+  --broadcast --json \
+  --constructor-args "$WIF_ADDRESS" "$LOCK_CONTRACT_ADDRESS" \
+  "$UNISWAP_ROUTER_ADDRESS" "$NON_LOCKER_GAS_WIF"
+```
+
+Round-opening command:
+
+```sh
+cast send "$VOTE_CONTRACT_ADDRESS" \
+  'openRound(uint256,uint8,uint64)' 2 3 1793455958 \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" --force --json
+```
+
+The unlocked buy used one delegated batch containing USDG approval, WIF
+approval, and the following router call:
+
+```sh
+buyData=$(cast calldata \
+  'buyUniswap(address,address,uint24,uint256,uint256,uint160,uint256)' \
+  "$USDG_ADDRESS" "$STOCK_TOKEN_ADDRESS" 500 100000 \
+  473239455526483 0 "$NON_LOCKER_GAS_WIF")
+```
+
+The lock setup used one delegated batch containing:
+
+```sh
+lockApprove=$(cast calldata 'approve(address,uint256)' \
+  "$LOCK_CONTRACT_ADDRESS" 10000000000000000000)
+lockCall=$(cast calldata 'lock(uint256)' 10000000000000000000)
+```
+
+The three-token locked mix used one delegated batch with one USDG approval and
+three `buyUniswap` calls for `100000` USDG base units each. The live outputs
+were:
+
+| Token | Increment received | Chainlink at receipt block | Actual fill | Difference |
+|---|---:|---:|---:|---:|
+| AAPL | `286600499005546` | `$348.669763` | `$348.917746` | `+0.071%` |
+| NVDA | `482357504271390` | `$207.465694` | `$207.315112` | `-0.073%` |
+| MSFT | `190411909181690` | `$523.277500` | `$525.177235` | `+0.363%` |
+
+All three fills were within 2% of Chainlink. The M2 router currently uses the
+verified Uniswap v3 fallback only. During the live mix preparation, the RPC
+reset while refreshing the NVDA quote, so that one call was encoded with
+`amountOutMinimum=0`; the receipt still filled within 2%, but this is the
+limit on the M2 verdict and must be fixed before treating the route as
+production-safe.
+
+Final M2 read-only state:
+
+```text
+user ETH: 0
+user WIF: 987990000000000000000
+locked WIF: 10000000000000000000
+user USDG: 4167257 = 4.167257 USDG
+user AAPL: 575493661266855
+user NVDA: 9016656975474287
+user MSFT: 3373231894814291
+WIF totalSupply: 999998681250000000000000000
+round 2: totalVotes 1, closed false
+round 2 hasVoted(user): true
+round 2 votesFor[0]: 1
+relayer ETH: 0.000379269014454223
+```
+
+M2 acceptance verification:
+
+```text
+git diff --check: exit 0
+forge fmt --check: exit 0
+forge test -vv: 7 passed; 0 failed; 0 skipped
+forge test --fork-url "$RPC_URL" -vv: 7 passed; 0 failed; 0 skipped
+```
+
+The fork run included the real-WIF fork test and the new locked/unlocked
+router tests. It emitted only cache and Etherscan-config warnings.
+
+M2 is complete with the quote-refresh limit documented above. M3 has not
+started.
