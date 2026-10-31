@@ -199,6 +199,33 @@ Prepared but not deployed:
 - `deploy/flat-index.env.example` for a mode-600 VPS environment file.
 - `deploy/README.md` for build, process, and TLS/DNS preparation.
 
+### Mobile issue fixes
+
+The first phone attempt exposed two issues:
+
+1. The vote path returned the relayer's kill-switch response because the
+   temporary preview relayer was intentionally started paused.
+2. The app did not subscribe to injected-wallet `chainChanged` and
+   `accountsChanged` events, so a network switch did not update the UI until a
+   refresh.
+
+Fixes:
+
+- The preview relayer was restarted for the user's explicitly requested UI
+  vote with the daily cap still set to `3`. No script-submitted transaction was
+  sent.
+- The UI now updates the network pill immediately, clears stale quote state,
+  disables actions on the wrong network, and shows a recovery message when
+  chain 4663 is restored.
+
+Verification output:
+
+```text
+health={"enabled":true,"killSwitch":false,"dailyCap":3,"usage":0,"relayer":"0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4","quickNode":false}
+npm run build --prefix web
+✓ built in 164ms
+```
+
 ## Read-only mainnet preflight
 
 Exact command:
