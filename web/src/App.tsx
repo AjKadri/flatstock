@@ -108,6 +108,50 @@ function App() {
   }, [refresh]);
 
   useEffect(() => {
+    const provider = window.ethereum;
+    if (!provider?.on) return;
+
+    const handleChainChanged = (...args: unknown[]) => {
+      const rawChainId = args[0];
+      const nextChainId = typeof rawChainId === "string"
+        ? rawChainId.startsWith("0x") ? Number.parseInt(rawChainId, 16) : Number(rawChainId)
+        : Number(rawChainId);
+      setChainId(Number.isFinite(nextChainId) ? nextChainId : null);
+      setPlan([]);
+      if (nextChainId === chain.id) {
+        setMessage({ tone: "success", text: "Connected to chain 4663." });
+        void refresh();
+      } else {
+        setMessage({ tone: "error", text: "Wrong network. Switch to chain 4663." });
+      }
+    };
+
+    const handleAccountsChanged = (...args: unknown[]) => {
+      const nextAccounts = Array.isArray(args[0]) ? args[0] as string[] : [];
+      const nextAccount = nextAccounts[0] as Address | undefined;
+      if (!nextAccount) {
+        setAccount(null);
+        setWallet(null);
+        setWalletState(null);
+        setHoldings([]);
+        setHealth(null);
+        setPlan([]);
+        return;
+      }
+      setAccount(nextAccount);
+      setPlan([]);
+      void refresh(nextAccount);
+    };
+
+    provider.on("chainChanged", handleChainChanged);
+    provider.on("accountsChanged", handleAccountsChanged);
+    return () => {
+      provider.removeListener?.("chainChanged", handleChainChanged);
+      provider.removeListener?.("accountsChanged", handleAccountsChanged);
+    };
+  }, [refresh]);
+
+  useEffect(() => {
     if (!account) return;
     const timer = window.setInterval(() => void refresh(), 20_000);
     return () => window.clearInterval(timer);
