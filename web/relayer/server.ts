@@ -1,16 +1,17 @@
 import http from "node:http";
-import { createPublicClient, createWalletClient, decodeFunctionData, http as viemHttp, isAddress, parseAbi, type Address, type Hex } from "viem";
+import { createPublicClient, createWalletClient, decodeFunctionData, fallback, http as viemHttp, isAddress, parseAbi, type Address, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { defineChain } from "viem";
 
 const port = Number(process.env.M3_RELAYER_PORT || 8787);
-const rpcUrl = process.env.RPC_URL || "https://rpc.mainnet.chain.robinhood.com";
+const publicRpcUrl = process.env.RPC_URL || "https://rpc.mainnet.chain.robinhood.com";
+const quickNodeRpcUrl = process.env.QUICKNODE_RPC_URL?.trim();
 
 const chain = defineChain({
   id: 4663,
   name: "Robinhood Chain",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-  rpcUrls: { default: { http: [rpcUrl] } },
+  rpcUrls: { default: { http: [quickNodeRpcUrl || publicRpcUrl] } },
 });
 
 const addresses = {
@@ -34,8 +35,11 @@ if (!relayerKey) throw new Error("M1_RELAYER_PRIVATE_KEY is required in the envi
 if (!implementation) throw new Error("M1_7702_IMPLEMENTATION_ADDRESS is required in the environment.");
 
 const account = privateKeyToAccount(relayerKey);
-const publicClient = createPublicClient({ chain, transport: viemHttp(rpcUrl) });
-const walletClient = createWalletClient({ account, chain, transport: viemHttp(rpcUrl) });
+const readTransport = quickNodeRpcUrl
+  ? fallback([viemHttp(quickNodeRpcUrl), viemHttp(publicRpcUrl)])
+  : viemHttp(publicRpcUrl);
+const publicClient = createPublicClient({ chain, transport: readTransport });
+const walletClient = createWalletClient({ account, chain, transport: viemHttp(publicRpcUrl) });
 const delegateAbi = parseAbi(["function executeBatch((address target, uint256 value, bytes data)[] calls)"]);
 const erc20Abi = parseAbi(["function approve(address spender, uint256 amount) returns (bool)"]);
 const lockAbi = parseAbi(["function lock(uint256 amount)", "function unlock(uint256 amount)"]);
@@ -44,6 +48,26 @@ const routerAbi = parseAbi(["function buyUniswap(address sellToken, address buyT
 const allowedTargets = new Set([addresses.wif.toLowerCase(), addresses.usdg.toLowerCase(), addresses.votes.toLowerCase(), addresses.lock.toLowerCase(), addresses.buyRouter.toLowerCase()]);
 const usage = new Map<string, { day: string; count: number }>();
 let killSwitch = initialKillSwitch;
+
+type RpcResponse = { result?: unknown; error?: { code?: number; message?: string } };
+
+async function quickNodeCall(method: string, params: unknown[]) {
+  if (!quickNodeRpcUrl) throw new Error("QuickNode Stock Token API is not configured.");
+  const response = await fetch(quickNodeRpcUrl, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),
+  });
+  const payload = await response.json() as RpcResponse;
+  if (!response.ok || payload.error) {
+    throw new Error(payload.error?.message || `QuickNode request failed with HTTP ${response.status}.`);
+  }
+  return payload.result;
+}
+
+function csv(value: string | null) {
+  return value ? value.split(",").map((item) => item.trim().toUpperCase()).filter(Boolean) : undefined;
+}
 
 function dayKey() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Lagos" }).format(new Date());
@@ -114,10 +138,47 @@ const server = http.createServer(async (request, response) => {
   try {
     if (request.method === "GET" && request.url === "/api/health") {
       const current = usage.get(request.headers["x-wallet"]?.toString().toLowerCase() || "");
-      return json(response, 200, { enabled: true, killSwitch, dailyCap, usage: current?.day === dayKey() ? current.count : 0, relayer: account.address });
+      return json(response, 200, {
+        enabled: true,
+        killSwitch,
+        dailyCap,
+        usage: current?.day === dayKey() ? current.count : 0,
+        relayer: account.address,
+        quickNode: Boolean(quickNodeRpcUrl),
+      });
     }
-    if (request.method === "POST" && request.url === "/api/relay") return await relay(request, response);
-    if (request.method === "POST" && request.url === "/api/relay/kill-switch") {
+    const requestUrl = new URL(request.url || "/", "http://127.0.0.1");
+    if (request.method === "GET" && requestUrl.pathname === "/api/stock-token/balances") {
+      if (!quickNodeRpcUrl) return json(response, 503, { error: "QuickNode Stock Token API is not configured." });
+      const wallet = requestUrl.searchParams.get("address");
+      if (!wallet || !isAddress(wallet)) return json(response, 400, { error: "A valid address is required." });
+      const symbols = csv(requestUrl.searchParams.get("symbols"));
+      const result = await quickNodeCall("qn_getStockTokenBalances", [wallet, {
+        ...(symbols ? { symbols } : {}),
+        includeUsd: true,
+        blockTag: "latest",
+      }]);
+      return json(response, 200, result);
+    }
+    if (request.method === "GET" && requestUrl.pathname === "/api/stock-token/corporate-actions") {
+      if (!quickNodeRpcUrl) return json(response, 503, { error: "QuickNode Stock Token API is not configured." });
+      const symbols = csv(requestUrl.searchParams.get("symbols"));
+      const result = await quickNodeCall("qn_getCorporateActions", [{
+        ...(symbols ? { symbols } : {}),
+        includeScheduled: true,
+        limit: 50,
+      }]);
+      return json(response, 200, result);
+    }
+    if (request.method === "GET" && requestUrl.pathname === "/api/stock-token/finality") {
+      if (!quickNodeRpcUrl) return json(response, 503, { error: "QuickNode Stock Token API is not configured." });
+      const txHash = requestUrl.searchParams.get("txHash");
+      if (!txHash || !/^0x[0-9a-fA-F]{64}$/.test(txHash)) return json(response, 400, { error: "A valid transaction hash is required." });
+      const result = await quickNodeCall("qn_getTransactionFinality", [txHash]);
+      return json(response, 200, result);
+    }
+    if (request.method === "POST" && requestUrl.pathname === "/api/relay") return await relay(request, response);
+    if (request.method === "POST" && requestUrl.pathname === "/api/relay/kill-switch") {
       if (!adminToken || request.headers.authorization !== `Bearer ${adminToken}`) return json(response, 401, { error: "Admin authorization required." });
       const payload = await body(request) as { enabled?: boolean };
       killSwitch = Boolean(payload.enabled);

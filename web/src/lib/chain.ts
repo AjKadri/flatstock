@@ -47,6 +47,7 @@ export type RoundState = {
 export type Holding = {
   symbol: string;
   balance: bigint;
+  shares?: string;
   price: number | null;
   value: number | null;
 };
@@ -128,6 +129,8 @@ export async function readVoteBurned() {
 }
 
 export async function readHoldings(account: Address): Promise<Holding[]> {
+  const quickNodeHoldings = await readQuickNodeHoldings(account);
+  if (quickNodeHoldings) return quickNodeHoldings;
   return Promise.all(
     assets.map(async (asset) => {
       const [balance, decimals, feedDecimals, latest] = await Promise.all([
@@ -163,6 +166,40 @@ export async function readHoldings(account: Address): Promise<Holding[]> {
       };
     }),
   );
+}
+
+async function readQuickNodeHoldings(account: Address): Promise<Holding[] | null> {
+  try {
+    const symbols = assets.map((asset) => asset.symbol).join(",");
+    const response = await fetch(
+      `${RELAYER_API}/stock-token/balances?address=${account}&symbols=${symbols}`,
+    );
+    if (!response.ok) return null;
+    const payload = await response.json() as {
+      holdings?: Array<{
+        symbol?: string;
+        balanceRaw?: string;
+        balanceUiDecimal?: string;
+        priceUsd?: string | null;
+        valueUsd?: string | null;
+      }>;
+    };
+    if (!Array.isArray(payload.holdings)) return null;
+    const bySymbol = new Map(payload.holdings.map((holding) => [holding.symbol?.toUpperCase(), holding]));
+    return assets.map((asset) => {
+      const holding = bySymbol.get(asset.symbol);
+      const price = holding?.priceUsd == null ? null : Number(holding.priceUsd) / 1e8;
+      return {
+        symbol: asset.symbol,
+        balance: holding?.balanceRaw ? BigInt(holding.balanceRaw) : 0n,
+        shares: holding?.balanceUiDecimal || "0",
+        price,
+        value: holding?.valueUsd == null ? null : Number(holding.valueUsd),
+      };
+    });
+  } catch {
+    return null;
+  }
 }
 
 export async function readWalletState(account: Address) {

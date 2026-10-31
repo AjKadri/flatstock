@@ -318,7 +318,7 @@ function App() {
 
       <section className="card">
         <div className="section-heading"><div><p className="eyebrow">Your holdings</p><h3>Portfolio</h3></div><strong className="portfolio-total">${totalValue.toFixed(2)}</strong></div>
-        {!account ? <p className="muted">Connect a wallet to see Stock Tokens held by that wallet.</p> : <div className="portfolio-list">{holdings.map((holding) => <div className="portfolio-row" key={holding.symbol}><div><strong>{holding.symbol}</strong><small>{Number(holding.balance) / 1e18 > 0 ? (Number(holding.balance) / 1e18).toFixed(6) : "No tokens"}</small></div><div>{holding.price === null ? "Price unavailable" : `$${holding.price.toFixed(2)}`}<small>{holding.value === null ? "" : `$${holding.value.toFixed(2)}`}</small></div></div>)}</div>}
+        {!account ? <p className="muted">Connect a wallet to see Stock Tokens held by that wallet.</p> : <div className="portfolio-list">{holdings.map((holding) => <div className="portfolio-row" key={holding.symbol}><div><strong>{holding.symbol}</strong><small>{holding.shares ? `${holding.shares} shares` : Number(holding.balance) / 1e18 > 0 ? `${(Number(holding.balance) / 1e18).toFixed(6)} raw` : "No tokens"}</small></div><div>{holding.price === null ? "Price unavailable" : `$${holding.price.toFixed(2)}`}<small>{holding.value === null ? "" : `$${holding.value.toFixed(2)}`}</small></div></div>)}</div>}
       </section>
 
       <footer><span>Self-custody only. The app never holds your funds.</span><span>Live data from chain 4663.</span></footer>

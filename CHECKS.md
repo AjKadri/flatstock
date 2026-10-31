@@ -169,6 +169,36 @@ Self-custody only. The app never holds your funds. Live data from chain 4663.
 The responsive stylesheet includes a mobile layout at `max-width: 720px`, but
 an actual mobile wallet in-app-browser session has not been captured yet.
 
+### Phone preview and deployment preparation
+
+Temporary phone preview URL:
+
+```text
+https://patient-increased-diana-weight.trycloudflare.com/
+```
+
+This is an account-less quick tunnel to the local Vite server. It is for the
+mobile check only and is not a deployment or a permanent URL.
+
+The preview server uses a narrow `.trycloudflare.com` dev-host allow-list. The
+local relayer was started with its kill switch on so the public preview could
+read health without accepting a sponsored transaction.
+
+Observed output:
+
+```text
+health={"enabled":true,"killSwitch":true,"dailyCap":3,"usage":0,"relayer":"0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4","quickNode":false}
+quicknode_status=503
+{"error":"QuickNode Stock Token API is not configured."}
+```
+
+Prepared but not deployed:
+
+- `deploy/flat-index-relayer.service` for systemd on Ubuntu.
+- `deploy/nginx.conf.template` for the user-selected subdomain.
+- `deploy/flat-index.env.example` for a mode-600 VPS environment file.
+- `deploy/README.md` for build, process, and TLS/DNS preparation.
+
 ## Read-only mainnet preflight
 
 Exact command:
