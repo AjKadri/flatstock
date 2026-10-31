@@ -7,7 +7,7 @@ import {
 
 export const CHAIN_ID = 4663;
 export const RPC_URL =
-  import.meta.env.VITE_RPC_URL || "https://rpc.mainnet.chain.robinhood.com";
+  import.meta.env.VITE_RPC_URL || "/api/rpc";
 export const EXPLORER_URL =
   import.meta.env.VITE_EXPLORER_URL || "https://robinhoodchain.blockscout.com";
 export const RELAYER_API = import.meta.env.VITE_RELAYER_API || "/api";
@@ -20,7 +20,7 @@ export const LEGAL_NOTICE =
 
 export const chain = defineChain({
   id: CHAIN_ID,
-  name: "Robinhood Chain",
+  name: "Chain 4663",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: { default: { http: [RPC_URL] } },
 });
@@ -59,6 +59,7 @@ export const assets = [
 export const ONE_WIF = 1_000_000_000_000_000_000n;
 export const NON_LOCKER_GAS_WIF = 10_000_000_000_000_000n;
 export const MAX_SLIPPAGE_BPS = 200n;
+export const ORACLE_MAX_AGE_SECONDS = 86_400n;
 
 export const erc20Abi = parseAbi([
   "function approve(address spender, uint256 amount) returns (bool)",

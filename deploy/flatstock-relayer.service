@@ -1,0 +1,22 @@
+[Unit]
+Description=Flatstock relayer
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=flatstock
+Group=flatstock
+WorkingDirectory=/opt/flatstock
+EnvironmentFile=/etc/flatstock/flatstock.env
+ExecStart=/usr/bin/npm run relay --prefix /opt/flatstock/web
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/flatstock
+
+[Install]
+WantedBy=multi-user.target

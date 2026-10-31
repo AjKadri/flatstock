@@ -9,7 +9,7 @@ const quickNodeRpcUrl = process.env.QUICKNODE_RPC_URL?.trim();
 
 const chain = defineChain({
   id: 4663,
-  name: "Robinhood Chain",
+  name: "Chain 4663",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: { default: { http: [quickNodeRpcUrl || publicRpcUrl] } },
 });
@@ -30,6 +30,7 @@ const implementation = process.env.M1_7702_IMPLEMENTATION_ADDRESS?.toLowerCase()
 const dailyCap = Number(process.env.M3_DAILY_SPONSORED_TX_CAP || 3);
 const initialKillSwitch = process.env.M3_RELAYER_KILL_SWITCH === "1";
 const adminToken = process.env.M3_RELAYER_ADMIN_TOKEN;
+const allowedOrigin = process.env.M3_ALLOWED_ORIGIN || "https://app.flatstock.ajkadri.dev";
 
 if (!relayerKey) throw new Error("M1_RELAYER_PRIVATE_KEY is required in the environment.");
 if (!implementation) throw new Error("M1_7702_IMPLEMENTATION_ADDRESS is required in the environment.");
@@ -74,7 +75,7 @@ function dayKey() {
 }
 
 function json(response: http.ServerResponse, status: number, body: unknown) {
-  response.writeHead(status, { "content-type": "application/json", "access-control-allow-origin": "*" });
+  response.writeHead(status, { "content-type": "application/json" });
   response.end(JSON.stringify(body));
 }
 
@@ -86,6 +87,34 @@ async function body(request: http.IncomingMessage) {
 
 function fail(message: string): never {
   throw new Error(message);
+}
+
+async function proxyRpc(request: http.IncomingMessage, response: http.ServerResponse) {
+  const payload = await body(request);
+  const upstreams = [quickNodeRpcUrl, publicRpcUrl].filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index);
+  let lastError = "RPC proxy failed.";
+  for (const upstream of upstreams) {
+    try {
+      const upstreamResponse = await fetch(upstream, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const raw = await upstreamResponse.text();
+      const result = JSON.parse(raw) as unknown;
+      const hasRpcError = Array.isArray(result)
+        ? result.some((item) => typeof item === "object" && item !== null && "error" in item)
+        : typeof result === "object" && result !== null && "error" in result;
+      if (!upstreamResponse.ok || hasRpcError) {
+        lastError = `Upstream returned HTTP ${upstreamResponse.status}.`;
+        continue;
+      }
+      return json(response, 200, result);
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : lastError;
+    }
+  }
+  return json(response, 502, { error: lastError });
 }
 
 function validateBatch(data: Hex) {
@@ -134,6 +163,15 @@ async function relay(request: http.IncomingMessage, response: http.ServerRespons
 }
 
 const server = http.createServer(async (request, response) => {
+  const origin = request.headers.origin;
+  if (origin === allowedOrigin) {
+    response.setHeader("access-control-allow-origin", allowedOrigin);
+    response.setHeader("access-control-allow-methods", "GET,POST,OPTIONS");
+    response.setHeader("access-control-allow-headers", "content-type,authorization,x-wallet");
+    response.setHeader("vary", "Origin");
+  } else if (origin) {
+    return json(response, 403, { error: "Origin is not allowed." });
+  }
   if (request.method === "OPTIONS") return json(response, 204, {});
   try {
     if (request.method === "GET" && request.url === "/api/health") {
@@ -148,6 +186,7 @@ const server = http.createServer(async (request, response) => {
       });
     }
     const requestUrl = new URL(request.url || "/", "http://127.0.0.1");
+    if (request.method === "POST" && requestUrl.pathname === "/api/rpc") return await proxyRpc(request, response);
     if (request.method === "GET" && requestUrl.pathname === "/api/stock-token/balances") {
       if (!quickNodeRpcUrl) return json(response, 503, { error: "QuickNode Stock Token API is not configured." });
       const wallet = requestUrl.searchParams.get("address");

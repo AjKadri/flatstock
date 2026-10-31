@@ -1,12 +1,13 @@
 {
-  "name": "flat-index-web",
+  "name": "flatstock-web",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "relay": "tsx relayer/server.ts"
+    "relay": "tsx relayer/server.ts",
+    "close-round": "tsx relayer/close-round.ts"
   },
   "dependencies": {
     "react": "latest",

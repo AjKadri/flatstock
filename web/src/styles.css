@@ -61,6 +61,7 @@ h3 { font-size: 20px; letter-spacing: -.03em; }
 .buy-controls { align-items: end; margin: 20px 0 14px; }
 label { display: grid; gap: 7px; color: #a9bfb1; font-size: 12px; font-weight: 700; }
 input { min-width: 200px; border: 1px solid #315946; border-radius: 10px; color: #ecfbf0; background: #07160f; padding: 12px; outline: none; }
+select { min-width: 120px; border: 1px solid #315946; border-radius: 10px; color: #ecfbf0; background: #07160f; padding: 12px; outline: none; }
 input:focus { border-color: #8be5a8; }
 .quote-table { border: 1px solid #203d30; border-radius: 12px; overflow: hidden; margin-bottom: 14px; }
 .quote-header, .quote-row { grid-template-columns: 1fr 2fr .8fr; display: grid; padding: 10px 12px; }
@@ -76,6 +77,7 @@ input:focus { border-color: #8be5a8; }
 .portfolio-total { color: #bdf5c9; font-size: 20px; }
 .portfolio-list { display: grid; gap: 5px; }
 .portfolio-row { border-bottom: 1px solid #193329; padding: 12px 0; }
+.portfolio-button { width: 100%; border-top: 0; border-right: 0; border-left: 0; color: inherit; background: transparent; text-align: left; }
 .portfolio-row strong, .portfolio-row small { display: block; }
 .portfolio-row small { color: #9bb1a5; font-size: 12px; margin-top: 4px; }
 footer { justify-content: space-between; padding: 20px 3px 0; font-size: 11px; }

@@ -10,8 +10,8 @@ tipster-specific contract section in `AGENTS.md` is out of scope.
 - Date: 2026-10-30 Lagos time.
 - Required execution window: 14:30 to 21:00 Lagos.
 - Live basket receipt: `2026-10-30 14:50:44 WAT +0100`, inside the required window.
-- Chain: Robinhood Chain mainnet, chain ID `4663`.
-- Public RPC: `https://rpc.mainnet.chain.robinhood.com`.
+- Chain: chain `4663` mainnet.
+- Public RPC: configured through `RPC_URL`.
 - `$WIF`: `0x5173b8eA6923c2d40267890D45C46a3480954773`, 18 decimals.
 - `USDG`: `0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168`, 6 decimals.
 - User wallet: `0x3554121694a2472300f079Afa4B1fC7F9aAFac01`.
@@ -202,6 +202,36 @@ Ran 4 test suites: 7 tests passed, 0 failed, 0 skipped
 The only build note is Vite's non-failing warning that the main JavaScript
 chunk is larger than 500 kB.
 
+### Current M3 implementation acceptance
+
+Verdict: pass with limits. The app now has the approved Flatstock UI copy,
+explicit transaction review screens, a sell-back review path, a 2% quote
+guard, and a 24-hour Chainlink freshness guard. The browser's general RPC
+reads use the VPS proxy, which prefers `QUICKNODE_RPC_URL` and falls back to
+`RPC_URL`. No QuickNode endpoint is exposed to browser code.
+
+Exact commands:
+
+```sh
+npm run build --prefix web
+git diff --check
+node --import tsx relayer/close-round.ts
+```
+
+Observed output:
+
+```text
+✓ 440 modules transformed
+✓ built successfully
+git diff --check: exit 0, no output
+{"enabled":false,"roundId":"3","action":"none"}
+```
+
+The close-round bot remains disabled by default. A first `npm run close-round`
+smoke attempt hit the local macOS `tsx` IPC `listen EPERM` before executing;
+the direct Node loader invocation above exercised the same disabled safety
+path successfully. No mainnet transaction was sent.
+
 ### Relayer protection smoke check
 
 The local relayer was started with `M3_RELAYER_KILL_SWITCH=1`, a local admin
@@ -233,7 +263,7 @@ VITE_ROUND_ID=3 npm run dev --prefix web -- --port 5174
 Observed desktop preview output:
 
 ```text
-Flat Index
+Flatstock
 Wrong network
 Notice Not available to US persons. Not investment advice.
 WIF burned by votes: 2 WIF
@@ -272,10 +302,19 @@ quicknode_status=503
 
 Prepared but not deployed:
 
-- `deploy/flat-index-relayer.service` for systemd on Ubuntu.
-- `deploy/nginx.conf.template` for the user-selected subdomain.
-- `deploy/flat-index.env.example` for a mode-600 VPS environment file.
-- `deploy/README.md` for build, process, and TLS/DNS preparation.
+- `deploy/flatstock-relayer.service` for systemd on Ubuntu.
+- `deploy/nginx-api.conf.template` for `api.flatstock.ajkadri.dev`.
+- `deploy/flatstock-close-round.service` and `.timer` for the disabled-by-default close bot.
+- `deploy/flatstock.env.example` for a mode-600 VPS environment file.
+- `deploy/README.md` and `deploy/HOSTING.md` for build, process, TLS, DNS, and Vercel preparation.
+
+The QuickNode Stock Token API remains blocked until `QUICKNODE_RPC_URL` is
+added to the VPS environment. Its proxy routes return:
+
+```text
+HTTP 503
+{"error":"QuickNode Stock Token API is not configured."}
+```
 
 ### Mobile issue fixes
 

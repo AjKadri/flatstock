@@ -8,6 +8,7 @@ import {
   LEGAL_NOTICE,
   lockAbi,
   ONE_WIF,
+  RELAYER_API,
   ROUND_ID,
   votesAbi,
 } from "./config";
@@ -16,6 +17,8 @@ import {
   buildBatch,
   buildBuyCall,
   buildBuyPlan,
+  buildSellCall,
+  buildSellPlan,
   connectWallet,
   formatDate,
   formatEth,
@@ -32,10 +35,11 @@ import {
   type ConnectedWallet,
   type Holding,
   type RoundState,
+  type SellLeg,
 } from "./lib/chain";
 
 type Health = { enabled: boolean; killSwitch: boolean; dailyCap: number; usage?: number; error?: string };
-type SubmittedTx = { action: "vote" | "buy"; hash: Hex };
+type SubmittedTx = { action: "vote" | "buy" | "sell"; hash: Hex };
 
 function App() {
   const [wallet, setWallet] = useState<ConnectedWallet | null>(null);
@@ -49,9 +53,13 @@ function App() {
   const [buyAmount, setBuyAmount] = useState("5");
   const [selectedAsset, setSelectedAsset] = useState(0);
   const [plan, setPlan] = useState<BuyLeg[]>([]);
+  const [sellSymbol, setSellSymbol] = useState("NVDA");
+  const [sellAmount, setSellAmount] = useState("0.001");
+  const [sellPlan, setSellPlan] = useState<SellLeg | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmingVote, setConfirmingVote] = useState(false);
   const [confirmingBuy, setConfirmingBuy] = useState(false);
+  const [confirmingSell, setConfirmingSell] = useState(false);
   const [submittedTx, setSubmittedTx] = useState<SubmittedTx | null>(null);
   const [message, setMessage] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
 
@@ -71,7 +79,7 @@ function App() {
         setHoldings(nextHoldings);
         setWalletState(nextWallet);
         try {
-          const response = await fetch("/api/health", {
+          const response = await fetch(`${RELAYER_API}/health`, {
             headers: { "x-wallet": connectedAccount },
           });
           if (response.ok) setHealth((await response.json()) as Health);
@@ -290,6 +298,65 @@ function App() {
     }
   };
 
+  const previewSell = async () => {
+    if (!account) return;
+    if (chainId !== chain.id) return setMessage({ tone: "error", text: "Switch to chain 4663 before checking prices." });
+    try {
+      setBusy("sell-quote");
+      setMessage(null);
+      const nextPlan = await buildSellPlan(sellSymbol, sellAmount, account);
+      setSellPlan(nextPlan);
+      setMessage({ tone: "success", text: "Sell price guard passed. Review the USDG you will receive." });
+    } catch (error) {
+      setSellPlan(null);
+      setMessage({ tone: "error", text: error instanceof Error ? error.message : "Sell quote rejected." });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const runSell = async () => {
+    if (!wallet || !account || !sellPlan) return;
+    if (chainId !== chain.id) return setMessage({ tone: "error", text: "Switch to chain 4663 before selling." });
+    try {
+      setBusy("sell");
+      setConfirmingSell(false);
+      setMessage(null);
+      setSubmittedTx(null);
+      const locked = walletState?.locked !== undefined && walletState.locked >= 10n * ONE_WIF;
+      const gasWif = locked ? 0n : 10_000_000_000_000_000n;
+      const calls = [
+        { target: sellPlan.token, value: 0n, data: buildApprove(addresses.buyRouter, addresses.buyRouter, sellPlan.amountIn) },
+        ...(!locked
+          ? [{ target: addresses.wif, value: 0n, data: buildApprove(addresses.buyRouter, addresses.buyRouter, gasWif) }]
+          : []),
+        { target: addresses.buyRouter, value: 0n, data: buildSellCall(sellPlan, gasWif) },
+      ];
+      let sellHash: Hex;
+      if (walletState?.delegated) {
+        sellHash = await sendDelegatedBatch(wallet, account, calls);
+      } else if (walletState?.eth === 0n) {
+        throw new Error("This wallet has no ETH and is not delegated for sponsorship.");
+      } else {
+        let lastHash: Hex | undefined;
+        for (const call of calls) {
+          const target = call.target === addresses.wif || call.target === sellPlan.token ? call.target : addresses.buyRouter;
+          lastHash = await sendDirect(wallet, account, target, call.data);
+        }
+        if (!lastHash) throw new Error("The sell did not produce a transaction hash.");
+        sellHash = lastHash;
+      }
+      setSubmittedTx({ action: "sell", hash: sellHash });
+      setMessage({ tone: "success", text: `${sellPlan.symbol} sold. USDG was sent directly to your wallet.` });
+      setSellPlan(null);
+      await refresh();
+    } catch (error) {
+      setMessage({ tone: "error", text: error instanceof Error ? error.message : "Sell cancelled or failed." });
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const requestVote = () => {
     if (!wallet || !account || chainId !== chain.id || !round?.isOpen) return;
     setSubmittedTx(null);
@@ -308,6 +375,13 @@ function App() {
     setConfirmingBuy(true);
   };
 
+  const requestSell = () => {
+    if (!wallet || !account || chainId !== chain.id || !sellPlan) return;
+    setSubmittedTx(null);
+    setMessage(null);
+    setConfirmingSell(true);
+  };
+
   const roundStatus = round ? (round.isOpen ? "Open" : "Closed") : "Loading";
   const totalValue = useMemo(
     () => holdings.reduce((sum, holding) => sum + (holding.value || 0), 0),
@@ -318,8 +392,8 @@ function App() {
     <main className="shell">
       <header className="topbar">
         <div>
-          <p className="eyebrow">Working name</p>
-          <h1>Flat Index</h1>
+          <p className="eyebrow">Community-picked stocks</p>
+          <h1>Flatstock</h1>
         </div>
         <div className="topbar-actions">
           <span className={`network-pill ${chainId === chain.id ? "good" : "warn"}`}>
@@ -347,7 +421,7 @@ function App() {
       <section className="hero card">
         <div>
           <p className="eyebrow">Community-picked stocks</p>
-          <h2>Buy this week’s mix in one tap.</h2>
+          <h2>Buy the US stocks the community picked, in one tap, with no gas.</h2>
           <p className="muted">$WIF holders choose the basket. You keep the Stock Tokens in your own wallet.</p>
         </div>
         <div className="hero-stat"><span>WIF burned by votes</span><strong>{formatWif(votesBurned * ONE_WIF)}</strong><small>1 WIF per vote</small></div>
@@ -402,9 +476,25 @@ function App() {
         <p className="helper">Every quote must exist and stay within 2% of Chainlink. A failed guard blocks the entire batch.</p>
       </section>
 
+      <section className="card buy-card">
+        <div className="section-heading"><div><p className="eyebrow">Exit path</p><h3>Sell one Stock Token</h3></div><span className="quiet">Direct to your wallet</span></div>
+        <div className="buy-controls">
+          <label>Asset<select value={sellSymbol} onChange={(event) => { setSellSymbol(event.target.value); setSellPlan(null); }} aria-label="Stock Token to sell">
+            {assets.map((asset) => <option key={asset.symbol} value={asset.symbol}>{asset.symbol}</option>)}
+          </select></label>
+          <label>Amount in shares<input inputMode="decimal" value={sellAmount} onChange={(event) => { setSellAmount(event.target.value); setSellPlan(null); }} aria-label="Amount in shares to sell" /></label>
+          <button className="secondary" disabled={!account || chainId !== chain.id || busy !== null} onClick={() => void previewSell()}>{busy === "sell-quote" ? "Checking price..." : "Check sell price"}</button>
+        </div>
+        {sellPlan && <div className="quote-table"><div className="quote-header"><span>Asset</span><span>Quote vs Chainlink</span><span>Guard</span></div><div className="quote-row"><span>{sellPlan.symbol}</span><span>${sellPlan.quotePrice.toFixed(2)} / ${sellPlan.chainlinkPrice.toFixed(2)}</span><span className="good-text">{(sellPlan.differenceBps / 100).toFixed(2)}%</span></div></div>}
+        <button className="primary full" disabled={!account || chainId !== chain.id || !sellPlan || busy !== null} onClick={requestSell}>{busy === "sell" ? "Submitting sell..." : sellPlan ? `Review ${sellPlan.symbol} sell` : "Check sell price first"}</button>
+        {confirmingSell && sellPlan && <div className="confirmation"><strong>Confirm {sellPlan.symbol} sell</strong><p>This action sells {sellAmount} shares back to USDG and sends the output directly to your wallet. The price guard passed. If this wallet has no WIF lock, exactly 0.01 WIF is burned for gas.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runSell()}>Confirm and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingSell(false)}>Cancel</button></div></div>}
+        {submittedTx?.action === "sell" && <div className="tx-proof"><strong>Sell submitted.</strong><a href={`${EXPLORER_URL}/tx/${submittedTx.hash}`} target="_blank" rel="noreferrer">View transaction</a></div>}
+        <p className="helper">Every sell quote must exist, be fresh, and stay within 2% of Chainlink.</p>
+      </section>
+
       <section className="card">
         <div className="section-heading"><div><p className="eyebrow">Your holdings</p><h3>Portfolio</h3></div><strong className="portfolio-total">${totalValue.toFixed(2)}</strong></div>
-        {!account ? <p className="muted">Connect a wallet to see Stock Tokens held by that wallet.</p> : <div className="portfolio-list">{holdings.map((holding) => <div className="portfolio-row" key={holding.symbol}><div><strong>{holding.symbol}</strong><small>{holding.shares ? `${holding.shares} shares` : Number(holding.balance) / 1e18 > 0 ? `${(Number(holding.balance) / 1e18).toFixed(6)} raw` : "No tokens"}</small></div><div>{holding.price === null ? "Price unavailable" : `$${holding.price.toFixed(2)}`}<small>{holding.value === null ? "" : `$${holding.value.toFixed(2)}`}</small></div></div>)}</div>}
+        {!account ? <p className="muted">Connect a wallet to see Stock Tokens held by that wallet.</p> : <div className="portfolio-list">{holdings.map((holding) => <button className="portfolio-row portfolio-button" key={holding.symbol} onClick={() => { setSellSymbol(holding.symbol); setSellPlan(null); }}><div><strong>{holding.symbol}</strong><small>{holding.shares ? `${holding.shares} shares` : Number(holding.balance) / 1e18 > 0 ? `${(Number(holding.balance) / 1e18).toFixed(6)} raw` : "No tokens"}</small></div><div>{holding.price === null ? "Price unavailable" : `$${holding.price.toFixed(2)}`}<small>{holding.value === null ? "" : `$${holding.value.toFixed(2)}`}</small></div></button>)}</div>}
       </section>
 
       <footer><span>Self-custody only. The app never holds your funds.</span><span>Live data from chain 4663.</span></footer>

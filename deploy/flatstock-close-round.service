@@ -1,0 +1,17 @@
+[Unit]
+Description=Flatstock vote close bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=flatstock
+Group=flatstock
+WorkingDirectory=/opt/flatstock
+EnvironmentFile=/etc/flatstock/flatstock.env
+ExecStart=/usr/bin/npm run close-round --prefix /opt/flatstock/web
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/flatstock
