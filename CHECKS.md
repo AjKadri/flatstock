@@ -134,6 +134,46 @@ The UI now requires an explicit in-app confirmation stating that exactly 1
 WIF will be spent and burned, that the relayer pays ETH gas, and that no WIF or
 ETH is sent to the relayer. After submission it shows a direct explorer link.
 
+### Approved mobile gasless buy
+
+The user confirmed the in-app review screen and submitted the $3 USDG buy from
+the phone wallet browser. No buy was sent from a script by the agent.
+
+Transaction:
+
+```text
+txHash=0x0042c543774d2eb67f1a392094e766485ff64af2766646746b4ca6d3f2038f14
+status=0x1
+from=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+to=0x3554121694a2472300f079Afa4B1fC7F9aAFac01
+blockNumber=102736815
+gasUsed=207870
+effectiveGasPrice=20000000 wei
+gasPaid=4157400000000 wei = 0.0000041574 ETH
+gasCostAt-$2248.26-ETH-reference=$0.009347
+```
+
+Observed transfer and fill:
+
+```text
+USDG user -> buy router = 3000000 raw = 3 USDG
+NVDA pool -> user = 14713836484323660 raw = 0.01471383648432366 NVDA
+user USDG balance after = 1167257 raw = 1.167257 USDG
+user NVDA balance after = 23730493459797947 raw = 0.023730493459797947 NVDA
+route=Uniswap v3 fallback
+pool=0xd4EB21209C4D6093f80B5b84f5C45cc093EA14a3
+fee=500
+```
+
+At the transaction block, the NVDA Chainlink answer was `$205.28000142`.
+The executed fill was `$203.88971994`, a `-0.677261%` difference (`68` bps),
+within the 2% guard. The token transfer recipient was the user wallet, not a
+project contract. The relayer kill switch was re-enabled immediately after
+the receipt was verified.
+
+Verdict: pass for the approved mobile gasless buy, with the temporary-domain
+wallet warning and final round-close UI confirmation still outstanding.
+
 ## M3 web app acceptance evidence
 
 Status: in progress. The desktop public-read path is verified against live
