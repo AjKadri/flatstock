@@ -21,8 +21,8 @@ tipster-specific contract section in `AGENTS.md` is out of scope.
 - No key values were printed. Secrets remain in the ignored `.env` file.
 
 The user approved the EIP-7702 delegate deployment, the tiny mainnet vote
-round, the market-hours basket buy, and the AAPL sell-back. No further
-mainnet transaction was sent.
+round, the market-hours basket buy, and the AAPL sell-back. No further M1
+transaction was sent in that phase.
 
 ## M3 round 3 short-test evidence
 
