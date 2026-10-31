@@ -7,6 +7,7 @@ import {
   EXPLORER_URL,
   LEGAL_NOTICE,
   lockAbi,
+  MIX_RULES_ENABLED,
   ONE_WIF,
   RELAYER_API,
   ROUND_ID,
@@ -433,6 +434,7 @@ function App() {
           {round ? (
             <>
               <p className="muted">{round.isOpen ? `Closes ${formatDate(round.closesAt)}.` : `Closed ${formatDate(round.closesAt)}.`} {round.totalVotes.toString()} vote{round.totalVotes === 1n ? "" : "s"} counted.</p>
+              <p className="helper">Mix rule preview: 50% equal-weight plus 50% vote share. No stock can exceed 50%.{!MIX_RULES_ENABLED ? " Buys stay paused until the new vote contract is configured." : ""}</p>
               <div className="asset-list">
                 {assets.map((asset, index) => (
                   <button key={asset.symbol} className={`asset-row ${selectedAsset === index ? "selected" : ""}`} onClick={() => setSelectedAsset(index)} disabled={!round.isOpen || index >= round.assetCount}>
@@ -468,9 +470,9 @@ function App() {
 
       <section className="card buy-card">
         <div className="section-heading"><div><p className="eyebrow">One tap</p><h3>Buy the voted mix</h3></div><span className="quiet">0% trading fee</span></div>
-        <div className="buy-controls"><label>Amount in USDG<input inputMode="decimal" value={buyAmount} onChange={(event) => setBuyAmount(event.target.value)} aria-label="Amount in USDG" /></label><button className="secondary" disabled={chainId !== chain.id || !round?.isOpen || busy !== null} onClick={() => void previewBuy()}>{busy === "quote" ? "Checking prices..." : "Check prices"}</button></div>
+        <div className="buy-controls"><label>Amount in USDG<input inputMode="decimal" value={buyAmount} onChange={(event) => setBuyAmount(event.target.value)} aria-label="Amount in USDG" /></label><button className="secondary" disabled={!MIX_RULES_ENABLED || chainId !== chain.id || !round?.isOpen || busy !== null} onClick={() => void previewBuy()}>{busy === "quote" ? "Checking prices..." : "Check prices"}</button></div>
         {plan.length > 0 && <div className="quote-table"><div className="quote-header"><span>Asset</span><span>Quote vs Chainlink</span><span>Guard</span></div>{plan.map((leg) => <div className="quote-row" key={leg.symbol}><span>{leg.symbol}</span><span>${leg.quotePrice.toFixed(2)} / ${leg.chainlinkPrice.toFixed(2)}</span><span className="good-text">{(leg.differenceBps / 100).toFixed(2)}%</span></div>)}</div>}
-        <button className="primary full" disabled={!account || chainId !== chain.id || !round?.isOpen || plan.length === 0 || busy !== null} onClick={requestBuy}>{busy === "buy" ? "Relaying your mix..." : plan.length === 0 ? "Check prices first" : account ? "Review this mix" : "Connect to buy"}</button>
+        <button className="primary full" disabled={!MIX_RULES_ENABLED || !account || chainId !== chain.id || !round?.isOpen || plan.length === 0 || busy !== null} onClick={requestBuy}>{busy === "buy" ? "Relaying your mix..." : !MIX_RULES_ENABLED ? "New mix contract required" : plan.length === 0 ? "Check prices first" : account ? "Review this mix" : "Connect to buy"}</button>
         {confirmingBuy && <div className="confirmation"><strong>Confirm sponsored mix</strong><p>This action spends {buyAmount} USDG from your wallet. Your Stock Tokens go directly to your wallet. The relayer pays the ETH gas and the price guard has passed for every leg. You can cancel here before submission.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runBuy()}>Confirm and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingBuy(false)}>Cancel</button></div></div>}
         {submittedTx?.action === "buy" && <div className="tx-proof"><strong>Mix submitted.</strong><a href={`${EXPLORER_URL}/tx/${submittedTx.hash}`} target="_blank" rel="noreferrer">View transaction</a></div>}
         <p className="helper">Every quote must exist and stay within 2% of Chainlink. A failed guard blocks the entire batch.</p>

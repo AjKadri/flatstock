@@ -15,6 +15,9 @@ export const ROUND_ID = BigInt(import.meta.env.VITE_ROUND_ID || "2");
 export const STATS_FROM_BLOCK = BigInt(
   import.meta.env.VITE_STATS_FROM_BLOCK || "101593767",
 );
+export const MIX_VOTE_SHARE_BPS = BigInt(import.meta.env.VITE_VOTE_SHARE_BPS || "5000");
+export const MIX_MAX_WEIGHT_BPS = 5000n;
+export const MIX_RULES_ENABLED = Boolean(import.meta.env.VITE_VOTES_ADDRESS);
 export const LEGAL_NOTICE =
   "Not available to US persons. Not investment advice.";
 
@@ -28,7 +31,7 @@ export const chain = defineChain({
 export const addresses = {
   wif: "0x5173b8eA6923c2d40267890D45C46a3480954773" as Address,
   usdg: "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" as Address,
-  votes: "0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9" as Address,
+  votes: (import.meta.env.VITE_VOTES_ADDRESS || "0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9") as Address,
   lock: "0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121" as Address,
   buyRouter: "0x5B08a91F8C8666C85e636bbE61Aed3b059B61FfA" as Address,
   quoter: "0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7" as Address,
@@ -70,6 +73,7 @@ export const erc20Abi = parseAbi([
 export const votesAbi = parseAbi([
   "function rounds(uint256) view returns (uint64 opensAt, uint64 closesAt, uint8 assetCount, uint256 totalVotes, bool closed)",
   "function vote(uint256 roundId, uint8 assetIndex)",
+  "function votesFor(uint256 roundId, uint8 assetIndex) view returns (uint256)",
   "function weightBps(uint256 roundId, uint8 assetIndex) view returns (uint256)",
 ]);
 

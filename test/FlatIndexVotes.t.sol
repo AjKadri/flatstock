@@ -72,21 +72,46 @@ contract FlatIndexVotesTest {
         votes.vote(1, 1);
     }
 
-    function testWeightsFreezeAtClose() public {
-        votes.openRound(2, 3, uint64(block.timestamp + 1 days));
+    function testBlendCapsAndWeightsFreezeAtClose() public {
+        votes.openRound(2, 3, uint64(block.timestamp + 1 days), 5_000);
 
         vm.prank(alice);
         votes.vote(2, 0);
         vm.prank(bob);
-        votes.vote(2, 1);
+        votes.vote(2, 0);
         vm.warp(block.timestamp + 1 days);
         votes.closeRound(2);
 
-        require(votes.weightBps(2, 0) == 5000, "first weight mismatch");
-        require(votes.weightBps(2, 1) == 5000, "second weight mismatch");
+        require(votes.voteShareBps(2) == 5_000, "blend ratio mismatch");
+        require(votes.weightBps(2, 0) == 5_000, "cap mismatch");
+        require(votes.weightBps(2, 1) == 2_500, "first redistribution mismatch");
+        require(votes.weightBps(2, 2) == 2_500, "second redistribution mismatch");
+        require(votes.finalWeightBps(2, 0) == 5_000, "final weight was not stored");
 
         vm.expectRevert(FlatIndexVotes.RoundNotOpen.selector);
         vm.prank(alice);
         votes.vote(2, 2);
+    }
+
+    function testNoVotesUseEqualWeightsAndBlendRatioIsParameter() public {
+        votes.openRound(3, 3, uint64(block.timestamp + 1 days), 0);
+
+        require(votes.voteShareBps(3) == 0, "zero vote blend was not stored");
+        require(votes.weightBps(3, 0) == 3_334, "equal first weight mismatch");
+        require(votes.weightBps(3, 1) == 3_333, "equal second weight mismatch");
+        require(votes.weightBps(3, 2) == 3_333, "equal third weight mismatch");
+    }
+
+    function testOneNvdaVoteProducesCappedRoundThreeMix() public {
+        votes.openRound(4, 3, uint64(block.timestamp + 1 days), 5_000);
+
+        vm.prank(bob);
+        votes.vote(4, 1);
+        vm.warp(block.timestamp + 1 days);
+        votes.closeRound(4);
+
+        require(votes.weightBps(4, 0) == 2_500, "AAPL round-three mix mismatch");
+        require(votes.weightBps(4, 1) == 5_000, "NVDA round-three mix mismatch");
+        require(votes.weightBps(4, 2) == 2_500, "MSFT round-three mix mismatch");
     }
 }

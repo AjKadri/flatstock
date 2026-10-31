@@ -12,7 +12,7 @@ placeholders with the actual public addresses before saving them.
 | --- | --- | --- | --- |
 | CNAME | `flatstock` | `cname.vercel-dns.com.` | Vercel landing project |
 | CNAME | `app.flatstock` | `cname.vercel-dns.com.` | Vercel app project |
-| A | `api.flatstock` | `<VPS_PUBLIC_IPV4>` | VPS API |
+| A | `api.flatstock` | `2.29.11.26` | VPS API |
 | AAAA | `api.flatstock` | `<VPS_PUBLIC_IPV6>` | VPS API, only if the VPS has IPv6 |
 
 Use the exact CNAME target Vercel shows if its domain screen gives a
@@ -49,6 +49,8 @@ VITE_RPC_URL=https://api.flatstock.ajkadri.dev/api/rpc
 VITE_RELAYER_API=https://api.flatstock.ajkadri.dev/api
 VITE_EXPLORER_URL=https://robinhoodchain.blockscout.com
 VITE_ROUND_ID=3
+VITE_VOTES_ADDRESS=<NEW_RULES_VOTE_CONTRACT_ADDRESS>
+VITE_VOTE_SHARE_BPS=5000
 VITE_STATS_FROM_BLOCK=101593767
 ```
 

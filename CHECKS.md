@@ -316,6 +316,75 @@ HTTP 503
 {"error":"QuickNode Stock Token API is not configured."}
 ```
 
+## New mix rules acceptance
+
+Verdict: pass locally. The vote contract now accepts a per-round vote-share
+blend parameter, defaults to 50% vote share plus 50% equal weight, caps any
+single asset at 50%, redistributes the excess, and stores final weights at
+close. New rounds require at least two assets. Split votes remain deferred.
+
+Exact checks:
+
+```sh
+forge test -vv
+node --input-type=module -e 'const votes=[0n,1n,0n], equal=[3334n,3333n,3333n]; let raw=equal.map((e,i)=>(e*5000n+(i===1?10000n:0n)*5000n)/10000n); raw[2]+=10000n-raw.reduce((a,b)=>a+b,0n); const excess=raw[1]-5000n; raw[1]=5000n; raw[0]+=excess/2n; raw[2]+=excess-excess/2n; console.log(JSON.stringify({votes:votes.map(String),weightsBps:raw.map(String),symbols:["AAPL","NVDA","MSFT"]}));'
+```
+
+Observed output:
+
+```text
+Ran 4 test suites: 9 tests passed, 0 failed, 0 skipped
+{"votes":["0","1","0"],"weightsBps":["2500","5000","2500"],"symbols":["AAPL","NVDA","MSFT"]}
+```
+
+Live read-only mainnet verification before applying the formula:
+
+```sh
+set -a; source .env; set +a
+cast chain-id --rpc-url "$RPC_URL"
+cast call "$VOTE_CONTRACT_ADDRESS" 'rounds(uint256)(uint64,uint64,uint8,uint256,bool)' 3 --rpc-url "$RPC_URL"
+cast call "$VOTE_CONTRACT_ADDRESS" 'votesFor(uint256,uint8)(uint256)' 3 0 --rpc-url "$RPC_URL"
+cast call "$VOTE_CONTRACT_ADDRESS" 'votesFor(uint256,uint8)(uint256)' 3 1 --rpc-url "$RPC_URL"
+cast call "$VOTE_CONTRACT_ADDRESS" 'votesFor(uint256,uint8)(uint256)' 3 2 --rpc-url "$RPC_URL"
+```
+
+Observed output:
+
+```text
+4663
+1793465885
+1793563200
+3
+1
+false
+0
+1
+0
+```
+
+Round 3's actual votes are AAPL `0`, NVDA `1`, MSFT `0`. Under the new rules
+the displayed computed mix is AAPL `25%`, NVDA `50%`, MSFT `25%`. This is a
+new-rule preview until the replacement vote contract is deployed. The app
+keeps mix buys disabled while `VITE_VOTES_ADDRESS` is absent, so the old round
+cannot silently execute a client-only weighting rule.
+
+Prepared mainnet commands, not sent:
+
+```sh
+set -a; source .env; set +a
+forge create src/FlatIndexVotes.sol:FlatIndexVotes \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
+  --broadcast --json --constructor-args "$WIF_ADDRESS"
+
+ROUND4_CLOSE=$(node --input-type=module -e 'console.log(Math.floor(new Date("2026-11-09T15:00:00+01:00").getTime()/1000))')
+cast send "$NEW_VOTE_CONTRACT_ADDRESS" \
+  'openRound(uint256,uint8,uint64,uint16)' 4 3 "$ROUND4_CLOSE" 5000 \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" --force --json
+```
+
+Both commands require fresh approval immediately before sending. The existing
+round-3 close also remains pending until its approved close time.
+
 ### Mobile issue fixes
 
 The first phone attempt exposed two issues:

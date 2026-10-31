@@ -21,6 +21,9 @@ import {
   LEGAL_NOTICE,
   lockAbi,
   MAX_SLIPPAGE_BPS,
+  MIX_MAX_WEIGHT_BPS,
+  MIX_RULES_ENABLED,
+  MIX_VOTE_SHARE_BPS,
   NON_LOCKER_GAS_WIF,
   ORACLE_MAX_AGE_SECONDS,
   quoterAbi,
@@ -104,17 +107,19 @@ export async function readRound(): Promise<RoundState> {
       args: [ROUND_ID],
     })) as readonly [bigint, bigint, number, bigint, boolean];
   const now = await getLatestTimestamp();
-  const weights = await Promise.all(
+  const votes = await Promise.all(
     assets.map(async (_, index) => {
       if (index >= assetCount || totalVotes === 0n) return 0n;
       return (await publicClient.readContract({
         address: addresses.votes,
         abi: votesAbi,
-        functionName: "weightBps",
+        functionName: "votesFor",
         args: [ROUND_ID, index],
       })) as bigint;
     }),
   );
+  const computed = calculateMixWeights(votes, assetCount, MIX_VOTE_SHARE_BPS);
+  const weights = assets.map((_, index) => index < assetCount ? computed[index] || 0n : 0n);
   return {
     opensAt,
     closesAt,
@@ -124,6 +129,69 @@ export async function readRound(): Promise<RoundState> {
     isOpen: !closed && now < closesAt,
     weights,
   };
+}
+
+export function calculateMixWeights(
+  votes: bigint[],
+  assetCount: number,
+  voteShareBps = MIX_VOTE_SHARE_BPS,
+): bigint[] {
+  if (assetCount <= 0) return [];
+  if (assetCount === 1) return [10_000n];
+  const count = BigInt(assetCount);
+  const totalVotes = votes.slice(0, assetCount).reduce((sum, value) => sum + value, 0n);
+  const equalBase = 10_000n / count;
+  const equalRemainder = 10_000n % count;
+  const equalShare = 10_000n - voteShareBps;
+  const weights = Array.from({ length: assetCount }, () => 0n);
+  let voteSum = 0n;
+  let weightSum = 0n;
+  for (let index = 0; index < assetCount; index += 1) {
+    const equalWeight = equalBase + (BigInt(index) < equalRemainder ? 1n : 0n);
+    let voteWeight = 0n;
+    if (totalVotes !== 0n) {
+      voteWeight = index === assetCount - 1
+        ? 10_000n - voteSum
+        : (votes[index] || 0n) * 10_000n / totalVotes;
+      if (index !== assetCount - 1) voteSum += voteWeight;
+    }
+    weights[index] = (equalWeight * equalShare + voteWeight * voteShareBps) / 10_000n;
+    weightSum += weights[index];
+  }
+  if (weightSum < 10_000n) weights[assetCount - 1] += 10_000n - weightSum;
+
+  const capped = Array.from({ length: assetCount }, () => false);
+  let excess = 0n;
+  for (let index = 0; index < assetCount; index += 1) {
+    if (weights[index] > MIX_MAX_WEIGHT_BPS) {
+      excess += weights[index] - MIX_MAX_WEIGHT_BPS;
+      weights[index] = MIX_MAX_WEIGHT_BPS;
+      capped[index] = true;
+    }
+  }
+  while (excess !== 0n) {
+    const eligible = weights.reduce((sum, weight, index) => sum + (!capped[index] && weight < MIX_MAX_WEIGHT_BPS ? 1 : 0), 0);
+    if (eligible === 0) throw new Error("Mix weights cannot satisfy the 50% cap.");
+    const base = excess / BigInt(eligible);
+    const remainder = excess % BigInt(eligible);
+    let seen = 0;
+    let nextExcess = 0n;
+    for (let index = 0; index < assetCount; index += 1) {
+      if (capped[index] || weights[index] >= MIX_MAX_WEIGHT_BPS) continue;
+      const addition = base + (BigInt(seen) < remainder ? 1n : 0n);
+      seen += 1;
+      const capacity = MIX_MAX_WEIGHT_BPS - weights[index];
+      if (addition > capacity) {
+        weights[index] = MIX_MAX_WEIGHT_BPS;
+        capped[index] = true;
+        nextExcess += addition - capacity;
+      } else {
+        weights[index] += addition;
+      }
+    }
+    excess = nextExcess;
+  }
+  return weights;
 }
 
 export async function readVoteBurned() {
@@ -242,6 +310,7 @@ export async function readWalletState(account: Address) {
 }
 
 export async function buildBuyPlan(amountText: string, round: RoundState): Promise<BuyLeg[]> {
+  if (!MIX_RULES_ENABLED) throw new Error("The new vote contract is not configured for mix buys yet.");
   if (!round.isOpen) throw new Error("No vote round is open on mainnet.");
   if (round.totalVotes === 0n) throw new Error("The open round has no votes yet.");
   const total = parseUnits(amountText, 6);

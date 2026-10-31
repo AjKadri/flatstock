@@ -5,12 +5,16 @@ interface IWifVotes {
     function burn(uint256 amount) external;
 }
 
-/// @notice One-WIF-per-wallet weekly stock-choice voting for the M1 check.
-/// @dev The vote contract receives exactly one WIF and burns it in the same
-/// transaction. Counts remain immutable after a round is closed.
+/// @notice One-WIF-per-wallet stock-choice voting with bounded blended weights.
+/// @dev Each round blends equal weights and vote share, then caps any one
+/// asset at 50% and redistributes the excess. Final weights are stored at
+/// close so they cannot change afterward.
 contract FlatIndexVotes {
     uint256 public constant VOTE_COST = 1 ether;
     uint8 public constant MAX_ASSETS = 8;
+    uint256 public constant BPS = 10_000;
+    uint256 public constant MAX_WEIGHT_BPS = 5_000;
+    uint16 public constant DEFAULT_VOTE_SHARE_BPS = 5_000;
 
     IWifVotes public immutable wif;
     address public immutable owner;
@@ -26,8 +30,10 @@ contract FlatIndexVotes {
     mapping(uint256 => Round) public rounds;
     mapping(uint256 => mapping(address => bool)) public hasVoted;
     mapping(uint256 => mapping(uint8 => uint256)) public votesFor;
+    mapping(uint256 => uint16) public voteShareBps;
+    mapping(uint256 => mapping(uint8 => uint256)) public finalWeightBps;
 
-    event RoundOpened(uint256 indexed roundId, uint8 assetCount, uint64 opensAt, uint64 closesAt);
+    event RoundOpened(uint256 indexed roundId, uint8 assetCount, uint64 opensAt, uint64 closesAt, uint16 voteShareBps);
     event VoteCast(uint256 indexed roundId, address indexed voter, uint8 indexed assetIndex);
     event RoundClosed(uint256 indexed roundId, uint256 totalVotes);
 
@@ -36,6 +42,7 @@ contract FlatIndexVotes {
     error RoundExists();
     error RoundMissing();
     error InvalidAssets();
+    error InvalidBlendRatio();
     error InvalidCloseTime();
     error RoundNotOpen();
     error RoundClosedAlready();
@@ -56,15 +63,25 @@ contract FlatIndexVotes {
     }
 
     function openRound(uint256 roundId, uint8 assetCount, uint64 closesAt) external onlyOwner {
+        _openRound(roundId, assetCount, closesAt, DEFAULT_VOTE_SHARE_BPS);
+    }
+
+    function openRound(uint256 roundId, uint8 assetCount, uint64 closesAt, uint16 voteShareBps_) external onlyOwner {
+        _openRound(roundId, assetCount, closesAt, voteShareBps_);
+    }
+
+    function _openRound(uint256 roundId, uint8 assetCount, uint64 closesAt, uint16 voteShareBps_) internal {
         Round storage current = rounds[roundId];
         if (current.assetCount != 0) revert RoundExists();
-        if (assetCount == 0 || assetCount > MAX_ASSETS) revert InvalidAssets();
+        if (assetCount < 2 || assetCount > MAX_ASSETS) revert InvalidAssets();
         if (closesAt <= block.timestamp) revert InvalidCloseTime();
+        if (voteShareBps_ > BPS) revert InvalidBlendRatio();
 
         current.opensAt = uint64(block.timestamp);
         current.closesAt = closesAt;
         current.assetCount = assetCount;
-        emit RoundOpened(roundId, assetCount, current.opensAt, closesAt);
+        voteShareBps[roundId] = voteShareBps_;
+        emit RoundOpened(roundId, assetCount, current.opensAt, closesAt, voteShareBps_);
     }
 
     function vote(uint256 roundId, uint8 assetIndex) external {
@@ -92,6 +109,10 @@ contract FlatIndexVotes {
         if (current.closed) revert RoundClosedAlready();
         if (block.timestamp < current.closesAt) revert InvalidCloseTime();
 
+        uint256[] memory weights = _computedWeights(roundId);
+        for (uint8 i; i < current.assetCount; ++i) {
+            finalWeightBps[roundId][i] = weights[i];
+        }
         current.closed = true;
         emit RoundClosed(roundId, current.totalVotes);
     }
@@ -100,7 +121,88 @@ contract FlatIndexVotes {
         Round storage current = rounds[roundId];
         if (current.assetCount == 0) revert RoundMissing();
         if (assetIndex >= current.assetCount) revert InvalidAsset();
-        if (current.totalVotes == 0) return 0;
-        return votesFor[roundId][assetIndex] * 10_000 / current.totalVotes;
+        if (current.closed) return finalWeightBps[roundId][assetIndex];
+        return _computedWeights(roundId)[assetIndex];
+    }
+
+    function _computedWeights(uint256 roundId) internal view returns (uint256[] memory weights) {
+        Round storage current = rounds[roundId];
+        uint8 count = current.assetCount;
+        weights = new uint256[](count);
+        uint256 equalBase = BPS / count;
+        uint256 equalRemainder = BPS % count;
+        uint256 totalVotes = current.totalVotes;
+        uint256 voteShare = voteShareBps[roundId];
+        uint256 equalShare = BPS - voteShare;
+        uint256 voteSum;
+        uint256 weightSum;
+
+        for (uint8 i; i < count; ++i) {
+            uint256 voteWeight = _voteWeight(roundId, i, count, totalVotes, voteSum);
+            weights[i] = _blendWeight(
+                equalBase + (i < equalRemainder ? 1 : 0), voteWeight, equalShare, voteShare
+            );
+            weightSum += weights[i];
+            if (i != count - 1) voteSum += voteWeight;
+        }
+        if (weightSum < BPS) weights[count - 1] += BPS - weightSum;
+        _capAndRedistribute(weights, count);
+    }
+
+    function _voteWeight(uint256 roundId, uint8 index, uint8 count, uint256 totalVotes, uint256 previousVoteSum)
+        internal
+        view
+        returns (uint256)
+    {
+        if (totalVotes == 0) return 0;
+        if (index == count - 1) return BPS - previousVoteSum;
+        return votesFor[roundId][index] * BPS / totalVotes;
+    }
+
+    function _blendWeight(uint256 equalWeight, uint256 voteWeight, uint256 equalShare, uint256 voteShare)
+        internal
+        pure
+        returns (uint256)
+    {
+        return (equalWeight * equalShare + voteWeight * voteShare) / BPS;
+    }
+
+    function _capAndRedistribute(uint256[] memory weights, uint8 count) internal pure {
+        bool[] memory capped = new bool[](count);
+        uint256 excess;
+        for (uint8 i; i < count; ++i) {
+            if (weights[i] > MAX_WEIGHT_BPS) {
+                excess += weights[i] - MAX_WEIGHT_BPS;
+                weights[i] = MAX_WEIGHT_BPS;
+                capped[i] = true;
+            }
+        }
+
+        while (excess != 0) {
+            uint256 eligible;
+            for (uint8 i; i < count; ++i) {
+                if (!capped[i] && weights[i] < MAX_WEIGHT_BPS) ++eligible;
+            }
+            if (eligible == 0) revert InvalidAssets();
+
+            uint256 base = excess / eligible;
+            uint256 remainder = excess % eligible;
+            uint256 seen;
+            uint256 nextExcess;
+            for (uint8 i; i < count; ++i) {
+                if (capped[i] || weights[i] >= MAX_WEIGHT_BPS) continue;
+                uint256 addition = base + (seen < remainder ? 1 : 0);
+                ++seen;
+                uint256 capacity = MAX_WEIGHT_BPS - weights[i];
+                if (addition > capacity) {
+                    weights[i] = MAX_WEIGHT_BPS;
+                    capped[i] = true;
+                    nextExcess += addition - capacity;
+                } else {
+                    weights[i] += addition;
+                }
+            }
+            excess = nextExcess;
+        }
     }
 }
