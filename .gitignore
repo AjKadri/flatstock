@@ -7,4 +7,6 @@ work/
 node_modules/
 out/
 cache/
+web/dist/
+web/tsconfig.tsbuildinfo
 

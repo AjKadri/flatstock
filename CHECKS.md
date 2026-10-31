@@ -1,6 +1,6 @@
 # M1 mainnet checks
 
-Status: M1 complete. M2 complete with limits. No M3 work has started.
+Status: M1 complete. M2 complete with limits. M3 in progress. Round 3 is open.
 
 Scope follows `PLAN-v3.md` section 3. `PLAN-v3.md` replaces the v2 plan. The
 tipster-specific contract section in `AGENTS.md` is out of scope.
@@ -23,6 +23,151 @@ tipster-specific contract section in `AGENTS.md` is out of scope.
 The user approved the EIP-7702 delegate deployment, the tiny mainnet vote
 round, the market-hours basket buy, and the AAPL sell-back. No further
 mainnet transaction was sent.
+
+## M3 round 3 short-test evidence
+
+Verdict: pass with limits. The approved short test round is open on mainnet;
+the close transaction and post-close UI mix confirmation are intentionally
+pending until the scheduled close time.
+
+Schedule override recorded in `PLAN-v3.md`:
+
+- Close: `2026-11-01 21:00 WAT` (`1793563200`).
+- Mainnet: chain `4663`.
+- Round id: `3`.
+- Asset count: `3`.
+
+### Read-only preflight
+
+Exact commands:
+
+```sh
+set -a; source .env; set +a
+CLOSE_TS=$(node --input-type=module -e 'console.log(Math.floor(new Date("2026-11-01T21:00:00+01:00").getTime()/1000))')
+RELAYER=$(cast wallet address --private-key "$M1_RELAYER_PRIVATE_KEY")
+cast chain-id --rpc-url "$RPC_URL"
+cast call "$VOTE_CONTRACT_ADDRESS" 'rounds(uint256)(uint64,uint64,uint8,uint256,bool)' 3 --rpc-url "$RPC_URL"
+cast balance "$RELAYER" --rpc-url "$RPC_URL"
+cast estimate "$VOTE_CONTRACT_ADDRESS" 'openRound(uint256,uint8,uint64)' 3 3 "$CLOSE_TS" --from "$RELAYER" --rpc-url "$RPC_URL"
+```
+
+Observed output:
+
+```text
+close_ts=1793563200
+chain_id=4663
+round3=0 0 0 0 false
+relayer_eth=379269014454223 wei
+estimate=47794 gas
+```
+
+### Approved mainnet transaction
+
+Exact command:
+
+```sh
+set -a; source .env; set +a
+CLOSE_TS=$(node --input-type=module -e 'console.log(Math.floor(new Date("2026-11-01T21:00:00+01:00").getTime()/1000))')
+cast send "$VOTE_CONTRACT_ADDRESS" 'openRound(uint256,uint8,uint64)' 3 3 "$CLOSE_TS" --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" --force --json
+```
+
+Observed output:
+
+```text
+txHash=0x9e6217a848a55aba45b1521e323f16e12a6d22711cafeccf6ffdf10cb54889fb
+status=0x1
+blockNumber=102708287 (raw provider receipt 0x61f343f)
+gasUsed=47222
+effectiveGasPrice=20010000 wei
+gasPaid=944912220000 wei = 0.00000094491222 ETH
+```
+
+The receipt's `blockNumber` is recorded both as decimal `102708287` and raw
+`0x61f343f`. At an ETH/USD reference of `$2248.26`
+observed on 31 Oct 2026, the relayer gas cost was `$0.002124`.
+
+Post-transaction read:
+
+```text
+round3.opensAt=1793465885
+round3.closesAt=1793563200
+round3.assetCount=3
+round3.totalVotes=0
+round3.closed=false
+```
+
+## M3 web app acceptance evidence
+
+Status: in progress. The desktop public-read path is verified against live
+round 3. Wallet-signing and mobile in-app-browser transaction flows remain
+deferred until a funded browser wallet is available and each requested
+mainnet transaction is separately approved.
+
+### Build and contract regression checks
+
+Exact commands:
+
+```sh
+npm run build --prefix web
+forge test -vv
+```
+
+Observed output:
+
+```text
+vite v8.3.5
+✓ 440 modules transformed
+✓ built in 163ms
+Ran 4 test suites: 7 tests passed, 0 failed, 0 skipped
+```
+
+The only build note is Vite's non-failing warning that the main JavaScript
+chunk is larger than 500 kB.
+
+### Relayer protection smoke check
+
+The local relayer was started with `M3_RELAYER_KILL_SWITCH=1`, a local admin
+token, and daily cap `3`. No secret values were printed.
+
+Observed output:
+
+```text
+M3 relayer listening on 8791; kill switch on; daily cap 3
+health={"enabled":true,"killSwitch":true,"dailyCap":3,"usage":0,"relayer":"0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4"}
+relay_status=503
+relay_body={"error":"Sponsorship is paused by the kill switch."}
+kill_status=200
+kill_body={"killSwitch":false}
+kill_on_status=200
+kill_on_body={"killSwitch":true}
+```
+
+The final local relayer state was paused.
+
+### Browser acceptance snapshot
+
+Local preview command:
+
+```sh
+VITE_ROUND_ID=3 npm run dev --prefix web -- --port 5174
+```
+
+Observed desktop preview output:
+
+```text
+Flat Index
+Wrong network
+Notice Not available to US persons. Not investment advice.
+WIF burned by votes: 2 WIF
+Vote round 3: Open
+Closes 1 Nov 2026, 21:00. 0 votes counted.
+Buy this week’s mix in one tap.
+Every quote must exist and stay within 2% of Chainlink.
+Self-custody only. The app never holds your funds. Live data from chain 4663.
+```
+
+The responsive stylesheet includes a mobile layout at `max-width: 720px`, but
+an actual mobile wallet in-app-browser session has not been captured yet.
 
 ## Read-only mainnet preflight
 

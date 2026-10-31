@@ -1,0 +1,25 @@
+{
+  "name": "flat-index-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "relay": "tsx relayer/server.ts"
+  },
+  "dependencies": {
+    "react": "latest",
+    "react-dom": "latest",
+    "viem": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "latest",
+    "tsx": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  }
+}
