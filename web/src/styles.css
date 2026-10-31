@@ -67,6 +67,12 @@ input:focus { border-color: #8be5a8; }
 .quote-header { color: #7f9c8b; background: #0a1a14; font-size: 11px; text-transform: uppercase; }
 .quote-row { border-top: 1px solid #193329; font-size: 13px; }
 .good-text { color: #9be7b5; }
+.confirmation { display: grid; gap: 10px; margin-top: 14px; padding: 14px; border: 1px solid #51785d; border-radius: 12px; background: #102d20; color: #dff5e5; font-size: 13px; line-height: 1.45; }
+.confirmation p { color: #b6d2bd; }
+.confirmation-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.confirmation-actions button { flex: 1 1 180px; }
+.tx-proof { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 11px 12px; border: 1px solid #2e8c5d; border-radius: 10px; color: #bdf5c9; font-size: 13px; }
+.tx-proof a { color: #d9ffe2; text-decoration: underline; white-space: nowrap; }
 .portfolio-total { color: #bdf5c9; font-size: 20px; }
 .portfolio-list { display: grid; gap: 5px; }
 .portfolio-row { border-bottom: 1px solid #193329; padding: 12px 0; }

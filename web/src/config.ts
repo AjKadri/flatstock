@@ -8,6 +8,8 @@ import {
 export const CHAIN_ID = 4663;
 export const RPC_URL =
   import.meta.env.VITE_RPC_URL || "https://rpc.mainnet.chain.robinhood.com";
+export const EXPLORER_URL =
+  import.meta.env.VITE_EXPLORER_URL || "https://robinhoodchain.blockscout.com";
 export const RELAYER_API = import.meta.env.VITE_RELAYER_API || "/api";
 export const ROUND_ID = BigInt(import.meta.env.VITE_ROUND_ID || "2");
 export const STATS_FROM_BLOCK = BigInt(

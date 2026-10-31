@@ -96,6 +96,44 @@ round3.totalVotes=0
 round3.closed=false
 ```
 
+### User-controlled mobile vote
+
+The user submitted the vote through the phone wallet browser UI. No vote was
+sent from a script by the agent.
+
+Transaction:
+
+```text
+txHash=0x9d0b995f96a553bb5c33d92369525d5a67f36aa8a323fdaf7d09d88c3f11c094
+status=0x1
+from=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+to=0x3554121694a2472300f079Afa4B1fC7F9aAFac01
+gasUsed=142349
+effectiveGasPrice=20006000 wei
+gasPaid=2847834094000 wei = 0.000002847834094 ETH
+gasCostAt-$2248.26-ETH-reference=$0.006403
+```
+
+Read-only receipt checks:
+
+```text
+round3.totalVotes=1
+hasVoted(round3,user)=true
+weightBps(round3,AAPL)=0
+weightBps(round3,NVDA)=10000
+weightBps(round3,MSFT)=0
+user WIF balance=986.99 WIF
+```
+
+The receipt contains a 1 WIF transfer from the user to the vote contract and
+a 1 WIF burn to the zero address. The relayer paid native gas. The preview
+relayer kill switch was re-enabled immediately after this transaction and
+before any buy transaction.
+
+The UI now requires an explicit in-app confirmation stating that exactly 1
+WIF will be spent and burned, that the relayer pays ETH gas, and that no WIF or
+ETH is sent to the relayer. After submission it shows a direct explorer link.
+
 ## M3 web app acceptance evidence
 
 Status: in progress. The desktop public-read path is verified against live
