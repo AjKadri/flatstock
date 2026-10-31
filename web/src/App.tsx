@@ -146,6 +146,7 @@ function App() {
 
   const runLock = async () => {
     if (!wallet || !account) return;
+    if (chainId !== chain.id) return setMessage({ tone: "error", text: "Switch to chain 4663 before locking WIF." });
     try {
       setBusy("lock");
       setMessage(null);
@@ -175,6 +176,7 @@ function App() {
 
   const previewBuy = async () => {
     if (!round) return;
+    if (chainId !== chain.id) return setMessage({ tone: "error", text: "Switch to chain 4663 before checking prices." });
     try {
       setBusy("quote");
       setMessage(null);
@@ -191,6 +193,7 @@ function App() {
 
   const runBuy = async () => {
     if (!wallet || !account || !round) return;
+    if (chainId !== chain.id) return setMessage({ tone: "error", text: "Switch to chain 4663 before buying." });
     if (!round.isOpen) return setMessage({ tone: "info", text: "No vote round is open on mainnet." });
     try {
       setBusy("buy");
@@ -284,7 +287,7 @@ function App() {
                   </button>
                 ))}
               </div>
-              <button className="secondary full" disabled={!account || !round.isOpen || busy !== null} onClick={() => void runVote()}>
+              <button className="secondary full" disabled={!account || chainId !== chain.id || !round.isOpen || busy !== null} onClick={() => void runVote()}>
                 {busy === "vote" ? "Waiting for confirmation..." : account ? "Vote and burn 1 WIF" : "Connect to vote"}
               </button>
               {!round.isOpen && <p className="helper">No vote round is open on mainnet. The organizer must open the next round.</p>}
@@ -301,7 +304,7 @@ function App() {
               <div><span>Locked</span><strong>{walletState && walletState.locked > 0n ? formatWif(walletState.locked) : "Not locked"}</strong></div>
             </div>
           ) : <p className="muted">Connect to check whether this wallet can use sponsored gas.</p>}
-          <button className="secondary full" disabled={!account || busy !== null || (walletState?.locked || 0n) > 0n} onClick={() => void runLock()}>
+          <button className="secondary full" disabled={!account || chainId !== chain.id || busy !== null || (walletState?.locked || 0n) > 0n} onClick={() => void runLock()}>
             {busy === "lock" ? "Waiting for confirmation..." : walletState?.locked ? "WIF lock active" : "Lock 10 WIF for no gas"}
           </button>
           {health && <p className="helper">Sponsor: {health.killSwitch ? "paused" : health.enabled ? `${health.usage || 0}/${health.dailyCap} used today` : "offline"}.</p>}
@@ -310,9 +313,9 @@ function App() {
 
       <section className="card buy-card">
         <div className="section-heading"><div><p className="eyebrow">One tap</p><h3>Buy the voted mix</h3></div><span className="quiet">0% trading fee</span></div>
-        <div className="buy-controls"><label>Amount in USDG<input inputMode="decimal" value={buyAmount} onChange={(event) => setBuyAmount(event.target.value)} aria-label="Amount in USDG" /></label><button className="secondary" disabled={!round?.isOpen || busy !== null} onClick={() => void previewBuy()}>{busy === "quote" ? "Checking prices..." : "Check prices"}</button></div>
+        <div className="buy-controls"><label>Amount in USDG<input inputMode="decimal" value={buyAmount} onChange={(event) => setBuyAmount(event.target.value)} aria-label="Amount in USDG" /></label><button className="secondary" disabled={chainId !== chain.id || !round?.isOpen || busy !== null} onClick={() => void previewBuy()}>{busy === "quote" ? "Checking prices..." : "Check prices"}</button></div>
         {plan.length > 0 && <div className="quote-table"><div className="quote-header"><span>Asset</span><span>Quote vs Chainlink</span><span>Guard</span></div>{plan.map((leg) => <div className="quote-row" key={leg.symbol}><span>{leg.symbol}</span><span>${leg.quotePrice.toFixed(2)} / ${leg.chainlinkPrice.toFixed(2)}</span><span className="good-text">{(leg.differenceBps / 100).toFixed(2)}%</span></div>)}</div>}
-        <button className="primary full" disabled={!account || !round?.isOpen || busy !== null} onClick={() => void runBuy()}>{busy === "buy" ? "Relaying your mix..." : account ? "Buy this mix" : "Connect to buy"}</button>
+        <button className="primary full" disabled={!account || chainId !== chain.id || !round?.isOpen || busy !== null} onClick={() => void runBuy()}>{busy === "buy" ? "Relaying your mix..." : account ? "Buy this mix" : "Connect to buy"}</button>
         <p className="helper">Every quote must exist and stay within 2% of Chainlink. A failed guard blocks the entire batch.</p>
       </section>
 
