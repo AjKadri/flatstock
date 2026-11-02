@@ -5,7 +5,8 @@ import { defineChain } from "viem";
 const publicRpcUrl = process.env.RPC_URL || "https://rpc.mainnet.chain.robinhood.com";
 const quickNodeRpcUrl = process.env.QUICKNODE_RPC_URL?.trim();
 const contractAddress = (process.env.VOTE_CONTRACT_ADDRESS || "0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9") as Address;
-const roundId = BigInt(process.env.VOTE_ROUND_ID || process.env.VITE_ROUND_ID || "3");
+const configuredRoundId = process.env.VOTE_ROUND_ID || process.env.VITE_ROUND_ID;
+const fallbackRoundId = BigInt(process.env.CLOSE_ROUND_FALLBACK_ID || "3");
 const enabled = process.env.CLOSE_ROUND_ENABLED === "1";
 const privateKeyRaw = process.env.M3_CLOSE_BOT_PRIVATE_KEY || process.env.M1_RELAYER_PRIVATE_KEY;
 
@@ -22,18 +23,31 @@ const readTransport = quickNodeRpcUrl
 const publicClient = createPublicClient({ chain, transport: readTransport });
 const votesAbi = parseAbi([
   "function rounds(uint256) view returns (uint64 opensAt, uint64 closesAt, uint8 assetCount, uint256 totalVotes, bool closed)",
+  "function latestRoundId() view returns (uint256)",
   "function closeRound(uint256 roundId)",
 ]);
 
 async function main() {
   if (!enabled) {
-    console.log(JSON.stringify({ enabled: false, roundId: roundId.toString(), action: "none" }));
+    console.log(JSON.stringify({ enabled: false, roundId: configuredRoundId || "auto", action: "none" }));
     return;
   }
   if (!privateKeyRaw) throw new Error("M3_CLOSE_BOT_PRIVATE_KEY or M1_RELAYER_PRIVATE_KEY is required when closing is enabled.");
 
   const account = privateKeyToAccount(`0x${privateKeyRaw.replace(/^0x/, "")}` as Hex);
   const walletClient = createWalletClient({ account, chain, transport: http(publicRpcUrl) });
+  let roundId = configuredRoundId ? BigInt(configuredRoundId) : fallbackRoundId;
+  if (!configuredRoundId) {
+    try {
+      roundId = await publicClient.readContract({
+        address: contractAddress,
+        abi: votesAbi,
+        functionName: "latestRoundId",
+      }) as bigint;
+    } catch {
+      // The legacy contract has no latestRoundId getter.
+    }
+  }
   const [opensAt, closesAt, assetCount, totalVotes, closed] = (await publicClient.readContract({
     address: contractAddress,
     abi: votesAbi,

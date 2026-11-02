@@ -10,7 +10,6 @@ import {
   MIX_RULES_ENABLED,
   ONE_WIF,
   RELAYER_API,
-  ROUND_ID,
   votesAbi,
 } from "./config";
 import {
@@ -184,7 +183,7 @@ function App() {
       const vote = encodeFunctionData({
         abi: votesAbi,
         functionName: "vote",
-        args: [ROUND_ID, selectedAsset],
+        args: [round.roundId, selectedAsset],
       });
       let voteHash: Hex;
       if (walletState?.delegated) {
@@ -430,7 +429,7 @@ function App() {
 
       <div className="grid two">
         <section className="card">
-          <div className="section-heading"><div><p className="eyebrow">This week</p><h3>Vote round {ROUND_ID.toString()}</h3></div><span className={`status ${round ? (round.isOpen ? "open" : "closed") : "pending"}`}>{roundStatus}</span></div>
+          <div className="section-heading"><div><p className="eyebrow">This week</p><h3>Vote round {round?.roundId.toString() || "..."}</h3></div><span className={`status ${round ? (round.isOpen ? "open" : "closed") : "pending"}`}>{roundStatus}</span></div>
           {round ? (
             <>
               <p className="muted">{round.isOpen ? `Closes ${formatDate(round.closesAt)}.` : `Closed ${formatDate(round.closesAt)}.`} {round.totalVotes.toString()} vote{round.totalVotes === 1n ? "" : "s"} counted.</p>

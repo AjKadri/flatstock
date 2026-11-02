@@ -11,7 +11,7 @@ export const RPC_URL =
 export const EXPLORER_URL =
   import.meta.env.VITE_EXPLORER_URL || "https://robinhoodchain.blockscout.com";
 export const RELAYER_API = import.meta.env.VITE_RELAYER_API || "/api";
-export const ROUND_ID = BigInt(import.meta.env.VITE_ROUND_ID || "2");
+export const FALLBACK_ROUND_ID = BigInt(import.meta.env.VITE_ROUND_ID || "2");
 export const STATS_FROM_BLOCK = BigInt(
   import.meta.env.VITE_STATS_FROM_BLOCK || "101593767",
 );
@@ -37,6 +37,10 @@ export const addresses = {
   quoter: "0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7" as Address,
   uniswap: "0xCaf681a66D020601342297493863E78C959E5cb2" as Address,
 };
+export const legacyVotesAddress = "0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9" as Address;
+export const voteStatsAddresses = Array.from(
+  new Set([addresses.votes.toLowerCase(), legacyVotesAddress.toLowerCase()]),
+).map((address) => address as Address);
 
 export const assets = [
   {
@@ -72,6 +76,7 @@ export const erc20Abi = parseAbi([
 
 export const votesAbi = parseAbi([
   "function rounds(uint256) view returns (uint64 opensAt, uint64 closesAt, uint8 assetCount, uint256 totalVotes, bool closed)",
+  "function latestRoundId() view returns (uint256)",
   "function vote(uint256 roundId, uint8 assetIndex)",
   "function votesFor(uint256 roundId, uint8 assetIndex) view returns (uint256)",
   "function weightBps(uint256 roundId, uint8 assetIndex) view returns (uint256)",

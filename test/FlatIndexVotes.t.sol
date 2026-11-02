@@ -74,6 +74,7 @@ contract FlatIndexVotesTest {
 
     function testBlendCapsAndWeightsFreezeAtClose() public {
         votes.openRound(2, 3, uint64(block.timestamp + 1 days), 5_000);
+        require(votes.latestRoundId() == 2, "latest round id mismatch");
 
         vm.prank(alice);
         votes.vote(2, 0);

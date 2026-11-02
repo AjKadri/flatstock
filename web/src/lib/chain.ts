@@ -29,8 +29,9 @@ import {
   quoterAbi,
   RELAYER_API,
   routerAbi,
-  ROUND_ID,
+  FALLBACK_ROUND_ID,
   STATS_FROM_BLOCK,
+  voteStatsAddresses,
   voteCastEvent,
   votesAbi,
 } from "../config";
@@ -39,6 +40,7 @@ export const publicClient = createPublicClient({ chain, transport: http() });
 
 export type ConnectedWallet = ReturnType<typeof createWalletClient>;
 export type RoundState = {
+  roundId: bigint;
   opensAt: bigint;
   closesAt: bigint;
   assetCount: number;
@@ -99,12 +101,22 @@ export async function getLatestTimestamp() {
 }
 
 export async function readRound(): Promise<RoundState> {
+  let roundId = FALLBACK_ROUND_ID;
+  try {
+    roundId = await publicClient.readContract({
+      address: addresses.votes,
+      abi: votesAbi,
+      functionName: "latestRoundId",
+    }) as bigint;
+  } catch {
+    // The legacy deployed vote contract has no latestRoundId getter.
+  }
   const [opensAt, closesAt, assetCount, totalVotes, closed] =
     (await publicClient.readContract({
       address: addresses.votes,
       abi: votesAbi,
       functionName: "rounds",
-      args: [ROUND_ID],
+      args: [roundId],
     })) as readonly [bigint, bigint, number, bigint, boolean];
   const now = await getLatestTimestamp();
   const votes = await Promise.all(
@@ -114,13 +126,14 @@ export async function readRound(): Promise<RoundState> {
         address: addresses.votes,
         abi: votesAbi,
         functionName: "votesFor",
-        args: [ROUND_ID, index],
+        args: [roundId, index],
       })) as bigint;
     }),
   );
   const computed = calculateMixWeights(votes, assetCount, MIX_VOTE_SHARE_BPS);
   const weights = assets.map((_, index) => index < assetCount ? computed[index] || 0n : 0n);
   return {
+    roundId,
     opensAt,
     closesAt,
     assetCount,
@@ -196,13 +209,16 @@ export function calculateMixWeights(
 
 export async function readVoteBurned() {
   try {
-    const logs = await publicClient.getLogs({
-      address: addresses.votes,
-      event: voteCastEvent,
-      fromBlock: STATS_FROM_BLOCK,
-      toBlock: "latest",
-    });
-    return BigInt(logs.length);
+    const counts = await Promise.all(voteStatsAddresses.map(async (address) => {
+      const logs = await publicClient.getLogs({
+        address,
+        event: voteCastEvent,
+        fromBlock: STATS_FROM_BLOCK,
+        toBlock: "latest",
+      });
+      return BigInt(logs.length);
+    }));
+    return counts.reduce((sum, count) => sum + count, 0n);
   } catch {
     const round = await readRound();
     return round.totalVotes;

@@ -18,6 +18,7 @@ contract FlatIndexVotes {
 
     IWifVotes public immutable wif;
     address public immutable owner;
+    uint256 public latestRoundId;
 
     struct Round {
         uint64 opensAt;
@@ -81,6 +82,7 @@ contract FlatIndexVotes {
         current.closesAt = closesAt;
         current.assetCount = assetCount;
         voteShareBps[roundId] = voteShareBps_;
+        if (roundId > latestRoundId) latestRoundId = roundId;
         emit RoundOpened(roundId, assetCount, current.opensAt, closesAt, voteShareBps_);
     }
 

@@ -18,6 +18,21 @@ placeholders with the actual public addresses before saving them.
 Use the exact CNAME target Vercel shows if its domain screen gives a
 project-specific target. Do not create an A record for either Vercel host.
 
+## Connect the GitHub repository to Vercel
+
+Repeat this flow for each project:
+
+1. Open Vercel and choose `Add New...` then `Project`.
+2. Choose `Import Git Repository` and select GitHub.
+3. Authorize the Vercel GitHub integration for `AjKadri/flatstock`.
+4. Select the `flatstock` repository and the `main` branch.
+5. Set the project-specific root directory and build settings below.
+6. Do not deploy until the API DNS, environment variables, and kill-switch
+   state have been checked.
+
+The repository is already available at
+`https://github.com/AjKadri/flatstock`.
+
 ## Vercel projects
 
 Create two projects from the repository. Keep the current repository and
@@ -48,11 +63,15 @@ Add these public app variables in the Vercel project settings:
 VITE_RPC_URL=https://api.flatstock.ajkadri.dev/api/rpc
 VITE_RELAYER_API=https://api.flatstock.ajkadri.dev/api
 VITE_EXPLORER_URL=https://robinhoodchain.blockscout.com
-VITE_ROUND_ID=3
 VITE_VOTES_ADDRESS=<NEW_RULES_VOTE_CONTRACT_ADDRESS>
 VITE_VOTE_SHARE_BPS=5000
 VITE_STATS_FROM_BLOCK=101593767
 ```
+
+`VITE_VOTES_ADDRESS` is the only vote-contract address that needs to be
+changed. The app reads `latestRoundId()` from that contract and follows the
+latest opened round automatically. `VITE_ROUND_ID` is only a local fallback
+for the legacy contract and is not needed in Vercel.
 
 Do not add `M1_RELAYER_PRIVATE_KEY`, `M3_CLOSE_BOT_PRIVATE_KEY`,
 `M3_RELAYER_ADMIN_TOKEN`, `QUICKNODE_RPC_URL`, or `ZEROX_API_KEY` to Vercel.
@@ -63,6 +82,16 @@ The VPS needs Node.js 20 or newer, Nginx, Certbot, and a `flatstock` system
 user. Copy the repository to `/opt/flatstock`, then run:
 
 ```sh
+ssh root@2.29.11.26
+apt update
+apt install -y nginx certbot python3-certbot-nginx git curl
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+apt install -y nodejs
+useradd --system --home /opt/flatstock --shell /usr/sbin/nologin flatstock || true
+install -d -o flatstock -g flatstock -m 755 /opt/flatstock
+git clone https://github.com/AjKadri/flatstock.git /opt/flatstock
+chown -R flatstock:flatstock /opt/flatstock
+cd /opt/flatstock
 sudo install -d -m 700 /etc/flatstock
 sudo cp deploy/flatstock.env.example /etc/flatstock/flatstock.env
 sudo chown root:root /etc/flatstock/flatstock.env
@@ -78,14 +107,23 @@ sudo systemctl daemon-reload
 ```
 
 Before starting anything, fill `/etc/flatstock/flatstock.env` with the VPS-only
-values. Keep `CLOSE_ROUND_ENABLED=0` until the specific close transaction is
-approved. Keep `M3_RELAYER_KILL_SWITCH=1` until the app and HTTPS API have
-been checked.
+values. Set `M3_ALLOWED_ORIGIN=https://app.flatstock.ajkadri.dev`. Keep
+`CLOSE_ROUND_ENABLED=0` until the specific close transaction is approved. Keep
+`M3_RELAYER_KILL_SWITCH=1` until the app and HTTPS API have been checked and
+you explicitly confirm sponsorship can resume. Put `QUICKNODE_RPC_URL` only in
+this VPS file when available.
 
 Issue the API certificate only after DNS resolves to the VPS:
 
 ```sh
 sudo certbot --nginx -d api.flatstock.ajkadri.dev
+```
+
+Start the relayer only after TLS and the environment file are verified:
+
+```sh
+sudo systemctl enable --now flatstock-relayer
+sudo systemctl status flatstock-relayer --no-pager
 ```
 
 Then test:

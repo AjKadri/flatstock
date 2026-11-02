@@ -368,6 +368,37 @@ new-rule preview until the replacement vote contract is deployed. The app
 keeps mix buys disabled while `VITE_VOTES_ADDRESS` is absent, so the old round
 cannot silently execute a client-only weighting rule.
 
+### Automatic round discovery
+
+The replacement contract exposes `latestRoundId()`. The app reads that value
+from the configured `VITE_VOTES_ADDRESS` and uses the legacy `VITE_ROUND_ID`
+only when the old deployed contract does not expose the getter. The burn total
+reads vote events from both the legacy and replacement vote contracts.
+
+Observed local safety output:
+
+```text
+node --import tsx relayer/close-round.ts
+{"enabled":false,"roundId":"auto","action":"none"}
+```
+
+No close or open transaction was sent.
+
+### Replacement contract deployment preflight
+
+Read-only preflight:
+
+```text
+deployer=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+relayer_eth=0.000371318868140223
+creation_bytes=5075
+estimated_gas=1109189
+estimated_cost=0.000022237021072 ETH
+```
+
+The deployment constructor uses the existing WIF address from `.env`. The
+deployment transaction is still pending user confirmation.
+
 Prepared mainnet commands, not sent:
 
 ```sh
