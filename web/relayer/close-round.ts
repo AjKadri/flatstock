@@ -4,7 +4,7 @@ import { defineChain } from "viem";
 
 const publicRpcUrl = process.env.RPC_URL || "https://rpc.mainnet.chain.robinhood.com";
 const quickNodeRpcUrl = process.env.QUICKNODE_RPC_URL?.trim();
-const contractAddress = (process.env.VOTE_CONTRACT_ADDRESS || "0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9") as Address;
+const contractAddress = (process.env.VOTE_CONTRACT_ADDRESS || "0xD49249D2a5CffBCF35B6560857d1d1C703802e78") as Address;
 const configuredRoundId = process.env.VOTE_ROUND_ID || process.env.VITE_ROUND_ID;
 const fallbackRoundId = BigInt(process.env.CLOSE_ROUND_FALLBACK_ID || "3");
 const enabled = process.env.CLOSE_ROUND_ENABLED === "1";

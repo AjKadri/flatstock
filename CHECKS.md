@@ -397,24 +397,80 @@ estimated_cost=0.000022237021072 ETH
 ```
 
 The deployment constructor uses the existing WIF address from `.env`. The
-deployment transaction is still pending user confirmation.
+the deployment transaction below records the approved mainnet send.
 
-Prepared mainnet commands, not sent:
+### Replacement contract deployment
+
+Verdict: pass.
+
+The user approved the mainnet deployment. The replacement contract was sent
+from the approved deployer on chain `4663`.
+
+Exact command:
 
 ```sh
 set -a; source .env; set +a
+DEPLOYER=$(cast wallet address --private-key "$M1_RELAYER_PRIVATE_KEY")
 forge create src/FlatIndexVotes.sol:FlatIndexVotes \
   --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
   --broadcast --json --constructor-args "$WIF_ADDRESS"
+```
 
+Observed output:
+
+```text
+deployer=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+deployedTo=0xD49249D2a5CffBCF35B6560857d1d1C703802e78
+transactionHash=0x714948e2fd8ec201c85639523deca8ba4e268e14c5a3f85d020f20410122f886
+blockNumber=104489009
+status=1
+gasUsed=1099297
+effectiveGasPrice=20064000 wei
+gasCost=0.000022056295008 ETH
+```
+
+The exact receipt gas calculation is `1,099,297 * 20,064,000 =
+22,056,295,008,000` wei. At the Blockscout ETH/USD observation of
+`$2,252.50` during verification, that is approximately `$0.04968`. The
+receipt and transaction are linked at
+[Blockscout](https://robinhoodchain.blockscout.com/tx/0x714948e2fd8ec201c85639523deca8ba4e268e14c5a3f85d020f20410122f886).
+
+Post-deployment read-only checks:
+
+```text
+owner() = 0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+wif() = 0x5173b8eA6923c2d40267890D45C46a3480954773
+latestRoundId() = 0
+```
+
+Source verification:
+
+```text
+Sourcify: exact_match
+Verification job: db35e69d-f013-4a47-adbe-3eab7d1aa900
+Blockscout: contract page displays "Contract source code verified (exact match)"
+Compiler: v0.8.24+commit.e11b9ed9
+Optimizer: enabled, 200 runs
+```
+
+Links:
+
+- [Blockscout contract page](https://robinhoodchain.blockscout.com/address/0xD49249D2a5CffBCF35B6560857d1d1C703802e78?tab=contract)
+- [Sourcify verification job](https://verify.sourcify.dev/jobs/db35e69d-f013-4a47-adbe-3eab7d1aa900)
+- [Sourcify v2 metadata](https://sourcify.dev/server/v2/contract/4663/0xD49249D2a5CffBCF35B6560857d1d1C703802e78?fields=sources,metadata)
+
+Prepared mainnet command for the next approved step, not sent:
+
+```sh
+set -a; source .env; set +a
 ROUND4_CLOSE=$(node --input-type=module -e 'console.log(Math.floor(new Date("2026-11-09T15:00:00+01:00").getTime()/1000))')
-cast send "$NEW_VOTE_CONTRACT_ADDRESS" \
+cast send "0xD49249D2a5CffBCF35B6560857d1d1C703802e78" \
   'openRound(uint256,uint8,uint64,uint16)' 4 3 "$ROUND4_CLOSE" 5000 \
   --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" --force --json
 ```
 
-Both commands require fresh approval immediately before sending. The existing
-round-3 close also remains pending until its approved close time.
+The round-3 close and round-4 open each require separate user approval
+immediately before sending.
 
 ### Mobile issue fixes
 

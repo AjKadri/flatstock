@@ -31,7 +31,7 @@ export const chain = defineChain({
 export const addresses = {
   wif: "0x5173b8eA6923c2d40267890D45C46a3480954773" as Address,
   usdg: "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" as Address,
-  votes: (import.meta.env.VITE_VOTES_ADDRESS || "0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9") as Address,
+  votes: (import.meta.env.VITE_VOTES_ADDRESS || "0xD49249D2a5CffBCF35B6560857d1d1C703802e78") as Address,
   lock: "0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121" as Address,
   buyRouter: "0x5B08a91F8C8666C85e636bbE61Aed3b059B61FfA" as Address,
   quoter: "0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7" as Address,
