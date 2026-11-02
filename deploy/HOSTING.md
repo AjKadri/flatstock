@@ -78,13 +78,14 @@ Do not add `M1_RELAYER_PRIVATE_KEY`, `M3_CLOSE_BOT_PRIVATE_KEY`,
 
 ## VPS preparation
 
-The VPS needs Node.js 20 or newer, Nginx, Certbot, and a `flatstock` system
-user. Copy the repository to `/opt/flatstock`, then run:
+The VPS needs Node.js 20 or newer, Caddy, and a `flatstock` system user. Caddy
+continues to own ports 80 and 443 and handles TLS. Copy the repository to
+`/opt/flatstock`, then run:
 
 ```sh
 ssh root@2.29.11.26
 apt update
-apt install -y nginx certbot python3-certbot-nginx git curl
+apt install -y git curl
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt install -y nodejs
 useradd --system --home /opt/flatstock --shell /usr/sbin/nologin flatstock || true
@@ -100,9 +101,6 @@ npm ci --prefix /opt/flatstock/web
 sudo install -m 644 deploy/flatstock-relayer.service /etc/systemd/system/flatstock-relayer.service
 sudo install -m 644 deploy/flatstock-close-round.service /etc/systemd/system/flatstock-close-round.service
 sudo install -m 644 deploy/flatstock-close-round.timer /etc/systemd/system/flatstock-close-round.timer
-sudo install -m 644 deploy/nginx-api.conf.template /etc/nginx/sites-available/flatstock-api
-sudo ln -s /etc/nginx/sites-available/flatstock-api /etc/nginx/sites-enabled/flatstock-api
-sudo nginx -t
 sudo systemctl daemon-reload
 ```
 
@@ -113,11 +111,18 @@ values. Set `M3_ALLOWED_ORIGIN=https://app.flatstock.ajkadri.dev`. Keep
 you explicitly confirm sponsorship can resume. Put `QUICKNODE_RPC_URL` only in
 this VPS file when available.
 
-Issue the API certificate only after DNS resolves to the VPS:
+Add the prepared site block to the existing `/etc/caddy/Caddyfile`. Do not
+replace other applications' site blocks:
 
 ```sh
-sudo certbot --nginx -d api.flatstock.ajkadri.dev
+sudoedit /etc/caddy/Caddyfile
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl reload caddy
 ```
+
+Caddy will obtain and renew the certificate for
+`api.flatstock.ajkadri.dev`. The prepared block reverse-proxies to
+`127.0.0.1:8787`.
 
 Start the relayer only after TLS and the environment file are verified:
 

@@ -303,7 +303,7 @@ quicknode_status=503
 Prepared but not deployed:
 
 - `deploy/flatstock-relayer.service` for systemd on Ubuntu.
-- `deploy/nginx-api.conf.template` for `api.flatstock.ajkadri.dev`.
+- `deploy/Caddyfile.template` for `api.flatstock.ajkadri.dev`.
 - `deploy/flatstock-close-round.service` and `.timer` for the disabled-by-default close bot.
 - `deploy/flatstock.env.example` for a mode-600 VPS environment file.
 - `deploy/README.md` and `deploy/HOSTING.md` for build, process, TLS, DNS, and Vercel preparation.

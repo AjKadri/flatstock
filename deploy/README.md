@@ -8,7 +8,6 @@ This is a deployment plan only. It does not deploy or change DNS.
 npm ci --prefix web
 VITE_RPC_URL=https://api.flatstock.ajkadri.dev/api/rpc \
 VITE_RELAYER_API=https://api.flatstock.ajkadri.dev/api \
-VITE_ROUND_ID=3 \
 npm run build --prefix web
 ```
 
@@ -55,12 +54,21 @@ Keep the timer disabled until the round and close transaction have been
 explicitly approved. The bot reads through QuickNode when configured, falls
 back to `RPC_URL`, and submits the close through `RPC_URL`.
 
-## Subdomain and TLS
+## Caddy and TLS
 
-Install `deploy/nginx-api.conf.template` as an Nginx site, point
-`api.flatstock.ajkadri.dev` to the VPS, and issue TLS with the operator's
-normal certificate process.
+The VPS already owns ports 80 and 443 with Caddy. Add the site block from
+`deploy/Caddyfile.template` to the existing Caddyfile. It reverse-proxies
+`api.flatstock.ajkadri.dev` to `127.0.0.1:8787`; Caddy obtains and renews TLS.
 
-The Nginx config proxies API traffic to the local relayer.
-The current temporary phone preview is for testing only and is not a
-deployment or a permanent URL.
+The relayer defaults to `M3_RELAYER_HOST=127.0.0.1` and
+`M3_RELAYER_PORT=8787`. Choose another unused local port if needed, set both
+the environment variable and the Caddy upstream to the same port, then run:
+
+```sh
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl reload caddy
+```
+
+CORS remains enforced by the relayer with
+`M3_ALLOWED_ORIGIN=https://app.flatstock.ajkadri.dev`. The current temporary
+phone preview is for testing only and is not a deployment or a permanent URL.

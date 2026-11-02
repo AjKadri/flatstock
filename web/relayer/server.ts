@@ -3,6 +3,7 @@ import { createPublicClient, createWalletClient, decodeFunctionData, fallback, h
 import { privateKeyToAccount } from "viem/accounts";
 import { defineChain } from "viem";
 
+const host = process.env.M3_RELAYER_HOST || "127.0.0.1";
 const port = Number(process.env.M3_RELAYER_PORT || 8787);
 const publicRpcUrl = process.env.RPC_URL || "https://rpc.mainnet.chain.robinhood.com";
 const quickNodeRpcUrl = process.env.QUICKNODE_RPC_URL?.trim();
@@ -229,6 +230,6 @@ const server = http.createServer(async (request, response) => {
   }
 });
 
-server.listen(port, "0.0.0.0", () => {
-  console.log(`M3 relayer listening on ${port}; kill switch ${killSwitch ? "on" : "off"}; daily cap ${dailyCap}`);
+server.listen(port, host, () => {
+  console.log(`M3 relayer listening on ${host}:${port}; kill switch ${killSwitch ? "on" : "off"}; daily cap ${dailyCap}`);
 });
