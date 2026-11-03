@@ -64,14 +64,18 @@ VITE_RPC_URL=https://api.flatstock.ajkadri.dev/api/rpc
 VITE_RELAYER_API=https://api.flatstock.ajkadri.dev/api
 VITE_EXPLORER_URL=https://robinhoodchain.blockscout.com
 VITE_VOTES_ADDRESS=<NEW_RULES_VOTE_CONTRACT_ADDRESS>
+VITE_META_VOTES_ADDRESS=<SAME_SIGNATURE_SAFE_VOTE_CONTRACT_ADDRESS>
+VITE_META_ROUTER_ADDRESS=<SIGNATURE_SAFE_ROUTER_CONTRACT_ADDRESS>
 VITE_VOTE_SHARE_BPS=5000
 VITE_STATS_FROM_BLOCK=101593767
 ```
 
-`VITE_VOTES_ADDRESS` is the only vote-contract address that needs to be
-changed. The app reads `latestRoundId()` from that contract and follows the
-latest opened round automatically. `VITE_ROUND_ID` is only a local fallback
-for the legacy contract and is not needed in Vercel.
+`VITE_VOTES_ADDRESS` is the read address, and `VITE_META_VOTES_ADDRESS` must
+point to the same signature-safe vote deployment. The app reads
+`latestRoundId()` from that contract and follows the latest opened round
+automatically. `VITE_META_ROUTER_ADDRESS` is the signature-safe trade
+deployment. `VITE_ROUND_ID` is only a local fallback for the legacy contract
+and is not needed in Vercel.
 
 Do not add `M1_RELAYER_PRIVATE_KEY`, `M3_CLOSE_BOT_PRIVATE_KEY`,
 `M3_RELAYER_ADMIN_TOKEN`, `QUICKNODE_RPC_URL`, or `ZEROX_API_KEY` to Vercel.
@@ -108,7 +112,7 @@ Before starting anything, fill `/etc/flatstock/flatstock.env` with the VPS-only
 values. Set `M3_ALLOWED_ORIGIN=https://app.flatstock.ajkadri.dev`. Keep
 `CLOSE_ROUND_ENABLED=0` until the specific close transaction is approved. Keep
 `M3_RELAYER_KILL_SWITCH=1` until the app and HTTPS API have been checked and
-you explicitly confirm sponsorship can resume. Put `QUICKNODE_RPC_URL` only in
+you explicitly confirm signature relaying can resume. Put `QUICKNODE_RPC_URL` only in
 this VPS file when available.
 
 Add the prepared site block to the existing `/etc/caddy/Caddyfile`. Do not
@@ -157,5 +161,6 @@ standard RPC call is unauthorized, it reports the HTTP status and
 
 The browser uses `/api/rpc` through this VPS. The proxy prefers
 `QUICKNODE_RPC_URL` when it exists and falls back to `RPC_URL`; the QuickNode
-endpoint is never sent to the browser. The relayer submits transactions using
-`RPC_URL`.
+endpoint is never sent to the browser. The relayer submits only the new EIP-712
+signature-authorized vote and trade calls. `/api/relay` is retired and returns
+HTTP 410, so an old EIP-7702 client cannot submit arbitrary delegated batches.

@@ -10,17 +10,16 @@ import {
   MIX_RULES_ENABLED,
   ONE_WIF,
   RELAYER_API,
+  SIGNATURE_SAFE_WRITES_ENABLED,
   votesAbi,
 } from "./config";
 import {
   buildApprove,
-  buildBatch,
-  buildBuyCall,
+  buildBuyMixCall,
   buildBuyPlan,
   buildSellCall,
   buildSellPlan,
   connectWallet,
-  delegateWallet,
   formatDate,
   formatEth,
   formatWeightBps,
@@ -29,16 +28,21 @@ import {
   publicClient,
   readHoldings,
   readCorporateActions,
+  readAllowance,
+  readHistory,
   readRound,
   readVoteBurned,
   readWalletState,
-  sendDelegatedBatch,
+  signMetaBuy,
+  signMetaSell,
+  signMetaVote,
   sendDirect,
   waitForTransactionFinality,
   type BuyLeg,
   type ConnectedWallet,
   type CorporateAction,
   type Holding,
+  type HistoryItem,
   type RoundState,
   type SellLeg,
 } from "./lib/chain";
@@ -53,6 +57,7 @@ function App() {
   const [round, setRound] = useState<RoundState | null>(null);
   const [corporateActions, setCorporateActions] = useState<CorporateAction[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [walletState, setWalletState] = useState<Awaited<ReturnType<typeof readWalletState>> | null>(null);
   const [votesBurned, setVotesBurned] = useState<bigint>(0n);
   const [health, setHealth] = useState<Health | null>(null);
@@ -88,6 +93,7 @@ function App() {
         ]);
         setHoldings(nextHoldings);
         setWalletState(nextWallet);
+        setHistory(await readHistory(connectedAccount));
         try {
           const response = await fetch(`${RELAYER_API}/health`, {
             headers: { "x-wallet": connectedAccount },
@@ -132,6 +138,7 @@ function App() {
     setChainId(null);
     setWalletState(null);
     setHoldings([]);
+    setHistory([]);
     setHealth(null);
     setPlan([]);
     setSellPlan(null);
@@ -173,6 +180,7 @@ function App() {
         setWallet(null);
         setWalletState(null);
         setHoldings([]);
+        setHistory([]);
         setHealth(null);
         setPlan([]);
         return;
@@ -205,24 +213,21 @@ function App() {
       setConfirmingVote(false);
       setMessage(null);
       setSubmittedTx(null);
-      const approve = buildApprove(addresses.votes, addresses.votes, ONE_WIF);
-      const vote = encodeFunctionData({
-        abi: votesAbi,
-        functionName: "vote",
-        args: [round.roundId, selectedAsset],
-      });
+      const allowance = await readAllowance(addresses.wif, account, addresses.votes);
+      if (allowance < ONE_WIF) {
+        await sendDirect(wallet, account, addresses.wif, buildApprove(addresses.votes, addresses.votes, ONE_WIF));
+      }
       let voteHash: Hex;
-      if (walletState?.delegated) {
-        voteHash = await sendDelegatedBatch(wallet, account, [
-          { target: addresses.wif, value: 0n, data: buildApprove(addresses.votes, addresses.votes, ONE_WIF) },
-          { target: addresses.votes, value: 0n, data: vote },
-        ]);
+      if (hasSponsorLock && SIGNATURE_SAFE_WRITES_ENABLED) {
+        voteHash = await signMetaVote(wallet, account, round.roundId, selectedAsset);
       } else {
-        await sendDirect(wallet, account, addresses.wif, approve);
+        const vote = encodeFunctionData({ abi: votesAbi, functionName: "vote", args: [round.roundId, selectedAsset] });
         voteHash = await sendDirect(wallet, account, addresses.votes, vote);
       }
       setSubmittedTx({ action: "vote", hash: voteHash });
-      setMessage({ tone: "success", text: "Vote submitted. Exactly 1 WIF was burned. The relayer paid the ETH gas." });
+      setMessage({ tone: "success", text: hasSponsorLock && SIGNATURE_SAFE_WRITES_ENABLED
+        ? "Vote signature relayed. Exactly 1 WIF was burned."
+        : "Vote submitted from your wallet. Exactly 1 WIF was burned." });
       await refresh();
     } catch (error) {
       setMessage({ tone: "error", text: error instanceof Error ? error.message : "Vote cancelled or failed." });
@@ -247,32 +252,12 @@ function App() {
         { target: addresses.wif, value: 0n, data: buildApprove(addresses.lock, addresses.lock, lockAmount) },
         { target: addresses.lock, value: 0n, data: lockData },
       ];
-      if (walletState?.delegated) await sendDelegatedBatch(wallet, account, calls);
-      else {
-        await sendDirect(wallet, account, addresses.wif, calls[0].data);
-        await sendDirect(wallet, account, addresses.lock, calls[1].data);
-      }
-      setMessage({ tone: "success", text: "10 WIF locked. Sponsored buys are enabled for this wallet." });
+      await sendDirect(wallet, account, addresses.wif, calls[0].data);
+      await sendDirect(wallet, account, addresses.lock, calls[1].data);
+      setMessage({ tone: "success", text: "10 WIF locked. Signature-relayed actions are available when the new contracts are configured." });
       await refresh();
     } catch (error) {
       setMessage({ tone: "error", text: error instanceof Error ? error.message : "Lock cancelled or failed." });
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const runDelegation = async () => {
-    if (!wallet || !account) return;
-    if (chainId !== chain.id) return setMessage({ tone: "error", text: "Switch to chain 4663 before enabling relayed gas." });
-    try {
-      setBusy("delegate");
-      setMessage(null);
-      const hash = await delegateWallet(wallet, account);
-      await publicClient.waitForTransactionReceipt({ hash });
-      setMessage({ tone: "success", text: "Relayed gas enabled for this wallet." });
-      await refresh();
-    } catch (error) {
-      setMessage({ tone: "error", text: error instanceof Error ? error.message : "Delegation was cancelled or failed." });
     } finally {
       setBusy(null);
     }
@@ -306,29 +291,15 @@ function App() {
       setMessage(null);
       setSubmittedTx(null);
       const nextPlan = plan;
-      const locked = hasSponsorLock;
-      const gasWif = locked ? 0n : 10_000_000_000_000_000n;
-      const totalIn = nextPlan.reduce((sum, leg) => sum + leg.amountIn, 0n);
-      const calls = [
-        { target: addresses.usdg, value: 0n, data: buildApprove(addresses.buyRouter, addresses.buyRouter, totalIn) },
-        ...(!locked
-          ? [{ target: addresses.wif, value: 0n, data: buildApprove(addresses.buyRouter, addresses.buyRouter, gasWif) }]
-          : []),
-        ...nextPlan.map((leg) => ({ target: addresses.buyRouter, value: 0n, data: buildBuyCall(leg, gasWif) })),
-      ];
+      if (!SIGNATURE_SAFE_WRITES_ENABLED) throw new Error("Buys are paused until the signature-safe router is configured.");
       let buyHash: Hex;
-      if (walletState?.delegated) {
-        buyHash = await sendDelegatedBatch(wallet, account, calls);
-      } else if (walletState?.eth === 0n) {
-        throw new Error("This wallet has no ETH and is not delegated for sponsorship.");
+      if (hasSponsorLock) {
+        buyHash = await signMetaBuy(wallet, account, nextPlan);
       } else {
-        let lastHash: Hex | undefined;
-        for (const call of calls) {
-          const target = call.target === addresses.usdg || call.target === addresses.wif ? call.target : addresses.buyRouter;
-          lastHash = await sendDirect(wallet, account, target, call.data);
-        }
-        if (!lastHash) throw new Error("The buy did not produce a transaction hash.");
-        buyHash = lastHash;
+        const totalIn = nextPlan.reduce((sum, leg) => sum + leg.amountIn, 0n);
+        const allowance = await readAllowance(addresses.usdg, account, addresses.buyRouter);
+        if (allowance < totalIn) await sendDirect(wallet, account, addresses.usdg, buildApprove(addresses.buyRouter, addresses.buyRouter, totalIn));
+        buyHash = await sendDirect(wallet, account, addresses.buyRouter, buildBuyMixCall(nextPlan));
       }
       setSubmittedTx({ action: "buy", hash: buyHash });
       const finality = await waitForTransactionFinality(buyHash);
@@ -368,28 +339,14 @@ function App() {
       setConfirmingSell(false);
       setMessage(null);
       setSubmittedTx(null);
-      const locked = hasSponsorLock;
-      const gasWif = locked ? 0n : 10_000_000_000_000_000n;
-      const calls = [
-        { target: sellPlan.token, value: 0n, data: buildApprove(addresses.buyRouter, addresses.buyRouter, sellPlan.amountIn) },
-        ...(!locked
-          ? [{ target: addresses.wif, value: 0n, data: buildApprove(addresses.buyRouter, addresses.buyRouter, gasWif) }]
-          : []),
-        { target: addresses.buyRouter, value: 0n, data: buildSellCall(sellPlan, gasWif) },
-      ];
+      if (!SIGNATURE_SAFE_WRITES_ENABLED) throw new Error("Sells are paused until the signature-safe router is configured.");
       let sellHash: Hex;
-      if (walletState?.delegated) {
-        sellHash = await sendDelegatedBatch(wallet, account, calls);
-      } else if (walletState?.eth === 0n) {
-        throw new Error("This wallet has no ETH and is not delegated for sponsorship.");
+      if (hasSponsorLock) {
+        sellHash = await signMetaSell(wallet, account, sellPlan);
       } else {
-        let lastHash: Hex | undefined;
-        for (const call of calls) {
-          const target = call.target === addresses.wif || call.target === sellPlan.token ? call.target : addresses.buyRouter;
-          lastHash = await sendDirect(wallet, account, target, call.data);
-        }
-        if (!lastHash) throw new Error("The sell did not produce a transaction hash.");
-        sellHash = lastHash;
+        const allowance = await readAllowance(sellPlan.token, account, addresses.buyRouter);
+        if (allowance < sellPlan.amountIn) await sendDirect(wallet, account, sellPlan.token, buildApprove(addresses.buyRouter, addresses.buyRouter, sellPlan.amountIn));
+        sellHash = await sendDirect(wallet, account, addresses.buyRouter, buildSellCall(sellPlan));
       }
       setSubmittedTx({ action: "sell", hash: sellHash });
       setMessage({ tone: "success", text: `${sellPlan.symbol} sold. USDG was sent directly to your wallet.` });
@@ -428,15 +385,7 @@ function App() {
   };
 
   const roundStatus = round ? (round.isOpen ? "Open" : "Closed") : "Loading";
-  const gasMode = !walletState
-    ? "Wallet"
-    : hasSponsorLock && walletState.delegated
-      ? "Sponsored"
-      : hasSponsorLock
-        ? "Wallet"
-        : walletState.delegated
-          ? "WIF gas"
-          : "Wallet gas";
+  const gasMode = hasSponsorLock && SIGNATURE_SAFE_WRITES_ENABLED ? "Signature relayed" : "Wallet gas";
   const totalValue = useMemo(
     () => holdings.reduce((sum, holding) => sum + (holding.value || 0), 0),
     [holdings],
@@ -499,9 +448,9 @@ function App() {
                 ))}
               </div>
               <button className="secondary full" disabled={!account || chainId !== chain.id || !round.isOpen || busy !== null} onClick={requestVote}>
-                {busy === "vote" ? "Submitting sponsored vote..." : account ? "Review vote: burn 1 WIF" : "Connect to vote"}
+                {busy === "vote" ? "Waiting for wallet signature..." : account ? "Review vote: burn 1 WIF" : "Connect to vote"}
               </button>
-              {confirmingVote && <div className="confirmation"><strong>Confirm sponsored vote</strong><p>This action spends exactly 1 WIF and burns it in the vote contract. Your wallet has 0 ETH. The approved relayer will submit the transaction and pay the ETH gas. No WIF or ETH is sent to the relayer.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runVote()}>Confirm and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingVote(false)}>Cancel</button></div></div>}
+              {confirmingVote && <div className="confirmation"><strong>{hasSponsorLock && SIGNATURE_SAFE_WRITES_ENABLED ? "Sign this vote" : "Confirm wallet vote"}</strong><p>This action spends exactly 1 WIF and burns it in the vote contract. {hasSponsorLock && SIGNATURE_SAFE_WRITES_ENABLED ? "Your wallet will sign the exact round, stock, nonce and deadline. The relayer can submit only that signed vote and pays the ETH gas." : "Your wallet signs the vote transaction and pays the ETH gas."} A first vote on the new contract may also ask for a one-time WIF approval.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runVote()}>Sign and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingVote(false)}>Cancel</button></div></div>}
               {submittedTx?.action === "vote" && <div className="tx-proof"><strong>Vote submitted and 1 WIF burned.</strong><a href={`${EXPLORER_URL}/tx/${submittedTx.hash}`} target="_blank" rel="noreferrer">View transaction</a></div>}
               {!round.isOpen && <p className="helper">No vote round is open on mainnet. The organizer must open the next round.</p>}
             </>
@@ -509,22 +458,20 @@ function App() {
         </section>
 
         <section className="card">
-          <div className="section-heading"><div><p className="eyebrow">Eligibility</p><h3>Gas mode</h3></div><span className={`status ${gasMode === "Sponsored" ? "open" : "closed"}`}>{gasMode}</span></div>
+          <div className="section-heading"><div><p className="eyebrow">Eligibility</p><h3>Gas mode</h3></div><span className={`status ${gasMode === "Signature relayed" ? "open" : "closed"}`}>{gasMode}</span></div>
           {account ? (
             <div className="stat-stack">
               <div><span>ETH balance</span><strong>{formatEth(walletState?.eth || 0n)}</strong></div>
               <div><span>WIF balance</span><strong>{formatWif(walletState?.wif || 0n)}</strong></div>
               <div><span>Locked</span><strong>{walletState && walletState.locked > 0n ? formatWif(walletState.locked) : "Not locked"}</strong></div>
             </div>
-          ) : <p className="muted">Connect to check whether this wallet can use sponsored gas.</p>}
+          ) : <p className="muted">Connect to check whether this wallet can use signature-relayed actions.</p>}
           <button className="secondary full" disabled={!account || chainId !== chain.id || busy !== null || (walletState?.locked || 0n) > 0n} onClick={() => void runLock()}>
-            {busy === "lock" ? "Waiting for confirmation..." : walletState?.locked ? "WIF lock active" : "Lock 10 WIF for no gas"}
+            {busy === "lock" ? "Waiting for confirmation..." : walletState?.locked ? "WIF lock active" : "Lock 10 WIF for signature-relayed actions"}
           </button>
-          {account && walletState && !walletState.delegated && <button className="secondary full" disabled={chainId !== chain.id || busy !== null} onClick={() => void runDelegation()}>
-            {busy === "delegate" ? "Enabling relayed gas..." : "Enable relayed gas"}
-          </button>}
-          {account && !hasSponsorLock && <p className="helper">No WIF is locked. This buy approves and burns 0.01 WIF for gas reimbursement.{walletState?.delegated ? " The relayer submits the transaction." : " This wallet is not delegated, so it also pays native gas directly."}</p>}
-          {health && <p className="helper">Sponsor: {health.killSwitch ? "paused" : health.enabled ? `${health.usage || 0}/${health.dailyCap} used today` : "offline"}.</p>}
+          {account && !hasSponsorLock && <p className="helper">No WIF is locked. Actions use normal wallet transactions and this wallet pays ETH gas.</p>}
+          {account && hasSponsorLock && !SIGNATURE_SAFE_WRITES_ENABLED && <p className="helper">The signature-safe contracts are being configured. Until then, this wallet uses normal wallet transactions.</p>}
+          {health && <p className="helper">Signature relay: {health.killSwitch ? "paused" : health.enabled ? `${health.usage || 0}/${health.dailyCap} used today` : "offline"}.</p>}
         </section>
       </div>
 
@@ -532,8 +479,8 @@ function App() {
         <div className="section-heading"><div><p className="eyebrow">One tap</p><h3>Buy the voted mix</h3></div><span className="quiet">0% trading fee</span></div>
         <div className="buy-controls"><label>Amount in USDG<input inputMode="decimal" value={buyAmount} onChange={(event) => setBuyAmount(event.target.value)} aria-label="Amount in USDG" /></label><button className="secondary" disabled={!MIX_RULES_ENABLED || chainId !== chain.id || !round?.isOpen || busy !== null} onClick={() => void previewBuy()}>{busy === "quote" ? "Checking prices..." : "Check prices"}</button></div>
         {plan.length > 0 && <div className="quote-table"><div className="quote-header"><span>Asset</span><span>Quote vs Chainlink</span><span>Guard</span></div>{plan.map((leg) => <div className="quote-row" key={leg.symbol}><span>{leg.symbol}</span><span>${leg.quotePrice.toFixed(2)} / ${leg.chainlinkPrice.toFixed(2)}</span><span className="good-text">{(leg.differenceBps / 100).toFixed(2)}%</span></div>)}</div>}
-        <button className="primary full" disabled={!MIX_RULES_ENABLED || !account || chainId !== chain.id || !round?.isOpen || plan.length === 0 || busy !== null} onClick={requestBuy}>{busy === "buy" ? "Relaying your mix..." : !MIX_RULES_ENABLED ? "New mix contract required" : plan.length === 0 ? "Check prices first" : account ? "Review this mix" : "Connect to buy"}</button>
-        {confirmingBuy && <div className="confirmation"><strong>{hasSponsorLock ? "Confirm sponsored mix" : "Confirm mix with WIF gas"}</strong><p>{hasSponsorLock ? `This action spends ${buyAmount} USDG from your wallet. Your Stock Tokens go directly to your wallet. The relayer pays the ETH gas and the price guard has passed for every leg.` : `This action spends ${buyAmount} USDG and approves exactly 0.01 WIF for gas reimbursement. The router burns that WIF. ${walletState?.delegated ? "The relayer submits the transaction." : "This wallet is not delegated, so it also pays native gas directly."} Your Stock Tokens go directly to your wallet and the price guard has passed for every leg.`} You can cancel here before submission.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runBuy()}>Confirm and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingBuy(false)}>Cancel</button></div></div>}
+        <button className="primary full" disabled={!MIX_RULES_ENABLED || !SIGNATURE_SAFE_WRITES_ENABLED || !account || chainId !== chain.id || !round?.isOpen || plan.length === 0 || busy !== null} onClick={requestBuy}>{busy === "buy" ? "Waiting for wallet signature..." : !MIX_RULES_ENABLED || !SIGNATURE_SAFE_WRITES_ENABLED ? "Signature-safe router required" : plan.length === 0 ? "Check prices first" : account ? "Review this mix" : "Connect to buy"}</button>
+        {confirmingBuy && <div className="confirmation"><strong>{hasSponsorLock ? "Sign this mix" : "Confirm wallet mix"}</strong><p>This action spends {buyAmount} USDG from your wallet and sends the Stock Tokens directly to your wallet. {hasSponsorLock ? "Your wallet signs the exact legs, minimum outputs, amount, nonce and deadline. A separate USDG permit signature lets the relayer pull only this amount and pay the ETH gas." : "Your wallet signs the exact one-transaction mix and pays the ETH gas."} The price guard has passed for every leg.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runBuy()}>Sign and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingBuy(false)}>Cancel</button></div></div>}
         {submittedTx?.action === "buy" && <div className="tx-proof"><strong>{submittedTx.finality ? `Buy complete at ${submittedTx.finality} finality.` : "Buy submitted. Waiting for finality confirmation."}</strong><a href={`${EXPLORER_URL}/tx/${submittedTx.hash}`} target="_blank" rel="noreferrer">View transaction</a></div>}
         <p className="helper">Every quote must exist and stay within 2% of Chainlink. A failed guard blocks the entire batch.</p>
       </section>
@@ -564,7 +511,7 @@ function App() {
         </div>
         {sellPlan && <div className="quote-table"><div className="quote-header"><span>Asset</span><span>Quote vs Chainlink</span><span>Guard</span></div><div className="quote-row"><span>{sellPlan.symbol}</span><span>${sellPlan.quotePrice.toFixed(2)} / ${sellPlan.chainlinkPrice.toFixed(2)}</span><span className="good-text">{(sellPlan.differenceBps / 100).toFixed(2)}%</span></div></div>}
         <button className="primary full" disabled={!account || chainId !== chain.id || !sellPlan || busy !== null} onClick={requestSell}>{busy === "sell" ? "Submitting sell..." : sellPlan ? `Review ${sellPlan.symbol} sell` : "Check sell price first"}</button>
-        {confirmingSell && sellPlan && <div className="confirmation"><strong>Confirm {sellPlan.symbol} sell</strong><p>This action sells {sellAmount} shares back to USDG and sends the output directly to your wallet. The price guard passed. If this wallet has no WIF lock, exactly 0.01 WIF is burned for gas.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runSell()}>Confirm and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingSell(false)}>Cancel</button></div></div>}
+        {confirmingSell && sellPlan && <div className="confirmation"><strong>{hasSponsorLock ? `Sign ${sellPlan.symbol} sell` : `Confirm ${sellPlan.symbol} sell`}</strong><p>This action sells {sellAmount} shares back to USDG and sends the output directly to your wallet. {hasSponsorLock ? "Your wallet signs the exact token, amount, minimum output, nonce and deadline. The relayer pays the ETH gas." : "Your wallet signs the exact transaction and pays the ETH gas."} The price guard passed.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runSell()}>Sign and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingSell(false)}>Cancel</button></div></div>}
         {submittedTx?.action === "sell" && <div className="tx-proof"><strong>Sell submitted.</strong><a href={`${EXPLORER_URL}/tx/${submittedTx.hash}`} target="_blank" rel="noreferrer">View transaction</a></div>}
         <p className="helper">Every sell quote must exist, be fresh, and stay within 2% of Chainlink.</p>
       </section>
@@ -572,6 +519,11 @@ function App() {
       <section className="card">
         <div className="section-heading"><div><p className="eyebrow">Your holdings</p><h3>Portfolio</h3></div><strong className="portfolio-total">${totalValue.toFixed(2)}</strong></div>
         {!account ? <p className="muted">Connect a wallet to see Stock Tokens held by that wallet.</p> : <div className="portfolio-list">{holdings.map((holding) => <button className="portfolio-row portfolio-button" key={holding.symbol} onClick={() => { setSellSymbol(holding.symbol); setSellPlan(null); }}><div><strong>{holding.symbol}</strong><small>{holding.shares ? `${holding.shares} shares` : Number(holding.balance) / 1e18 > 0 ? `${(Number(holding.balance) / 1e18).toFixed(6)} raw` : "No tokens"}</small></div><div>{holding.price === null ? "Price unavailable" : `$${holding.price.toFixed(2)}`}<small>{holding.value === null ? "" : `$${holding.value.toFixed(2)}`}</small></div></button>)}</div>}
+      </section>
+
+      <section className="card">
+        <div className="section-heading"><div><p className="eyebrow">On-chain record</p><h3>History</h3></div><span className="quiet">Votes, buys and sells</span></div>
+        {!account ? <p className="muted">Connect any wallet to load its history from contract events.</p> : history.length === 0 ? <p className="muted">No votes, buys or sells found for this wallet.</p> : <div className="action-list">{history.slice(0, 20).map((item) => <div className="action-row" key={`${item.hash}-${item.kind}`}><strong>{item.title}</strong><small>{item.date} · {item.amount} · <a href={item.link} target="_blank" rel="noreferrer">Blockscout</a></small></div>)}</div>}
       </section>
 
       <footer><span>Self-custody only. The app never holds your funds.</span><span>Live data from chain 4663.</span></footer>

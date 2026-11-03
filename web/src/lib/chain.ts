@@ -2,11 +2,13 @@ import {
   createPublicClient,
   createWalletClient,
   custom,
+  encodeAbiParameters,
   encodeFunctionData,
   encodePacked,
   formatEther,
   formatUnits,
   http,
+  keccak256,
   parseUnits,
   type Address,
   type Hex,
@@ -15,17 +17,19 @@ import {
   addresses,
   assets,
   chain,
-  delegateImplementation,
-  delegateAbi,
+  EXPLORER_URL,
   erc20Abi,
   feedAbi,
   LEGAL_NOTICE,
+  legacyBuyRouterAddress,
   lockAbi,
   MAX_SLIPPAGE_BPS,
   MIX_MAX_WEIGHT_BPS,
   MIX_RULES_ENABLED,
   MIX_VOTE_SHARE_BPS,
-  NON_LOCKER_GAS_WIF,
+  metaRouterAddress,
+  metaVotesAddress,
+  permitAbi,
   ORACLE_MAX_AGE_SECONDS,
   quoterAbi,
   RELAYER_API,
@@ -34,6 +38,9 @@ import {
   STATS_FROM_BLOCK,
   voteStatsAddresses,
   voteCastEvent,
+  tradeExecutedEvent,
+  mixBoughtEvent,
+  SIGNATURE_SAFE_WRITES_ENABLED,
   votesAbi,
 } from "../config";
 
@@ -123,6 +130,39 @@ export type SellLeg = {
 };
 
 export type BatchCall = { target: Address; value: bigint; data: Hex };
+
+export type HistoryItem = {
+  kind: "vote" | "buy" | "sell";
+  date: string;
+  title: string;
+  amount: string;
+  hash: Hex;
+  link: string;
+};
+
+export type MetaLeg = {
+  token: Address;
+  fee: number;
+  amountIn: bigint;
+  amountOutMinimum: bigint;
+  sqrtPriceLimitX96: bigint;
+};
+
+export type MetaPermit = {
+  value: bigint;
+  deadline: bigint;
+  v: number;
+  r: Hex;
+  s: Hex;
+};
+
+const metaLegComponents = [
+  { name: "token", type: "address" },
+  { name: "fee", type: "uint24" },
+  { name: "amountIn", type: "uint256" },
+  { name: "amountOutMinimum", type: "uint256" },
+  { name: "sqrtPriceLimitX96", type: "uint160" },
+] as const;
 
 export function getWalletClient() {
   if (!window.ethereum) throw new Error("No injected wallet was found.");
@@ -286,6 +326,113 @@ export async function readVoteBurned() {
   return counts.reduce((sum, count) => sum + count, 0n);
 }
 
+function symbolForToken(token: Address) {
+  if (token.toLowerCase() === addresses.usdg.toLowerCase()) return "USDG";
+  return assets.find((asset) => asset.token.toLowerCase() === token.toLowerCase())?.symbol || token.slice(0, 8);
+}
+
+function formatHistoryAmount(token: Address, amount: bigint) {
+  return `${formatUnits(amount, token.toLowerCase() === addresses.usdg.toLowerCase() ? 6 : 18)} ${symbolForToken(token)}`;
+}
+
+export async function readHistory(account: Address): Promise<HistoryItem[]> {
+  type RawHistory = HistoryItem & { blockNumber: bigint };
+  const rows: RawHistory[] = [];
+  const voteLogs = await Promise.all(voteStatsAddresses.map(async (address) => {
+    try {
+      return await publicClient.getLogs({
+        address,
+        event: voteCastEvent,
+        fromBlock: STATS_FROM_BLOCK,
+        toBlock: "latest",
+      });
+    } catch {
+      return [];
+    }
+  }));
+  for (const logs of voteLogs) {
+    for (const log of logs) {
+      if (!log.args.voter || log.args.voter.toLowerCase() !== account.toLowerCase() || log.blockNumber === null || !log.transactionHash) continue;
+      rows.push({
+        kind: "vote",
+        date: "",
+        title: `Voted for ${assets[Number(log.args.assetIndex || 0)]?.symbol || "stock"}`,
+        amount: "1 WIF burned",
+        hash: log.transactionHash,
+        link: `${EXPLORER_URL}/tx/${log.transactionHash}`,
+        blockNumber: log.blockNumber,
+      });
+    }
+  }
+
+  const tradeLogs: Array<{ logs: readonly any[]; legacy: boolean }> = [];
+  if (metaRouterAddress) {
+    try {
+      tradeLogs.push({
+        logs: await publicClient.getLogs({
+          address: metaRouterAddress,
+          event: tradeExecutedEvent,
+          fromBlock: STATS_FROM_BLOCK,
+          toBlock: "latest",
+        }),
+        legacy: false,
+      });
+    } catch {
+      // The history section remains useful if the new router has no events yet.
+    }
+  }
+  try {
+    tradeLogs.push({
+      logs: await publicClient.getLogs({
+        address: legacyBuyRouterAddress,
+        event: mixBoughtEvent,
+        fromBlock: STATS_FROM_BLOCK,
+        toBlock: "latest",
+      }),
+      legacy: true,
+    });
+  } catch {
+    // A provider can reject a wide historical range. The rest of history still loads.
+  }
+
+  for (const group of tradeLogs) {
+    for (const log of group.logs) {
+      if (log.blockNumber === null || !log.transactionHash) continue;
+      const args = log.args as Record<string, unknown>;
+      const accountArg = args.account as Address | undefined;
+      if (!accountArg || accountArg.toLowerCase() !== account.toLowerCase()) continue;
+      const sellToken = args.sellToken as Address;
+      const buyToken = args.buyToken as Address;
+      const amountIn = args.amountIn as bigint;
+      const amountOut = args.amountOut as bigint;
+      const isBuy = group.legacy
+        ? sellToken.toLowerCase() === addresses.usdg.toLowerCase()
+        : Number(args.kind) === 0;
+      rows.push({
+        kind: isBuy ? "buy" : "sell",
+        date: "",
+        title: isBuy ? `Bought ${symbolForToken(buyToken)}` : `Sold ${symbolForToken(sellToken)}`,
+        amount: isBuy
+          ? `${formatHistoryAmount(sellToken, amountIn)} -> ${formatHistoryAmount(buyToken, amountOut)}`
+          : `${formatHistoryAmount(sellToken, amountIn)} -> ${formatHistoryAmount(buyToken, amountOut)}`,
+        hash: log.transactionHash,
+        link: `${EXPLORER_URL}/tx/${log.transactionHash}`,
+        blockNumber: log.blockNumber,
+      });
+    }
+  }
+
+  const uniqueBlocks = [...new Set(rows.map((row) => row.blockNumber.toString()))];
+  const blockDates = new Map<string, string>();
+  await Promise.all(uniqueBlocks.map(async (blockNumber) => {
+    const block = await publicClient.getBlock({ blockNumber: BigInt(blockNumber) });
+    blockDates.set(blockNumber, formatDate(block.timestamp));
+  }));
+  return rows
+    .sort((left, right) => (left.blockNumber > right.blockNumber ? -1 : left.blockNumber < right.blockNumber ? 1 : 0))
+    .map(({ blockNumber, ...row }) => ({ ...row, date: blockDates.get(blockNumber.toString()) || "Unknown date" }));
+}
+
 export async function readHoldings(account: Address): Promise<Holding[]> {
   const quickNodeHoldings = await readQuickNodeHoldings(account);
   if (quickNodeHoldings) return quickNodeHoldings;
@@ -436,8 +583,16 @@ export async function readWalletState(account: Address) {
       args: [account],
     }) as Promise<bigint>,
   ]);
-  const code = await publicClient.getCode({ address: account });
-  return { eth, wif, usdg, locked, delegated: code?.toLowerCase().startsWith("0xef0100") ?? false };
+  return { eth, wif, usdg, locked };
+}
+
+export async function readAllowance(token: Address, owner: Address, spender: Address) {
+  return await publicClient.readContract({
+    address: token,
+    abi: erc20Abi,
+    functionName: "allowance",
+    args: [owner, spender],
+  }) as bigint;
 }
 
 export async function buildBuyPlan(amountText: string, round: RoundState): Promise<BuyLeg[]> {
@@ -457,7 +612,7 @@ export async function buildBuyPlan(amountText: string, round: RoundState): Promi
     const index = assets.indexOf(asset);
     const amountIn = position === active.length - 1
       ? total - allocated
-      : (total * round.weights[index]) / (round.totalVotes * 10_000n);
+      : (total * round.weights[index]) / 10_000n;
     allocated += amountIn;
     if (amountIn <= 0n) continue;
     const path = encodePacked(["address", "uint24", "address"], [addresses.usdg, asset.fee, asset.token]);
@@ -554,41 +709,53 @@ export function buildApprove(token: Address, spender: Address, amount: bigint): 
   return encodeFunctionData({ abi: erc20Abi, functionName: "approve", args: [spender, amount] });
 }
 
-export function buildBuyCall(leg: BuyLeg, gasWifAmount: bigint): Hex {
+export function buildBuyCall(leg: BuyLeg): Hex {
   return encodeFunctionData({
     abi: routerAbi,
     functionName: "buyUniswap",
-    args: [addresses.usdg, leg.token, leg.fee, leg.amountIn, leg.minOut, 0n, gasWifAmount],
+    args: [addresses.usdg, leg.token, leg.fee, leg.amountIn, leg.minOut, 0n],
   });
 }
 
-export function buildSellCall(leg: SellLeg, gasWifAmount: bigint): Hex {
+export function buildSellCall(leg: SellLeg): Hex {
   return encodeFunctionData({
     abi: routerAbi,
-    functionName: "buyUniswap",
-    args: [leg.token, addresses.usdg, leg.fee, leg.amountIn, leg.minOut, 0n, gasWifAmount],
+    functionName: "sellUniswap",
+    args: [leg.token, addresses.usdg, leg.fee, leg.amountIn, leg.minOut, 0n],
   });
 }
 
-export function buildBatch(calls: BatchCall[]): Hex {
+export function buildBuyMixCall(legs: BuyLeg[]): Hex {
+  const metaLegs = legs.map((leg) => ({
+    token: leg.token,
+    fee: leg.fee,
+    amountIn: leg.amountIn,
+    amountOutMinimum: leg.minOut,
+    sqrtPriceLimitX96: 0n,
+  }));
+  const total = legs.reduce((sum, leg) => sum + leg.amountIn, 0n);
   return encodeFunctionData({
-    abi: delegateAbi,
-    functionName: "executeBatch",
-    args: [calls],
+    abi: routerAbi,
+    functionName: "buyMix",
+    args: [metaLegs, total],
   });
 }
 
-export async function sendDelegatedBatch(wallet: ConnectedWallet, account: Address, calls: BatchCall[]) {
-  const data = buildBatch(calls);
-  const response = await fetch(`${RELAYER_API}/relay`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ wallet: account, data }),
-  });
-  const payload = (await response.json()) as { txHash?: Hex; error?: string };
-  if (!response.ok || !payload.txHash) throw new Error(payload.error || "The sponsor rejected this request.");
-  await publicClient.waitForTransactionReceipt({ hash: payload.txHash });
-  return payload.txHash;
+export function buildMetaLegs(legs: BuyLeg[]): MetaLeg[] {
+  return legs.map((leg) => ({
+    token: leg.token,
+    fee: leg.fee,
+    amountIn: leg.amountIn,
+    amountOutMinimum: leg.minOut,
+    sqrtPriceLimitX96: 0n,
+  }));
+}
+
+export function hashMetaLegs(legs: MetaLeg[]): Hex {
+  return keccak256(encodeAbiParameters(
+    [{ type: "tuple[]", components: metaLegComponents }],
+    [legs],
+  ));
 }
 
 export async function sendDirect(
@@ -602,19 +769,139 @@ export async function sendDirect(
   return hash;
 }
 
-export async function delegateWallet(wallet: ConnectedWallet, account: Address) {
-  const nonce = await publicClient.getTransactionCount({ address: account });
-  return wallet.sendTransaction({
+export async function readPermitNonce(account: Address) {
+  return await publicClient.readContract({
+    address: addresses.usdg,
+    abi: permitAbi,
+    functionName: "nonces",
+    args: [account],
+  }) as bigint;
+}
+
+export async function signMetaVote(
+  wallet: ConnectedWallet,
+  account: Address,
+  roundId: bigint,
+  assetIndex: number,
+) {
+  if (!metaVotesAddress || !SIGNATURE_SAFE_WRITES_ENABLED) throw new Error("Signature-safe vote contract is not configured.");
+  const nonce = await publicClient.readContract({
+    address: metaVotesAddress,
+    abi: votesAbi,
+    functionName: "voteNonces",
+    args: [account],
+  }) as bigint;
+  const deadline = (await getLatestTimestamp()) + 15n * 60n;
+  const signature = await wallet.signTypedData({
     account,
-    to: account,
-    value: 0n,
-    chain,
-    authorizationList: [{
-      address: delegateImplementation,
-      chainId: chain.id,
-      nonce,
-    }],
+    domain: { name: "Flatstock Votes", version: "1", chainId: chain.id, verifyingContract: metaVotesAddress },
+    types: { Vote: [
+      { name: "voter", type: "address" },
+      { name: "roundId", type: "uint256" },
+      { name: "assetIndex", type: "uint8" },
+      { name: "nonce", type: "uint256" },
+      { name: "deadline", type: "uint256" },
+    ] },
+    primaryType: "Vote",
+    message: { voter: account, roundId, assetIndex, nonce, deadline },
   });
+  const response = await fetch(`${RELAYER_API}/meta/vote`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ voter: account, roundId: roundId.toString(), assetIndex, nonce: nonce.toString(), deadline: deadline.toString(), signature }),
+  });
+  const payload = await response.json() as { txHash?: Hex; error?: string };
+  if (!response.ok || !payload.txHash) throw new Error(payload.error || "The signature relay rejected this vote.");
+  await publicClient.waitForTransactionReceipt({ hash: payload.txHash });
+  return payload.txHash;
+}
+
+export async function signMetaBuy(
+  wallet: ConnectedWallet,
+  account: Address,
+  legs: BuyLeg[],
+) {
+  if (!metaRouterAddress || !SIGNATURE_SAFE_WRITES_ENABLED) throw new Error("Signature-safe trade contract is not configured.");
+  const metaLegs = buildMetaLegs(legs);
+  const amountIn = legs.reduce((sum, leg) => sum + leg.amountIn, 0n);
+  const nonce = await publicClient.readContract({ address: metaRouterAddress, abi: routerAbi, functionName: "buyNonces", args: [account] }) as bigint;
+  const deadline = (await getLatestTimestamp()) + 15n * 60n;
+  const permitNonce = await readPermitNonce(account);
+  const permitDeadline = deadline;
+  const permitSignature = await wallet.signTypedData({
+    account,
+    domain: { name: "Global Dollar", version: "1", chainId: chain.id, verifyingContract: addresses.usdg },
+    types: { Permit: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+      { name: "value", type: "uint256" },
+      { name: "nonce", type: "uint256" },
+      { name: "deadline", type: "uint256" },
+    ] },
+    primaryType: "Permit",
+    message: { owner: account, spender: metaRouterAddress, value: amountIn, nonce: permitNonce, deadline: permitDeadline },
+  });
+  const { v, r, s } = splitSignature(permitSignature);
+  const actionSignature = await wallet.signTypedData({
+    account,
+    domain: { name: "Flatstock Trades", version: "1", chainId: chain.id, verifyingContract: metaRouterAddress },
+    types: { BuyMix: [
+      { name: "user", type: "address" },
+      { name: "legsHash", type: "bytes32" },
+      { name: "amountIn", type: "uint256" },
+      { name: "nonce", type: "uint256" },
+      { name: "deadline", type: "uint256" },
+    ] },
+    primaryType: "BuyMix",
+    message: { user: account, legsHash: hashMetaLegs(metaLegs), amountIn, nonce, deadline },
+  });
+  const response = await fetch(`${RELAYER_API}/meta/buy`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ user: account, legs: metaLegs, amountIn: amountIn.toString(), nonce: nonce.toString(), deadline: deadline.toString(), permit: { value: amountIn.toString(), deadline: permitDeadline.toString(), v, r, s }, signature: actionSignature }),
+  });
+  const payload = await response.json() as { txHash?: Hex; error?: string };
+  if (!response.ok || !payload.txHash) throw new Error(payload.error || "The signature relay rejected this buy.");
+  await publicClient.waitForTransactionReceipt({ hash: payload.txHash });
+  return payload.txHash;
+}
+
+export async function signMetaSell(wallet: ConnectedWallet, account: Address, leg: SellLeg) {
+  if (!metaRouterAddress || !SIGNATURE_SAFE_WRITES_ENABLED) throw new Error("Signature-safe trade contract is not configured.");
+  const nonce = await publicClient.readContract({ address: metaRouterAddress, abi: routerAbi, functionName: "sellNonces", args: [account] }) as bigint;
+  const deadline = (await getLatestTimestamp()) + 15n * 60n;
+  const signature = await wallet.signTypedData({
+    account,
+    domain: { name: "Flatstock Trades", version: "1", chainId: chain.id, verifyingContract: metaRouterAddress },
+    types: { SellStock: [
+      { name: "user", type: "address" },
+      { name: "token", type: "address" },
+      { name: "fee", type: "uint24" },
+      { name: "amountIn", type: "uint256" },
+      { name: "amountOutMinimum", type: "uint256" },
+      { name: "nonce", type: "uint256" },
+      { name: "deadline", type: "uint256" },
+    ] },
+    primaryType: "SellStock",
+    message: { user: account, token: leg.token, fee: leg.fee, amountIn: leg.amountIn, amountOutMinimum: leg.minOut, nonce, deadline },
+  });
+  const response = await fetch(`${RELAYER_API}/meta/sell`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ user: account, sellToken: leg.token, fee: leg.fee, amountIn: leg.amountIn.toString(), amountOutMinimum: leg.minOut.toString(), sqrtPriceLimitX96: "0", nonce: nonce.toString(), deadline: deadline.toString(), signature }),
+  });
+  const payload = await response.json() as { txHash?: Hex; error?: string };
+  if (!response.ok || !payload.txHash) throw new Error(payload.error || "The signature relay rejected this sell.");
+  await publicClient.waitForTransactionReceipt({ hash: payload.txHash });
+  return payload.txHash;
+}
+
+function splitSignature(signature: Hex) {
+  return {
+    r: `0x${signature.slice(2, 66)}` as Hex,
+    s: `0x${signature.slice(66, 130)}` as Hex,
+    v: Number.parseInt(signature.slice(130, 132), 16),
+  };
 }
 
 export function formatWif(value: bigint) {

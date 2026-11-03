@@ -18,6 +18,9 @@ export const STATS_FROM_BLOCK = BigInt(
 export const MIX_VOTE_SHARE_BPS = BigInt(import.meta.env.VITE_VOTE_SHARE_BPS || "5000");
 export const MIX_MAX_WEIGHT_BPS = 5000n;
 export const MIX_RULES_ENABLED = Boolean(import.meta.env.VITE_VOTES_ADDRESS);
+export const SIGNATURE_SAFE_WRITES_ENABLED = Boolean(
+  import.meta.env.VITE_META_VOTES_ADDRESS && import.meta.env.VITE_META_ROUTER_ADDRESS,
+);
 export const LEGAL_NOTICE =
   "Not available to US persons. Not investment advice.";
 
@@ -33,11 +36,17 @@ export const addresses = {
   usdg: "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" as Address,
   votes: (import.meta.env.VITE_VOTES_ADDRESS || "0x68d2622f3bbf6BE80CdfED679489de344410C7Db") as Address,
   lock: "0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121" as Address,
-  buyRouter: "0x5B08a91F8C8666C85e636bbE61Aed3b059B61FfA" as Address,
+  buyRouter: (import.meta.env.VITE_META_ROUTER_ADDRESS || "0x5B08a91F8C8666C85e636bbE61Aed3b059B61FfA") as Address,
   quoter: "0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7" as Address,
   uniswap: "0xCaf681a66D020601342297493863E78C959E5cb2" as Address,
 };
-export const delegateImplementation = "0x8BDD498234E2272c97ACb1aA19Dc136BE8B2914C" as Address;
+export const legacyBuyRouterAddress = "0x5B08a91F8C8666C85e636bbE61Aed3b059B61FfA" as Address;
+export const metaVotesAddress = import.meta.env.VITE_META_VOTES_ADDRESS
+  ? import.meta.env.VITE_META_VOTES_ADDRESS as Address
+  : null;
+export const metaRouterAddress = import.meta.env.VITE_META_ROUTER_ADDRESS
+  ? import.meta.env.VITE_META_ROUTER_ADDRESS as Address
+  : null;
 export const legacyVotesAddress = "0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9" as Address;
 export const previousReplacementVotesAddress = "0xD49249D2a5CffBCF35B6560857d1d1C703802e78" as Address;
 export const voteStatsAddresses = Array.from(
@@ -70,12 +79,12 @@ export const assets = [
 ] as const;
 
 export const ONE_WIF = 1_000_000_000_000_000_000n;
-export const NON_LOCKER_GAS_WIF = 10_000_000_000_000_000n;
 export const MAX_SLIPPAGE_BPS = 200n;
 export const ORACLE_MAX_AGE_SECONDS = 86_400n;
 
 export const erc20Abi = parseAbi([
   "function approve(address spender, uint256 amount) returns (bool)",
+  "function allowance(address owner, address spender) view returns (uint256)",
   "function balanceOf(address account) view returns (uint256)",
   "function decimals() view returns (uint8)",
 ]);
@@ -84,6 +93,8 @@ export const votesAbi = parseAbi([
   "function rounds(uint256) view returns (uint64 opensAt, uint64 closesAt, uint8 assetCount, uint256 totalVotes, bool closed)",
   "function latestRoundId() view returns (uint256)",
   "function vote(uint256 roundId, uint8 assetIndex)",
+  "function voteNonces(address voter) view returns (uint256)",
+  "function voteBySig(address voter, uint256 roundId, uint8 assetIndex, uint256 nonce, uint256 deadline, bytes signature)",
   "function votesFor(uint256 roundId, uint8 assetIndex) view returns (uint256)",
   "function weightBps(uint256 roundId, uint8 assetIndex) view returns (uint256)",
 ]);
@@ -95,7 +106,13 @@ export const lockAbi = parseAbi([
 ]);
 
 export const routerAbi = parseAbi([
-  "function buyUniswap(address sellToken, address buyToken, uint24 fee, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96, uint256 gasWifAmount) returns (uint256 amountOut)",
+  "function buyUniswap(address sellToken, address buyToken, uint24 fee, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) returns (uint256 amountOut)",
+  "function sellUniswap(address sellToken, address buyToken, uint24 fee, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) returns (uint256 amountOut)",
+  "function buyMix((address token, uint24 fee, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)[] legs, uint256 amountIn) returns (uint256[] amountsOut)",
+  "function buyMixBySig(address user, (address token, uint24 fee, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)[] legs, uint256 amountIn, uint256 nonce, uint256 deadline, (uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) permitData, bytes signature) returns (uint256[] amountsOut)",
+  "function sellBySig(address user, address sellToken, uint24 fee, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96, uint256 nonce, uint256 deadline, bytes signature) returns (uint256 amountOut)",
+  "function buyNonces(address user) view returns (uint256)",
+  "function sellNonces(address user) view returns (uint256)",
 ]);
 
 export const quoterAbi = parseAbi([
@@ -107,10 +124,18 @@ export const feedAbi = parseAbi([
   "function latestRoundData() view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)",
 ]);
 
-export const delegateAbi = parseAbi([
-  "function executeBatch((address target, uint256 value, bytes data)[] calls)",
+export const permitAbi = parseAbi([
+  "function nonces(address owner) view returns (uint256)",
+  "function DOMAIN_SEPARATOR() view returns (bytes32)",
+  "function name() view returns (string)",
 ]);
 
 export const voteCastEvent = parseAbiItem(
   "event VoteCast(uint256 indexed roundId, address indexed voter, uint8 indexed assetIndex)",
+);
+export const tradeExecutedEvent = parseAbiItem(
+  "event TradeExecuted(address indexed account, address indexed sellToken, address indexed buyToken, uint256 amountIn, uint256 amountOut, uint8 kind)",
+);
+export const mixBoughtEvent = parseAbiItem(
+  "event MixBought(address indexed account, address indexed sellToken, address indexed buyToken, uint256 amountIn, uint256 amountOut, bool lockedAccount)",
 );
