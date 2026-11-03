@@ -9,7 +9,7 @@ interface IWifVotes {
 /// @dev Each round blends equal weights and vote share, then caps any one
 /// asset at 50% and redistributes the excess. Final weights are stored at
 /// close so they cannot change afterward.
-contract FlatIndexVotes {
+contract FlatstockVotesLegacy {
     uint256 public constant VOTE_COST = 1 ether;
     uint8 public constant MAX_ASSETS = 8;
     uint256 public constant BPS = 10_000;
@@ -152,9 +152,7 @@ contract FlatIndexVotes {
 
         for (uint8 i; i < count; ++i) {
             uint256 voteWeight = _voteWeight(roundId, i, count, totalVotes, voteSum);
-            weights[i] = _blendWeight(
-                equalBase + (i < equalRemainder ? 1 : 0), voteWeight, equalShare, voteShare
-            );
+            weights[i] = _blendWeight(equalBase + (i < equalRemainder ? 1 : 0), voteWeight, equalShare, voteShare);
             weightSum += weights[i];
             if (i != count - 1) voteSum += voteWeight;
         }

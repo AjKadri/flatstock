@@ -411,7 +411,7 @@ Exact command:
 ```sh
 set -a; source .env; set +a
 DEPLOYER=$(cast wallet address --private-key "$M1_RELAYER_PRIVATE_KEY")
-forge create src/FlatIndexVotes.sol:FlatIndexVotes \
+forge create src/FlatstockVotesLegacy.sol:FlatstockVotesLegacy \
   --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
   --broadcast --json --constructor-args "$WIF_ADDRESS"
 ```
@@ -870,10 +870,10 @@ read-only route per token, with every recipient set to the user wallet.
 Source files:
 
 - `src/M1RelayerDelegate.sol`
-- `src/FlatIndexVotes.sol`
+- `src/FlatstockVotesLegacy.sol`
 - `test/M1RelayerDelegate.t.sol`
-- `test/FlatIndexVotes.t.sol`
-- `test/FlatIndexVotesFork.t.sol`
+- `test/FlatstockVotesLegacy.t.sol`
+- `test/FlatstockVotesLegacyFork.t.sol`
 
 Exact local command:
 
@@ -893,7 +893,7 @@ Exact fork command:
 
 ```sh
 set -a; source .env; set +a
-forge test --fork-url "$RPC_URL" --match-contract FlatIndexVotesForkTest -vv
+forge test --fork-url "$RPC_URL" --match-contract FlatstockVotesLegacyForkTest -vv
 ```
 
 Observed output:
@@ -1113,7 +1113,7 @@ The fork implementation proves:
 Vote contract deployment command:
 
 ```sh
-forge create src/FlatIndexVotes.sol:FlatIndexVotes \
+forge create src/FlatstockVotesLegacy.sol:FlatstockVotesLegacy \
   --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
   --broadcast --json --constructor-args "$WIF_ADDRESS"
 ```
@@ -1175,8 +1175,8 @@ Observed output:
 
 ```text
 No files changed, compilation skipped
-Ran 2 tests for FlatIndexVotesTest: 2 passed; 0 failed; 0 skipped
-Ran 1 test for FlatIndexVotesForkTest: 1 passed; 0 failed; 0 skipped
+Ran 2 tests for FlatstockVotesLegacyTest: 2 passed; 0 failed; 0 skipped
+Ran 1 test for FlatstockVotesLegacyForkTest: 1 passed; 0 failed; 0 skipped
 Ran 2 tests for M1RelayerDelegateTest: 2 passed; 0 failed; 0 skipped
 Ran 3 test suites in 5.46s: 5 tests passed; 0 failed; 0 skipped
 ```
@@ -1200,8 +1200,8 @@ The own EIP-7702 relayer, lock contract, buy router, and first live round are
 deployed on chain `4663`:
 
 ```text
-FlatIndexLock       0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121
-FlatIndexBuyRouter  0x5B08a91F8C8666C85e636bbE61Aed3b059B61FfA
+FlatstockLock            0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121
+FlatstockBuyRouterLegacy 0x5B08a91F8C8666C85e636bbE61Aed3b059B61FfA
 Vote contract       0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9
 EIP-7702 delegate   0x8BDD498234E2272c97ACb1aA19Dc136BE8B2914C
 ```
@@ -1230,10 +1230,10 @@ Deployment commands:
 
 ```sh
 set -a; source .env; set +a
-forge create src/FlatIndexLock.sol:FlatIndexLock \
+forge create src/FlatstockLock.sol:FlatstockLock \
   --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
   --broadcast --json --constructor-args "$WIF_ADDRESS" 10000000000000000000
-forge create src/FlatIndexBuyRouter.sol:FlatIndexBuyRouter \
+forge create src/FlatstockBuyRouterLegacy.sol:FlatstockBuyRouterLegacy \
   --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
   --broadcast --json \
   --constructor-args "$WIF_ADDRESS" "$LOCK_CONTRACT_ADDRESS" \
@@ -1461,7 +1461,7 @@ Exact commands used:
 set -a; source .env; set +a
 forge build
 cast send --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
-  --create "$(cat out/FlatIndexVotes.sol/FlatIndexVotes.bin)$(cast abi-encode 'f(address)' "$WIF_ADDRESS" | cut -c3-)" \
+  --create "$(cat out/FlatstockVotesLegacy.sol/FlatstockVotesLegacy.bin)$(cast abi-encode 'f(address)' "$WIF_ADDRESS" | cut -c3-)" \
   --json
 cast receipt 0x39fe0c7813c84d8a7866d1dca6f63e9636a19b36e98915414fcd45cd0c2b16dc \
   --rpc-url "$RPC_URL"
@@ -1498,7 +1498,7 @@ Blockscout verification page:
 https://robinhoodchain.blockscout.com/address/0x68d2622f3bbf6BE80CdfED679489de344410C7Db?tab=contract
 
 Observed page text: `Contract source code verified (exact match)`, contract
-`FlatIndexVotes`, compiler `0.8.24+commit.e11b9ed9`, EVM `cancun`, optimization
+`FlatstockVotesLegacy`, compiler `0.8.24+commit.e11b9ed9`, EVM `cancun`, optimization
 enabled with 200 runs.
 
 ### Round 4 opening on the fixed contract
@@ -1880,7 +1880,7 @@ Exact command:
 
 ```sh
 set -a; source .env; set +a
-forge create src/FlatIndexVotesMeta.sol:FlatIndexVotesMeta \
+forge create src/FlatstockVotes.sol:FlatstockVotes \
   --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
   --broadcast --json \
   --constructor-args "$WIF_ADDRESS" "$LOCK_CONTRACT_ADDRESS"
@@ -1912,10 +1912,10 @@ latestRoundId()=0
 Verification:
 
 ```text
-Sourcify: exact_match
+Sourcify: exact_match for the already deployed pre-rename artifact
 Sourcify job: c1bce528-4114-42ef-9867-d88926651a04
-Blockscout: Contract source code verified (exact match)
-Contract name: FlatIndexVotesMeta
+Blockscout: Contract source code verified (exact match) for the already deployed pre-rename artifact
+Local replacement name: FlatstockVotes
 Compiler: v0.8.24+commit.e11b9ed9
 EVM: cancun
 Optimizer: enabled, 200 runs
@@ -1926,3 +1926,23 @@ Links:
 - [Deployment transaction](https://robinhoodchain.blockscout.com/tx/0x863603d2bc1e8e4518a098acdd5d43df23858cedc7c9f5f41e7f15a0939c499b)
 - [Blockscout contract](https://robinhoodchain.blockscout.com/address/0xf6E2944E801CeDbfa5f489eCD0D3BF7578aE2A9D?tab=contract)
 - [Sourcify verification job](https://sourcify.dev/server/verify-ui/jobs/c1bce528-4114-42ef-9867-d88926651a04)
+
+## Product-name contract migration
+
+Date checked: 2026-11-03 WAT.
+
+The local Solidity, tests, relayer references, UI references, and tracked docs
+now use the Flatstock names. The generated Foundry `out/` and `cache/`
+directories are disposable build artifacts and are not tracked.
+
+| Local target | Mainnet status | Vercel value |
+| --- | --- | --- |
+| `FlatstockVotes` | Not deployed under the renamed source yet. Existing signature-safe vote address remains `0xf6E2944E801CeDbfa5f489eCD0D3BF7578aE2A9D` and is verified for the pre-rename artifact. | `VITE_VOTES_ADDRESS` and `VITE_META_VOTES_ADDRESS` remain on the existing address until the replacement is approved and verified. |
+| `FlatstockRouter` | Not deployed. No address or verification can be reported yet. | `VITE_META_ROUTER_ADDRESS` remains unset until deployment and verification. |
+| `FlatstockLock` | Existing lock address is retained and no redeploy is required by this rename. | No new Vercel value. |
+
+The renamed vote deployment would be a new mainnet transaction even though no
+real votes have been cast on the current signature-safe vote address. It is
+therefore pending explicit approval before sending. The router deployment is
+also pending separate approval. Sourcify and Blockscout verification for those
+new addresses can only be recorded after their deployments.

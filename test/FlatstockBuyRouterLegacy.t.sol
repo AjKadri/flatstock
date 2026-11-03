@@ -1,7 +1,7 @@
 pragma solidity ^0.8.24;
 
-import {FlatIndexBuyRouter, IUniswapV3SwapRouter} from "../src/FlatIndexBuyRouter.sol";
-import {FlatIndexLock} from "../src/FlatIndexLock.sol";
+import {FlatstockBuyRouterLegacy, IUniswapV3SwapRouter} from "../src/FlatstockBuyRouterLegacy.sol";
+import {FlatstockLock} from "../src/FlatstockLock.sol";
 
 interface VmBuy {
     function addr(uint256 privateKey) external returns (address);
@@ -57,7 +57,7 @@ contract MockSwapRouter {
     }
 }
 
-contract FlatIndexBuyRouterTest {
+contract FlatstockBuyRouterLegacyTest {
     VmBuy private constant vm = VmBuy(address(uint160(uint256(keccak256("hevm cheat code")))));
     uint256 private constant USER_KEY = 0xA11CE;
     address private user = vm.addr(USER_KEY);
@@ -65,9 +65,9 @@ contract FlatIndexBuyRouterTest {
     MockBuyToken private usd = new MockBuyToken();
     MockBuyToken private stock = new MockBuyToken();
     MockSwapRouter private swapRouter = new MockSwapRouter();
-    FlatIndexLock private lock = new FlatIndexLock(address(wif), 10 ether);
-    FlatIndexBuyRouter private router =
-        new FlatIndexBuyRouter(address(wif), address(lock), address(swapRouter), 1 ether);
+    FlatstockLock private lock = new FlatstockLock(address(wif), 10 ether);
+    FlatstockBuyRouterLegacy private router =
+        new FlatstockBuyRouterLegacy(address(wif), address(lock), address(swapRouter), 1 ether);
 
     function setUp() public {
         wif.mint(user, 100 ether);
@@ -101,7 +101,7 @@ contract FlatIndexBuyRouterTest {
         require(stock.balanceOf(user) == 2 ether, "stock not delivered");
         require(wif.balanceOf(user) == 90 ether, "locked WIF mismatch");
 
-        vm.expectRevert(FlatIndexBuyRouter.InvalidGasPayment.selector);
+        vm.expectRevert(FlatstockBuyRouterLegacy.InvalidGasPayment.selector);
         vm.prank(user);
         router.buyUniswap(address(usd), address(stock), 500, 1 ether, 2 ether, 0, 1 ether);
     }

@@ -1,10 +1,9 @@
 pragma solidity ^0.8.24;
 
-abstract contract FlatIndexEIP712 {
+abstract contract FlatstockEIP712 {
     bytes32 private constant DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-    uint256 private constant SECP256K1N_HALF =
-        0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0;
+    uint256 private constant SECP256K1N_HALF = 0x7fffffffffffffffffffffffffffffff5d576e7357a4501ddfe92f46681b20a0;
 
     bytes32 private immutable hashedName;
     bytes32 private immutable hashedVersion;
@@ -17,13 +16,7 @@ abstract contract FlatIndexEIP712 {
     }
 
     function DOMAIN_SEPARATOR() public view returns (bytes32) {
-        return keccak256(abi.encode(
-            DOMAIN_TYPEHASH,
-            hashedName,
-            hashedVersion,
-            block.chainid,
-            address(this)
-        ));
+        return keccak256(abi.encode(DOMAIN_TYPEHASH, hashedName, hashedVersion, block.chainid, address(this)));
     }
 
     function _hashTypedData(bytes32 structHash) internal view returns (bytes32) {

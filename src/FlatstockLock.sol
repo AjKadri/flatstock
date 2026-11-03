@@ -8,7 +8,7 @@ interface ILockWif {
 /// @notice Minimal self-custody eligibility lock for sponsored buys.
 /// @dev The contract holds only the user's explicitly locked WIF. It has no
 /// owner and cannot move one user's balance to another account.
-contract FlatIndexLock {
+contract FlatstockLock {
     ILockWif public immutable wif;
     uint256 public immutable minimumLock;
     mapping(address => uint256) public locked;

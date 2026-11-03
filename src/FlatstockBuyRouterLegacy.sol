@@ -1,6 +1,6 @@
 pragma solidity ^0.8.24;
 
-import {FlatIndexLock} from "./FlatIndexLock.sol";
+import {FlatstockLock} from "./FlatstockLock.sol";
 
 interface IBuyToken {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
@@ -29,9 +29,9 @@ interface IUniswapV3SwapRouter {
 /// @dev Tokens are pulled from the caller only for the duration of a swap and
 /// the output recipient is always the caller. Unlocked callers pay a fixed WIF
 /// amount that is burned; locked callers pay no WIF amount.
-contract FlatIndexBuyRouter {
+contract FlatstockBuyRouterLegacy {
     IBuyWif public immutable wif;
-    FlatIndexLock public immutable lockContract;
+    FlatstockLock public immutable lockContract;
     address public immutable swapRouter;
     uint256 public immutable gasWif;
 
@@ -56,7 +56,7 @@ contract FlatIndexBuyRouter {
             revert InvalidAddress();
         }
         wif = IBuyWif(wif_);
-        lockContract = FlatIndexLock(lockContract_);
+        lockContract = FlatstockLock(lockContract_);
         swapRouter = swapRouter_;
         gasWif = gasWif_;
     }

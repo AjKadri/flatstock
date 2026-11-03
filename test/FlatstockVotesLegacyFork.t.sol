@@ -1,6 +1,6 @@
 pragma solidity ^0.8.24;
 
-import {FlatIndexVotes} from "../src/FlatIndexVotes.sol";
+import {FlatstockVotesLegacy} from "../src/FlatstockVotesLegacy.sol";
 
 interface VmWifFork {
     function getChainId() external returns (uint256);
@@ -14,11 +14,11 @@ interface WifForkToken {
     function totalSupply() external view returns (uint256);
 }
 
-contract FlatIndexVotesForkTest {
+contract FlatstockVotesLegacyForkTest {
     VmWifFork private constant vm = VmWifFork(address(uint160(uint256(keccak256("hevm cheat code")))));
     WifForkToken private constant wif = WifForkToken(0x5173b8eA6923c2d40267890D45C46a3480954773);
     address private constant voter = 0x3554121694a2472300f079Afa4B1fC7F9aAFac01;
-    FlatIndexVotes private votes = new FlatIndexVotes(address(wif));
+    FlatstockVotesLegacy private votes = new FlatstockVotesLegacy(address(wif));
 
     function setUp() public {
         if (vm.getChainId() != 4663) return;

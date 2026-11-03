@@ -1,6 +1,6 @@
 pragma solidity ^0.8.24;
 
-import {FlatIndexVotes} from "../src/FlatIndexVotes.sol";
+import {FlatstockVotesLegacy} from "../src/FlatstockVotesLegacy.sol";
 
 interface VmVote {
     function addr(uint256 privateKey) external returns (address);
@@ -38,7 +38,7 @@ contract MockWifVoteToken {
     }
 }
 
-contract FlatIndexVotesTest {
+contract FlatstockVotesLegacyTest {
     VmVote private constant vm = VmVote(address(uint160(uint256(keccak256("hevm cheat code")))));
     uint256 private constant ALICE_KEY = 0xA11CE;
     uint256 private constant BOB_KEY = 0xB0B;
@@ -48,7 +48,7 @@ contract FlatIndexVotesTest {
     address private bob = vm.addr(BOB_KEY);
     address private carol = vm.addr(CAROL_KEY);
     MockWifVoteToken private wif = new MockWifVoteToken();
-    FlatIndexVotes private votes = new FlatIndexVotes(address(wif));
+    FlatstockVotesLegacy private votes = new FlatstockVotesLegacy(address(wif));
 
     function setUp() public {
         wif.mint(alice, 3 ether);
@@ -72,7 +72,7 @@ contract FlatIndexVotesTest {
         require(wif.totalSupply() == 6 ether, "WIF was not burned");
         require(votes.votesFor(1, 0) == 1, "vote not counted");
 
-        vm.expectRevert(FlatIndexVotes.AlreadyVoted.selector);
+        vm.expectRevert(FlatstockVotesLegacy.AlreadyVoted.selector);
         vm.prank(alice);
         votes.vote(1, 1);
     }
@@ -94,7 +94,7 @@ contract FlatIndexVotesTest {
         require(votes.weightBps(2, 2) == 2_500, "second redistribution mismatch");
         require(votes.finalWeightBps(2, 0) == 5_000, "final weight was not stored");
 
-        vm.expectRevert(FlatIndexVotes.RoundNotOpen.selector);
+        vm.expectRevert(FlatstockVotesLegacy.RoundNotOpen.selector);
         vm.prank(alice);
         votes.vote(2, 2);
     }
@@ -106,7 +106,10 @@ contract FlatIndexVotesTest {
         require(votes.weightBps(3, 0) == 3_334, "equal first weight mismatch");
         require(votes.weightBps(3, 1) == 3_333, "equal second weight mismatch");
         require(votes.weightBps(3, 2) == 3_333, "equal third weight mismatch");
-        require(votes.weightBps(3, 0) + votes.weightBps(3, 1) + votes.weightBps(3, 2) == 10_000, "zero vote weights do not sum to 100%");
+        require(
+            votes.weightBps(3, 0) + votes.weightBps(3, 1) + votes.weightBps(3, 2) == 10_000,
+            "zero vote weights do not sum to 100%"
+        );
 
         vm.warp(block.timestamp + 1 days);
         votes.closeRound(3);
@@ -141,7 +144,10 @@ contract FlatIndexVotesTest {
         require(votes.weightBps(5, 0) == 5_000, "many vote first weight mismatch");
         require(votes.weightBps(5, 1) == 3_333, "many vote second weight mismatch");
         require(votes.weightBps(5, 2) == 1_667, "many vote third weight mismatch");
-        require(votes.weightBps(5, 0) + votes.weightBps(5, 1) + votes.weightBps(5, 2) == 10_000, "many vote weights do not sum to 100%");
+        require(
+            votes.weightBps(5, 0) + votes.weightBps(5, 1) + votes.weightBps(5, 2) == 10_000,
+            "many vote weights do not sum to 100%"
+        );
 
         vm.warp(block.timestamp + 1 days);
         votes.closeRound(5);

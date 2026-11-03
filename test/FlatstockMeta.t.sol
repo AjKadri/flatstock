@@ -1,9 +1,9 @@
 pragma solidity ^0.8.24;
 
-import {FlatIndexLock} from "../src/FlatIndexLock.sol";
-import {FlatIndexEIP712} from "../src/FlatIndexEIP712.sol";
-import {FlatIndexMetaRouter, IMetaSwapRouter} from "../src/FlatIndexMetaRouter.sol";
-import {FlatIndexVotesMeta} from "../src/FlatIndexVotesMeta.sol";
+import {FlatstockLock} from "../src/FlatstockLock.sol";
+import {FlatstockEIP712} from "../src/FlatstockEIP712.sol";
+import {FlatstockRouter, IMetaSwapRouter} from "../src/FlatstockRouter.sol";
+import {FlatstockVotes} from "../src/FlatstockVotes.sol";
 
 interface VmMeta {
     function addr(uint256 privateKey) external returns (address);
@@ -52,15 +52,7 @@ contract MockPermitToken is MockMetaToken {
     mapping(address => uint256) public nonces;
     bytes32 public constant DOMAIN_SEPARATOR = keccak256("mock permit domain");
 
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256,
-        uint8,
-        bytes32,
-        bytes32
-    ) external {
+    function permit(address owner, address spender, uint256 value, uint256, uint8, bytes32, bytes32) external {
         allowance[owner][spender] = value;
         nonces[owner] += 1;
     }
@@ -77,7 +69,7 @@ contract MockMetaSwapRouter {
     }
 }
 
-contract FlatIndexMetaTest {
+contract FlatstockMetaTest {
     VmMeta private constant vm = VmMeta(address(uint160(uint256(keccak256("hevm cheat code")))));
     uint256 private constant ALICE_KEY = 0xA11CE;
     uint256 private constant BOB_KEY = 0xB0B;
@@ -86,8 +78,8 @@ contract FlatIndexMetaTest {
     address private bob = vm.addr(BOB_KEY);
     address private carol = vm.addr(CAROL_KEY);
     MockMetaToken private wif = new MockMetaToken();
-    FlatIndexLock private lock = new FlatIndexLock(address(wif), 10 ether);
-    FlatIndexVotesMeta private votes = new FlatIndexVotesMeta(address(wif), address(lock));
+    FlatstockLock private lock = new FlatstockLock(address(wif), 10 ether);
+    FlatstockVotes private votes = new FlatstockVotes(address(wif), address(lock));
 
     function setUp() public {
         wif.mint(alice, 20 ether);
@@ -110,9 +102,7 @@ contract FlatIndexMetaTest {
         view
         returns (bytes32)
     {
-        bytes32 structHash = keccak256(abi.encode(
-            votes.VOTE_TYPEHASH(), voter, roundId, assetIndex, nonce, deadline
-        ));
+        bytes32 structHash = keccak256(abi.encode(votes.VOTE_TYPEHASH(), voter, roundId, assetIndex, nonce, deadline));
         return keccak256(abi.encodePacked("\x19\x01", votes.DOMAIN_SEPARATOR(), structHash));
     }
 
@@ -126,7 +116,7 @@ contract FlatIndexMetaTest {
         require(votes.votesFor(1, 0) == 1, "relayed vote not counted");
         require(wif.totalSupply() == 25 ether, "relayed vote did not burn one WIF");
 
-        vm.expectRevert(FlatIndexVotesMeta.InvalidNonce.selector);
+        vm.expectRevert(FlatstockVotes.InvalidNonce.selector);
         votes.voteBySig(alice, 1, 0, 0, deadline, signature);
     }
 
@@ -136,12 +126,12 @@ contract FlatIndexMetaTest {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(ALICE_KEY, _voteDigest(alice, 2, 0, 0, deadline));
         bytes memory signature = abi.encodePacked(r, s, v);
 
-        vm.expectRevert(FlatIndexEIP712.InvalidSignature.selector);
+        vm.expectRevert(FlatstockEIP712.InvalidSignature.selector);
         votes.voteBySig(alice, 2, 1, 0, deadline, signature);
 
         (v, r, s) = vm.sign(BOB_KEY, _voteDigest(bob, 2, 1, 0, deadline));
         signature = abi.encodePacked(r, s, v);
-        vm.expectRevert(FlatIndexVotesMeta.NotLocked.selector);
+        vm.expectRevert(FlatstockVotes.NotLocked.selector);
         votes.voteBySig(bob, 2, 1, 0, deadline, signature);
     }
 
@@ -177,7 +167,7 @@ contract FlatIndexMetaTest {
     }
 }
 
-contract FlatIndexMetaRouterTest {
+contract FlatstockRouterTest {
     VmMeta private constant vm = VmMeta(address(uint160(uint256(keccak256("hevm cheat code")))));
     uint256 private constant ALICE_KEY = 0xA11CE;
     address private alice = vm.addr(ALICE_KEY);
@@ -185,9 +175,9 @@ contract FlatIndexMetaRouterTest {
     MockPermitToken private usdg = new MockPermitToken();
     MockMetaToken private stockA = new MockMetaToken();
     MockMetaToken private stockB = new MockMetaToken();
-    FlatIndexLock private lock = new FlatIndexLock(address(wif), 10 ether);
+    FlatstockLock private lock = new FlatstockLock(address(wif), 10 ether);
     MockMetaSwapRouter private swap = new MockMetaSwapRouter();
-    FlatIndexMetaRouter private router = new FlatIndexMetaRouter(address(usdg), address(lock), address(swap));
+    FlatstockRouter private router = new FlatstockRouter(address(usdg), address(lock), address(swap));
 
     function setUp() public {
         wif.mint(alice, 20 ether);
@@ -199,46 +189,52 @@ contract FlatIndexMetaRouterTest {
 
     function _buyDigest(
         address user,
-        FlatIndexMetaRouter.Leg[] memory legs,
+        FlatstockRouter.Leg[] memory legs,
         uint256 amountIn,
         uint256 nonce,
         uint256 deadline
     ) private view returns (bytes32) {
         bytes32 legsHash = keccak256(abi.encode(legs));
-        bytes32 structHash = keccak256(abi.encode(
-            router.BUY_TYPEHASH(), user, legsHash, amountIn, nonce, deadline
-        ));
+        bytes32 structHash = keccak256(abi.encode(router.BUY_TYPEHASH(), user, legsHash, amountIn, nonce, deadline));
         return keccak256(abi.encodePacked("\x19\x01", router.DOMAIN_SEPARATOR(), structHash));
     }
 
     function testExactRelayedBuyUsesPermitAndReplayIsRejected() public {
         usdg.mint(alice, 2 ether);
-        FlatIndexMetaRouter.Leg[] memory legs = new FlatIndexMetaRouter.Leg[](2);
-        legs[0] = FlatIndexMetaRouter.Leg(address(stockA), 500, 0.5 ether, 1 ether, 0);
-        legs[1] = FlatIndexMetaRouter.Leg(address(stockB), 500, 0.5 ether, 1 ether, 0);
+        FlatstockRouter.Leg[] memory legs = new FlatstockRouter.Leg[](2);
+        legs[0] = FlatstockRouter.Leg(address(stockA), 500, 0.5 ether, 1 ether, 0);
+        legs[1] = FlatstockRouter.Leg(address(stockB), 500, 0.5 ether, 1 ether, 0);
         uint256 deadline = block.timestamp + 1 hours;
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(ALICE_KEY, _buyDigest(alice, legs, 1 ether, 0, deadline));
-        FlatIndexMetaRouter.PermitData memory permit = FlatIndexMetaRouter.PermitData(2 ether, deadline, v, r, s);
+        FlatstockRouter.PermitData memory permit = FlatstockRouter.PermitData(2 ether, deadline, v, r, s);
 
         router.buyMixBySig(alice, legs, 1 ether, 0, deadline, permit, abi.encodePacked(r, s, v));
         require(stockA.balanceOf(alice) == 1 ether, "first stock not delivered");
         require(stockB.balanceOf(alice) == 1 ether, "second stock not delivered");
         require(router.buyNonces(alice) == 1, "buy nonce not consumed");
 
-        vm.expectRevert(FlatIndexMetaRouter.InvalidNonce.selector);
+        vm.expectRevert(FlatstockRouter.InvalidNonce.selector);
         router.buyMixBySig(alice, legs, 1 ether, 0, deadline, permit, abi.encodePacked(r, s, v));
     }
 
     function testBuySignatureCommitsToEveryLeg() public {
-        FlatIndexMetaRouter.Leg[] memory signedLegs = new FlatIndexMetaRouter.Leg[](1);
-        signedLegs[0] = FlatIndexMetaRouter.Leg(address(stockA), 500, 1 ether, 2 ether, 0);
+        FlatstockRouter.Leg[] memory signedLegs = new FlatstockRouter.Leg[](1);
+        signedLegs[0] = FlatstockRouter.Leg(address(stockA), 500, 1 ether, 2 ether, 0);
         uint256 deadline = block.timestamp + 1 hours;
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(ALICE_KEY, _buyDigest(alice, signedLegs, 1 ether, 0, deadline));
 
-        FlatIndexMetaRouter.Leg[] memory tamperedLegs = new FlatIndexMetaRouter.Leg[](1);
-        tamperedLegs[0] = FlatIndexMetaRouter.Leg(address(stockB), 500, 1 ether, 2 ether, 0);
-        vm.expectRevert(FlatIndexEIP712.InvalidSignature.selector);
-        router.buyMixBySig(alice, tamperedLegs, 1 ether, 0, deadline, FlatIndexMetaRouter.PermitData(0, 0, 0, 0, 0), abi.encodePacked(r, s, v));
+        FlatstockRouter.Leg[] memory tamperedLegs = new FlatstockRouter.Leg[](1);
+        tamperedLegs[0] = FlatstockRouter.Leg(address(stockB), 500, 1 ether, 2 ether, 0);
+        vm.expectRevert(FlatstockEIP712.InvalidSignature.selector);
+        router.buyMixBySig(
+            alice,
+            tamperedLegs,
+            1 ether,
+            0,
+            deadline,
+            FlatstockRouter.PermitData(0, 0, 0, 0, 0),
+            abi.encodePacked(r, s, v)
+        );
     }
 
     function testDirectWalletBuyHasNoWifGasPath() public {

@@ -1,6 +1,6 @@
 pragma solidity ^0.8.24;
 
-import {FlatIndexEIP712} from "./FlatIndexEIP712.sol";
+import {FlatstockEIP712} from "./FlatstockEIP712.sol";
 
 interface IVoteWif {
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
@@ -13,15 +13,14 @@ interface IVoteLock {
 
 /// @notice Vote contract with direct wallet voting and signature-authorized
 /// relayed voting for locked WIF wallets.
-contract FlatIndexVotesMeta is FlatIndexEIP712 {
+contract FlatstockVotes is FlatstockEIP712 {
     uint256 public constant VOTE_COST = 1 ether;
     uint8 public constant MAX_ASSETS = 8;
     uint256 public constant BPS = 10_000;
     uint256 public constant MAX_WEIGHT_BPS = 5_000;
     uint16 public constant DEFAULT_VOTE_SHARE_BPS = 5_000;
-    bytes32 public constant VOTE_TYPEHASH = keccak256(
-        "Vote(address voter,uint256 roundId,uint8 assetIndex,uint256 nonce,uint256 deadline)"
-    );
+    bytes32 public constant VOTE_TYPEHASH =
+        keccak256("Vote(address voter,uint256 roundId,uint8 assetIndex,uint256 nonce,uint256 deadline)");
 
     IVoteWif public immutable wif;
     IVoteLock public immutable lockContract;
@@ -65,9 +64,7 @@ contract FlatIndexVotesMeta is FlatIndexEIP712 {
     error SignatureExpired();
     error InvalidNonce();
 
-    constructor(address wif_, address lockContract_)
-        FlatIndexEIP712("Flatstock Votes", "1")
-    {
+    constructor(address wif_, address lockContract_) FlatstockEIP712("Flatstock Votes", "1") {
         if (wif_ == address(0)) revert InvalidWif();
         if (lockContract_ == address(0)) revert InvalidLock();
         wif = IVoteWif(wif_);
@@ -150,7 +147,9 @@ contract FlatIndexVotesMeta is FlatIndexEIP712 {
         if (block.timestamp < current.closesAt) revert InvalidCloseTime();
 
         uint256[] memory weights = _computedWeights(roundId);
-        for (uint8 i; i < current.assetCount; ++i) finalWeightBps[roundId][i] = weights[i];
+        for (uint8 i; i < current.assetCount; ++i) {
+            finalWeightBps[roundId][i] = weights[i];
+        }
         current.closed = true;
         emit RoundClosed(roundId, current.totalVotes);
     }
@@ -174,7 +173,9 @@ contract FlatIndexVotesMeta is FlatIndexEIP712 {
         uint256 equalShare = BPS - voteShare;
 
         if (totalVotes == 0) {
-            for (uint8 i; i < count; ++i) weights[i] = equalBase + (i < equalRemainder ? 1 : 0);
+            for (uint8 i; i < count; ++i) {
+                weights[i] = equalBase + (i < equalRemainder ? 1 : 0);
+            }
             return weights;
         }
 
@@ -182,7 +183,7 @@ contract FlatIndexVotesMeta is FlatIndexEIP712 {
         uint256 weightSum;
         for (uint8 i; i < count; ++i) {
             uint256 voteWeight = _voteWeight(roundId, i, count, totalVotes, voteSum);
-            weights[i] = ( (equalBase + (i < equalRemainder ? 1 : 0)) * equalShare + voteWeight * voteShare ) / BPS;
+            weights[i] = ((equalBase + (i < equalRemainder ? 1 : 0)) * equalShare + voteWeight * voteShare) / BPS;
             weightSum += weights[i];
             if (i != count - 1) voteSum += voteWeight;
         }
@@ -211,7 +212,9 @@ contract FlatIndexVotesMeta is FlatIndexEIP712 {
         }
         while (excess != 0) {
             uint256 eligible;
-            for (uint8 i; i < count; ++i) if (!capped[i] && weights[i] < MAX_WEIGHT_BPS) ++eligible;
+            for (uint8 i; i < count; ++i) {
+                if (!capped[i] && weights[i] < MAX_WEIGHT_BPS) ++eligible;
+            }
             if (eligible == 0) revert InvalidAssets();
             uint256 base = excess / eligible;
             uint256 remainder = excess % eligible;
