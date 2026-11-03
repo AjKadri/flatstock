@@ -472,6 +472,53 @@ cast send "0xD49249D2a5CffBCF35B6560857d1d1C703802e78" \
 The round-3 close and round-4 open each require separate user approval
 immediately before sending.
 
+### Round 3 close on the legacy contract
+
+Verdict: pass.
+
+The user approved the close after the scheduled deadline had passed. The old
+contract closed round 3 successfully.
+
+Exact command:
+
+```sh
+set -a; source .env; set +a
+OLD=0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9
+RELAYER=$(cast wallet address --private-key "$M1_RELAYER_PRIVATE_KEY")
+cast chain-id --rpc-url "$RPC_URL"
+cast call "$OLD" 'rounds(uint256)(uint64,uint64,uint8,uint256,bool)' 3 --rpc-url "$RPC_URL"
+cast estimate "$OLD" 'closeRound(uint256)' 3 --from "$RELAYER" --rpc-url "$RPC_URL"
+cast send "$OLD" 'closeRound(uint256)' 3 \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" --force --json
+cast call "$OLD" 'rounds(uint256)(uint64,uint64,uint8,uint256,bool)' 3 --rpc-url "$RPC_URL"
+cast call "$OLD" 'weightBps(uint256,uint8)(uint256)' 3 0 --rpc-url "$RPC_URL"
+cast call "$OLD" 'weightBps(uint256,uint8)(uint256)' 3 1 --rpc-url "$RPC_URL"
+cast call "$OLD" 'weightBps(uint256,uint8)(uint256)' 3 2 --rpc-url "$RPC_URL"
+```
+
+Observed output:
+
+```text
+chain=4663
+round3 before=1793465885 1793563200 3 1 false
+estimate=50149 gas
+transactionHash=0x6d9941684acf235d255fa8ab3ef47f721f8754dee8b79a0df06ea89c06b5bc47
+blockNumber=105009666
+status=1
+gasUsed=49750
+effectiveGasPrice=20000000 wei
+gasCost=0.000000995 ETH
+round3 after=1793465885 1793563200 3 1 true
+weightBps(AAPL,NVDA,MSFT)=0 10000 0
+```
+
+At the recorded `$2,252.50` ETH/USD observation, the close cost was
+approximately `$0.00224124`. The one NVDA vote therefore froze the legacy
+round at 100% NVDA. The replacement contract's 50% cap and 50/50 blend apply
+to round 4 and later.
+
+Transaction: [Blockscout](https://robinhoodchain.blockscout.com/tx/0x6d9941684acf235d255fa8ab3ef47f721f8754dee8b79a0df06ea89c06b5bc47).
+
 ### Mobile issue fixes
 
 The first phone attempt exposed two issues:
