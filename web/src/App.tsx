@@ -67,6 +67,7 @@ function App() {
   const [confirmingSell, setConfirmingSell] = useState(false);
   const [submittedTx, setSubmittedTx] = useState<SubmittedTx | null>(null);
   const [message, setMessage] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
+  const hasSponsorLock = walletState?.locked !== undefined && walletState.locked >= 10n * ONE_WIF;
 
   const refresh = useCallback(async (connectedAccount = account) => {
     try {
@@ -287,7 +288,7 @@ function App() {
       setMessage(null);
       setSubmittedTx(null);
       const nextPlan = plan;
-      const locked = walletState?.locked !== undefined && walletState.locked >= 10n * ONE_WIF;
+      const locked = hasSponsorLock;
       const gasWif = locked ? 0n : 10_000_000_000_000_000n;
       const totalIn = nextPlan.reduce((sum, leg) => sum + leg.amountIn, 0n);
       const calls = [
@@ -349,7 +350,7 @@ function App() {
       setConfirmingSell(false);
       setMessage(null);
       setSubmittedTx(null);
-      const locked = walletState?.locked !== undefined && walletState.locked >= 10n * ONE_WIF;
+      const locked = hasSponsorLock;
       const gasWif = locked ? 0n : 10_000_000_000_000_000n;
       const calls = [
         { target: sellPlan.token, value: 0n, data: buildApprove(addresses.buyRouter, addresses.buyRouter, sellPlan.amountIn) },
@@ -409,6 +410,15 @@ function App() {
   };
 
   const roundStatus = round ? (round.isOpen ? "Open" : "Closed") : "Loading";
+  const gasMode = !walletState
+    ? "Wallet"
+    : hasSponsorLock && walletState.delegated
+      ? "Sponsored"
+      : hasSponsorLock
+        ? "Wallet"
+        : walletState.delegated
+          ? "WIF gas"
+          : "Wallet gas";
   const totalValue = useMemo(
     () => holdings.reduce((sum, holding) => sum + (holding.value || 0), 0),
     [holdings],
@@ -481,7 +491,7 @@ function App() {
         </section>
 
         <section className="card">
-          <div className="section-heading"><div><p className="eyebrow">Eligibility</p><h3>Gas mode</h3></div><span className={`status ${walletState?.delegated ? "open" : "closed"}`}>{walletState?.delegated ? "Sponsored" : "Wallet"}</span></div>
+          <div className="section-heading"><div><p className="eyebrow">Eligibility</p><h3>Gas mode</h3></div><span className={`status ${gasMode === "Sponsored" ? "open" : "closed"}`}>{gasMode}</span></div>
           {account ? (
             <div className="stat-stack">
               <div><span>ETH balance</span><strong>{formatEth(walletState?.eth || 0n)}</strong></div>
@@ -492,6 +502,7 @@ function App() {
           <button className="secondary full" disabled={!account || chainId !== chain.id || busy !== null || (walletState?.locked || 0n) > 0n} onClick={() => void runLock()}>
             {busy === "lock" ? "Waiting for confirmation..." : walletState?.locked ? "WIF lock active" : "Lock 10 WIF for no gas"}
           </button>
+          {account && !hasSponsorLock && <p className="helper">No WIF is locked. This buy approves and burns 0.01 WIF for gas reimbursement.{walletState?.delegated ? " The relayer submits the transaction." : " This wallet is not delegated, so it also pays native gas directly."}</p>}
           {health && <p className="helper">Sponsor: {health.killSwitch ? "paused" : health.enabled ? `${health.usage || 0}/${health.dailyCap} used today` : "offline"}.</p>}
         </section>
       </div>
@@ -501,7 +512,7 @@ function App() {
         <div className="buy-controls"><label>Amount in USDG<input inputMode="decimal" value={buyAmount} onChange={(event) => setBuyAmount(event.target.value)} aria-label="Amount in USDG" /></label><button className="secondary" disabled={!MIX_RULES_ENABLED || chainId !== chain.id || !round?.isOpen || busy !== null} onClick={() => void previewBuy()}>{busy === "quote" ? "Checking prices..." : "Check prices"}</button></div>
         {plan.length > 0 && <div className="quote-table"><div className="quote-header"><span>Asset</span><span>Quote vs Chainlink</span><span>Guard</span></div>{plan.map((leg) => <div className="quote-row" key={leg.symbol}><span>{leg.symbol}</span><span>${leg.quotePrice.toFixed(2)} / ${leg.chainlinkPrice.toFixed(2)}</span><span className="good-text">{(leg.differenceBps / 100).toFixed(2)}%</span></div>)}</div>}
         <button className="primary full" disabled={!MIX_RULES_ENABLED || !account || chainId !== chain.id || !round?.isOpen || plan.length === 0 || busy !== null} onClick={requestBuy}>{busy === "buy" ? "Relaying your mix..." : !MIX_RULES_ENABLED ? "New mix contract required" : plan.length === 0 ? "Check prices first" : account ? "Review this mix" : "Connect to buy"}</button>
-        {confirmingBuy && <div className="confirmation"><strong>Confirm sponsored mix</strong><p>This action spends {buyAmount} USDG from your wallet. Your Stock Tokens go directly to your wallet. The relayer pays the ETH gas and the price guard has passed for every leg. You can cancel here before submission.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runBuy()}>Confirm and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingBuy(false)}>Cancel</button></div></div>}
+        {confirmingBuy && <div className="confirmation"><strong>{hasSponsorLock ? "Confirm sponsored mix" : "Confirm mix with WIF gas"}</strong><p>{hasSponsorLock ? `This action spends ${buyAmount} USDG from your wallet. Your Stock Tokens go directly to your wallet. The relayer pays the ETH gas and the price guard has passed for every leg.` : `This action spends ${buyAmount} USDG and approves exactly 0.01 WIF for gas reimbursement. The router burns that WIF. ${walletState?.delegated ? "The relayer submits the transaction." : "This wallet is not delegated, so it also pays native gas directly."} Your Stock Tokens go directly to your wallet and the price guard has passed for every leg.`} You can cancel here before submission.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runBuy()}>Confirm and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingBuy(false)}>Cancel</button></div></div>}
         {submittedTx?.action === "buy" && <div className="tx-proof"><strong>{submittedTx.finality ? `Buy complete at ${submittedTx.finality} finality.` : "Buy submitted. Waiting for finality confirmation."}</strong><a href={`${EXPLORER_URL}/tx/${submittedTx.hash}`} target="_blank" rel="noreferrer">View transaction</a></div>}
         <p className="helper">Every quote must exist and stay within 2% of Chainlink. A failed guard blocks the entire batch.</p>
       </section>

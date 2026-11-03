@@ -1794,3 +1794,37 @@ Relayer balance after the vote and buy:
 
 The balance reduction from the preflight value was exactly
 `0.000012275751332 ETH`, matching the recorded vote and buy gas costs.
+
+### No-lock buy attempt
+
+Verdict: fail for the requested relayed-gas path; no buy transaction was
+accepted and no WIF was burned.
+
+The wallet from the phone error was:
+
+```text
+wallet=0xdbd9d5639996624383a446b550c7826e40411a1a
+nativeBalance=0.000311458482957777 ETH
+lockedWif=0
+delegationCode=0x
+USDG allowance to buy router=1.000000 USDG
+WIF allowance to buy router=0.01 WIF
+```
+
+The wallet approved USDG and WIF, but it is not EIP-7702 delegated. The
+subsequent direct `buyUniswap` request was rejected by the user wallet:
+
+```text
+to=0x5B08a91F8C8666C85e636bbE61Aed3b059B61FfA
+function=buyUniswap
+gasWifAmount=0.01 WIF
+error=User rejected the request
+buyTxHash=none
+```
+
+The WIF approval is expected for a no-lock buy. The UI was wrong to label this
+path `Confirm sponsored mix`. It now distinguishes `Sponsored`, `WIF gas`,
+and `Wallet gas`, and explains that a no-lock buy approves and burns `0.01 WIF`.
+For the relayer-paid version of this check, the no-lock wallet must first be
+delegated. The current wallet instead pays native gas directly if the swap is
+confirmed.
