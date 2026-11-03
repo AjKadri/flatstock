@@ -1847,3 +1847,26 @@ npm run build --prefix web: passed
 Vercel deployment: 6EBYKuUc8e5gQHEsLNn8Hhiujkuw, Ready
 current source commit: d060918
 ```
+
+### No-lock delegation attempt
+
+Verdict: fail. The supplied transaction succeeded as a normal self-transfer,
+but it did not install EIP-7702 code.
+
+```text
+tx=0x8896d9d5641936d4ff1d1f93d4f221ad13ced03697e3363311a4f6f5f0d173c1
+from=0xdbd9d5639996624383a446b550c7826e40411a1a
+to=0xdbd9d5639996624383a446b550c7826e40411a1a
+type=2
+status=1
+gasUsed=21000
+effectiveGasPrice=26654000 wei
+gasCost=0.000000559734 ETH
+delegatedCodeAfter=0x
+```
+
+There was no authorization list in the submitted transaction. The wallet
+provider accepted the ordinary zero-value self-transfer and ignored the
+EIP-7702 authorization field. The transaction cost approximately `$0.00126`
+at the recorded `$2,252.50` ETH/USD observation, but no delegation was
+installed and no buy was sent.
