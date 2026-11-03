@@ -1,6 +1,6 @@
 # M1 mainnet checks
 
-Status: M1 complete. M2 complete with limits. M3 in progress. Round 3 is open.
+Status: M1 complete. M2 complete with limits. M3 in progress. Round 3 is closed on the old contract and round 4 is open on the replacement.
 
 Scope follows `PLAN-v3.md` section 3. `PLAN-v3.md` replaces the v2 plan. The
 tipster-specific contract section in `AGENTS.md` is out of scope.
