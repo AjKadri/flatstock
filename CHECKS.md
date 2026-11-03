@@ -1560,9 +1560,12 @@ voteStatsAddresses[2]=0xD49249D2a5CffBCF35B6560857d1d1C703802e78
 ```
 
 The Vercel Production `VITE_VOTES_ADDRESS` was updated to the new address and
-redeployed. Deployment created: `Cj3UyR48RtWQqijRczqLYvh1dVhM`.
+redeployed once for the environment change. After pushing commit `f43afa2`,
+the connected GitHub project created the current production deployment
+`CXezo4Ci41RhRVkYxruNEG541ikw`, which is Ready and uses the current source.
 
-Observed live text from `https://app.flatstock.ajkadri.dev/`:
+Observed live text from `https://app.flatstock.ajkadri.dev/` after the current
+`f43afa2` deployment:
 
 ```text
 Flatstock
