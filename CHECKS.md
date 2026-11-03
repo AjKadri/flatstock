@@ -519,6 +519,52 @@ to round 4 and later.
 
 Transaction: [Blockscout](https://robinhoodchain.blockscout.com/tx/0x6d9941684acf235d255fa8ab3ef47f721f8754dee8b79a0df06ea89c06b5bc47).
 
+### Round 4 opening on the replacement contract
+
+Verdict: pass.
+
+The user approved opening round 4 with three stocks, a 50% vote-share blend,
+and close timestamp `1794232800` (`Mon 9 Nov 2026 15:00 WAT`).
+
+Exact command:
+
+```sh
+set -a; source .env; set +a
+NEW=0xD49249D2a5CffBCF35B6560857d1d1C703802e78
+RELAYER=$(cast wallet address --private-key "$M1_RELAYER_PRIVATE_KEY")
+cast chain-id --rpc-url "$RPC_URL"
+cast call "$NEW" 'latestRoundId()(uint256)' --rpc-url "$RPC_URL"
+cast call "$NEW" 'rounds(uint256)(uint64,uint64,uint8,uint256,bool)' 4 --rpc-url "$RPC_URL"
+cast estimate "$NEW" 'openRound(uint256,uint8,uint64,uint16)' 4 3 1794232800 5000 \
+  --from "$RELAYER" --rpc-url "$RPC_URL"
+cast send "$NEW" 'openRound(uint256,uint8,uint64,uint16)' 4 3 1794232800 5000 \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" --force --json
+cast call "$NEW" 'latestRoundId()(uint256)' --rpc-url "$RPC_URL"
+cast call "$NEW" 'rounds(uint256)(uint64,uint64,uint8,uint256,bool)' 4 --rpc-url "$RPC_URL"
+cast call "$NEW" 'voteShareBps(uint256)(uint16)' 4 --rpc-url "$RPC_URL"
+```
+
+Observed output:
+
+```text
+chain=4663
+latestRoundId before=0
+round4 before=0 0 0 0 false
+estimate=92562 gas
+transactionHash=0x1316106102a193db6371fc4734d2270f6bc2dd536b0ca87980acb829d261267a
+blockNumber=105015974
+status=1
+gasUsed=91604
+effectiveGasPrice=20166000 wei
+gasCost=0.000001847286264 ETH
+latestRoundId after=4
+round4 after=1793704615 1794232800 3 0 false
+voteShareBps=5000
+```
+
+At the recorded `$2,252.50` ETH/USD observation, the opening transaction
+cost approximately `$0.00416101`. Transaction: [Blockscout](https://robinhoodchain.blockscout.com/tx/0x1316106102a193db6371fc4734d2270f6bc2dd536b0ca87980acb829d261267a).
+
 ### Mobile issue fixes
 
 The first phone attempt exposed two issues:
