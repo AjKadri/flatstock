@@ -1697,3 +1697,42 @@ quickNode=true
 
 The earlier wallet warning occurred before a transaction was accepted, so no
 WIF was spent. The vote can be retried from the phone UI now.
+
+### Round 4 phone vote
+
+Verdict: pass.
+
+The user supplied this transaction after confirming the sponsored vote in the
+phone UI:
+
+```text
+tx=0x1c5c0b5ed895adeec2c9c40213f8bd18db50b2bcf444b39a43ddfc0eed707489
+chainId=4663
+from=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+to=0x3554121694a2472300f079Afa4B1fC7F9aAFac01
+status=1
+block=105117844
+gasUsed=141232
+effectiveGasPrice=20000000 wei
+gasCost=0.00000282464 ETH
+```
+
+The relayer called the user's EIP-7702 delegated account. The receipt logs
+showed `WIF.approve(0x68d2622f3bbf6BE80CdfED679489de344410C7Db, 1 WIF)`, a
+1-WIF transfer from the user to the vote contract, a 1-WIF transfer from the
+vote contract to the zero address, and `VoteCast(roundId=4, assetIndex=0)`.
+
+Read-only verification after the receipt:
+
+```text
+hasVoted(round4,user)=true
+votesFor(round4,AAPL)=1
+round4=opensAt 1793713616, closesAt 1794232800, assetCount 3, totalVotes 1, closed false
+weightBps=5000, 2500, 2500
+user WIF balance=985.99 WIF
+```
+
+The missing wallet popup is expected after EIP-7702 delegation. The wallet
+approved the delegation earlier; the current UI confirmation is not a new
+cryptographic wallet signature. This is a documented limitation of the current
+relayer flow and should be made explicit before judging.
