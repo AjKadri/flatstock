@@ -80,6 +80,10 @@ input:focus { border-color: #8be5a8; }
 .portfolio-button { width: 100%; border-top: 0; border-right: 0; border-left: 0; color: inherit; background: transparent; text-align: left; }
 .portfolio-row strong, .portfolio-row small { display: block; }
 .portfolio-row small { color: #9bb1a5; font-size: 12px; margin-top: 4px; }
+.action-list { display: grid; gap: 5px; }
+.action-row { display: grid; gap: 4px; border-bottom: 1px solid #193329; padding: 12px 0; }
+.action-row:last-child { border-bottom: 0; }
+.action-row small { color: #9bb1a5; }
 footer { justify-content: space-between; padding: 20px 3px 0; font-size: 11px; }
 @media (max-width: 720px) {
   .shell { width: min(100% - 22px, 560px); padding-top: 17px; }

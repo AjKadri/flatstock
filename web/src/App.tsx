@@ -26,26 +26,30 @@ import {
   formatWif,
   publicClient,
   readHoldings,
+  readCorporateActions,
   readRound,
   readVoteBurned,
   readWalletState,
   sendDelegatedBatch,
   sendDirect,
+  waitForTransactionFinality,
   type BuyLeg,
   type ConnectedWallet,
+  type CorporateAction,
   type Holding,
   type RoundState,
   type SellLeg,
 } from "./lib/chain";
 
 type Health = { enabled: boolean; killSwitch: boolean; dailyCap: number; usage?: number; error?: string };
-type SubmittedTx = { action: "vote" | "buy" | "sell"; hash: Hex };
+type SubmittedTx = { action: "vote" | "buy" | "sell"; hash: Hex; finality?: string };
 
 function App() {
   const [wallet, setWallet] = useState<ConnectedWallet | null>(null);
   const [account, setAccount] = useState<Address | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
   const [round, setRound] = useState<RoundState | null>(null);
+  const [corporateActions, setCorporateActions] = useState<CorporateAction[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [walletState, setWalletState] = useState<Awaited<ReturnType<typeof readWalletState>> | null>(null);
   const [votesBurned, setVotesBurned] = useState<bigint>(0n);
@@ -71,6 +75,9 @@ function App() {
       ]);
       setRound(nextRound);
       setVotesBurned(burned);
+      setCorporateActions(await readCorporateActions(
+        assets.slice(0, nextRound.assetCount).map((asset) => asset.symbol),
+      ));
       if (connectedAccount) {
         const [nextHoldings, nextWallet] = await Promise.all([
           readHoldings(connectedAccount),
@@ -288,7 +295,9 @@ function App() {
         buyHash = lastHash;
       }
       setSubmittedTx({ action: "buy", hash: buyHash });
-      setMessage({ tone: "success", text: "Mix bought. Tokens were sent directly to your wallet." });
+      const finality = await waitForTransactionFinality(buyHash);
+      setSubmittedTx({ action: "buy", hash: buyHash, finality: finality.stage });
+      setMessage({ tone: "success", text: `Buy complete at ${finality.stage} finality. Tokens were sent directly to your wallet.` });
       setPlan([]);
       await refresh();
     } catch (error) {
@@ -396,8 +405,8 @@ function App() {
           <h1>Flatstock</h1>
         </div>
         <div className="topbar-actions">
-          <span className={`network-pill ${chainId === chain.id ? "good" : "warn"}`}>
-            {chainId === chain.id ? "Chain 4663" : "Wrong network"}
+          <span className={`network-pill ${chainId === null ? "" : chainId === chain.id ? "good" : "warn"}`}>
+            {chainId === null ? "Read-only" : chainId === chain.id ? "Chain 4663" : "Wrong network"}
           </span>
           {account ? (
             <button className="wallet-chip" onClick={() => void refresh()} title={account}>
@@ -448,7 +457,7 @@ function App() {
               {submittedTx?.action === "vote" && <div className="tx-proof"><strong>Vote submitted and 1 WIF burned.</strong><a href={`${EXPLORER_URL}/tx/${submittedTx.hash}`} target="_blank" rel="noreferrer">View transaction</a></div>}
               {!round.isOpen && <p className="helper">No vote round is open on mainnet. The organizer must open the next round.</p>}
             </>
-          ) : <p className="muted">Connect a wallet to load the live round.</p>}
+          ) : <p className="muted">Loading the live round through the read-only proxy.</p>}
         </section>
 
         <section className="card">
@@ -473,8 +482,23 @@ function App() {
         {plan.length > 0 && <div className="quote-table"><div className="quote-header"><span>Asset</span><span>Quote vs Chainlink</span><span>Guard</span></div>{plan.map((leg) => <div className="quote-row" key={leg.symbol}><span>{leg.symbol}</span><span>${leg.quotePrice.toFixed(2)} / ${leg.chainlinkPrice.toFixed(2)}</span><span className="good-text">{(leg.differenceBps / 100).toFixed(2)}%</span></div>)}</div>}
         <button className="primary full" disabled={!MIX_RULES_ENABLED || !account || chainId !== chain.id || !round?.isOpen || plan.length === 0 || busy !== null} onClick={requestBuy}>{busy === "buy" ? "Relaying your mix..." : !MIX_RULES_ENABLED ? "New mix contract required" : plan.length === 0 ? "Check prices first" : account ? "Review this mix" : "Connect to buy"}</button>
         {confirmingBuy && <div className="confirmation"><strong>Confirm sponsored mix</strong><p>This action spends {buyAmount} USDG from your wallet. Your Stock Tokens go directly to your wallet. The relayer pays the ETH gas and the price guard has passed for every leg. You can cancel here before submission.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runBuy()}>Confirm and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingBuy(false)}>Cancel</button></div></div>}
-        {submittedTx?.action === "buy" && <div className="tx-proof"><strong>Mix submitted.</strong><a href={`${EXPLORER_URL}/tx/${submittedTx.hash}`} target="_blank" rel="noreferrer">View transaction</a></div>}
+        {submittedTx?.action === "buy" && <div className="tx-proof"><strong>{submittedTx.finality ? `Buy complete at ${submittedTx.finality} finality.` : "Buy submitted. Waiting for finality confirmation."}</strong><a href={`${EXPLORER_URL}/tx/${submittedTx.hash}`} target="_blank" rel="noreferrer">View transaction</a></div>}
         <p className="helper">Every quote must exist and stay within 2% of Chainlink. A failed guard blocks the entire batch.</p>
+      </section>
+
+      <section className="card">
+        <div className="section-heading"><div><p className="eyebrow">Stock Token data</p><h3>Corporate actions</h3></div><span className="quiet">Shares update automatically</span></div>
+        {corporateActions.length === 0 ? <p className="muted">No recent corporate actions are available for this mix.</p> : <div className="action-list">{corporateActions.slice(0, 6).map((action, index) => {
+          const symbol = action.symbol || "Stock";
+          const label = action.type === "CASH_DIVIDEND"
+            ? `${symbol} paid a dividend, your shares grew.`
+            : action.type === "FORWARD_SPLIT"
+              ? `${symbol} split, your share count grew.`
+              : action.type === "REVERSE_SPLIT"
+                ? `${symbol} reverse split, your share count changed.`
+                : `${symbol} had a corporate action, your shares were updated.`;
+          return <div className="action-row" key={`${symbol}-${action.effectiveAt || index}`}><strong>{label}</strong><small>{action.status || "Recorded"}{action.effectiveAtIso ? ` · ${formatDate(BigInt(action.effectiveAt || 0))}` : ""}</small></div>;
+        })}</div>}
       </section>
 
       <section className="card buy-card">

@@ -210,6 +210,15 @@ const server = http.createServer(async (request, response) => {
       }]);
       return json(response, 200, result);
     }
+    if (request.method === "GET" && requestUrl.pathname === "/api/stock-token/oracle-health") {
+      if (!quickNodeRpcUrl) return json(response, 503, { error: "QuickNode Stock Token API is not configured." });
+      const symbols = csv(requestUrl.searchParams.get("symbols"));
+      const result = await quickNodeCall("qn_getOracleHealth", [{
+        ...(symbols ? { symbols } : {}),
+        blockTag: "latest",
+      }]);
+      return json(response, 200, result);
+    }
     if (request.method === "GET" && requestUrl.pathname === "/api/stock-token/finality") {
       if (!quickNodeRpcUrl) return json(response, 503, { error: "QuickNode Stock Token API is not configured." });
       const txHash = requestUrl.searchParams.get("txHash");

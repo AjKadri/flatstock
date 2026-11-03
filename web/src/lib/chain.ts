@@ -58,6 +58,39 @@ export type Holding = {
   value: number | null;
 };
 
+export type OracleFeedHealth = {
+  symbol?: string;
+  status?: string;
+  stale?: boolean;
+  oraclePaused?: boolean | null;
+  answer?: string | null;
+  ageSeconds?: number | null;
+};
+
+export type OracleHealth = {
+  feeds?: OracleFeedHealth[];
+  warnings?: string[];
+};
+
+export type CorporateAction = {
+  symbol?: string;
+  type?: string;
+  status?: string;
+  ratio?: string;
+  effectiveAt?: number;
+  effectiveAtIso?: string;
+};
+
+export type TransactionFinality = {
+  txHash?: Hex;
+  stage?: string;
+  soft?: boolean;
+  posted?: boolean;
+  safe?: boolean;
+  finalized?: boolean;
+  warnings?: string[];
+};
+
 export type BuyLeg = {
   symbol: string;
   token: Address;
@@ -130,8 +163,19 @@ export async function readRound(): Promise<RoundState> {
       })) as bigint;
     }),
   );
-  const computed = calculateMixWeights(votes, assetCount, MIX_VOTE_SHARE_BPS);
-  const weights = assets.map((_, index) => index < assetCount ? computed[index] || 0n : 0n);
+  const weights = closed
+    ? await Promise.all(assets.map(async (_, index) => {
+      if (index >= assetCount) return 0n;
+      return await publicClient.readContract({
+        address: addresses.votes,
+        abi: votesAbi,
+        functionName: "weightBps",
+        args: [roundId, index],
+      }) as bigint;
+    }))
+    : assets.map((_, index) => index < assetCount
+      ? calculateMixWeights(votes, assetCount, MIX_VOTE_SHARE_BPS)[index] || 0n
+      : 0n);
   return {
     roundId,
     opensAt,
@@ -208,8 +252,8 @@ export function calculateMixWeights(
 }
 
 export async function readVoteBurned() {
-  try {
-    const counts = await Promise.all(voteStatsAddresses.map(async (address) => {
+  const counts = await Promise.all(voteStatsAddresses.map(async (address) => {
+    try {
       const logs = await publicClient.getLogs({
         address,
         event: voteCastEvent,
@@ -217,12 +261,11 @@ export async function readVoteBurned() {
         toBlock: "latest",
       });
       return BigInt(logs.length);
-    }));
-    return counts.reduce((sum, count) => sum + count, 0n);
-  } catch {
-    const round = await readRound();
-    return round.totalVotes;
-  }
+    } catch {
+      return 0n;
+    }
+  }));
+  return counts.reduce((sum, count) => sum + count, 0n);
 }
 
 export async function readHoldings(account: Address): Promise<Holding[]> {
@@ -285,7 +328,7 @@ async function readQuickNodeHoldings(account: Address): Promise<Holding[] | null
     const bySymbol = new Map(payload.holdings.map((holding) => [holding.symbol?.toUpperCase(), holding]));
     return assets.map((asset) => {
       const holding = bySymbol.get(asset.symbol);
-      const price = holding?.priceUsd == null ? null : Number(holding.priceUsd) / 1e8;
+      const price = holding?.priceUsd == null ? null : Number(holding.priceUsd);
       return {
         symbol: asset.symbol,
         balance: holding?.balanceRaw ? BigInt(holding.balanceRaw) : 0n,
@@ -296,6 +339,59 @@ async function readQuickNodeHoldings(account: Address): Promise<Holding[] | null
     });
   } catch {
     return null;
+  }
+}
+
+export async function readOracleHealth(symbols: string[]): Promise<OracleHealth> {
+  const response = await fetch(
+    `${RELAYER_API}/stock-token/oracle-health?symbols=${encodeURIComponent(symbols.join(","))}`,
+  );
+  const payload = await response.json() as OracleHealth & { error?: string };
+  if (!response.ok) throw new Error(payload.error || "QuickNode oracle health is unavailable.");
+  return payload;
+}
+
+export async function readCorporateActions(symbols: string[]): Promise<CorporateAction[]> {
+  try {
+    const response = await fetch(
+      `${RELAYER_API}/stock-token/corporate-actions?symbols=${encodeURIComponent(symbols.join(","))}`,
+    );
+    if (!response.ok) return [];
+    const payload = await response.json() as { actions?: CorporateAction[] };
+    return Array.isArray(payload.actions) ? payload.actions : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function waitForTransactionFinality(hash: Hex): Promise<TransactionFinality> {
+  let lastError = "Transaction finality was not confirmed.";
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await fetch(
+        `${RELAYER_API}/stock-token/finality?txHash=${hash}`,
+      );
+      const payload = await response.json() as TransactionFinality & { error?: string };
+      if (!response.ok) throw new Error(payload.error || "Finality service unavailable.");
+      if (payload.soft === true && payload.stage && payload.stage !== "REORGED") return payload;
+      lastError = `Finality stage is ${payload.stage || "unknown"}.`;
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : lastError;
+    }
+    await new Promise((resolve) => window.setTimeout(resolve, 1000));
+  }
+  throw new Error(`Buy submitted, but finality was not confirmed. ${lastError}`);
+}
+
+export function assertHealthyOracles(health: OracleHealth, symbols: string[]) {
+  const bySymbol = new Map((health.feeds || []).map((feed) => [feed.symbol?.toUpperCase(), feed]));
+  for (const symbol of symbols) {
+    const feed = bySymbol.get(symbol.toUpperCase());
+    const status = feed?.status;
+    const acceptableStatus = status === "OK" || status === "MARKET_CLOSED";
+    if (!feed || !acceptableStatus || feed.stale === true || feed.oraclePaused === true || !feed.answer) {
+      throw new Error(`${symbol}: QuickNode oracle health is ${status || "unavailable"}. Buy refused.`);
+    }
   }
 }
 
@@ -333,6 +429,8 @@ export async function buildBuyPlan(amountText: string, round: RoundState): Promi
   if (total <= 0n) throw new Error("Enter a positive USDG amount.");
   const active = assets.filter((_, index) => index < round.assetCount && round.weights[index] > 0n);
   if (active.length === 0) throw new Error("The open round has no weighted assets.");
+  const oracleHealth = await readOracleHealth(active.map((asset) => asset.symbol));
+  assertHealthyOracles(oracleHealth, active.map((asset) => asset.symbol));
   let allocated = 0n;
   const legs: BuyLeg[] = [];
   const now = await getLatestTimestamp();
