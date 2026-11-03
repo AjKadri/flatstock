@@ -1682,3 +1682,18 @@ VPS relayer had the old vote contract hard-coded as its allowed approval target.
 The fix makes the relayer read `VOTE_CONTRACT_ADDRESS` from its VPS-only env,
 defaulting to the current verified contract, then restarts it with the new
 address. No user funds or mainnet transaction are sent by this fix.
+
+Observed after the VPS update:
+
+```text
+source=a5a3343
+vote_address=0x68d2622f3bbf6BE80CdfED679489de344410C7Db
+service=active
+killSwitch=false
+dailyCap=3
+usage=0
+quickNode=true
+```
+
+The earlier wallet warning occurred before a transaction was accepted, so no
+WIF was spent. The vote can be retried from the phone UI now.
