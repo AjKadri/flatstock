@@ -151,7 +151,8 @@ http_status=200
 chain_id=0x1237
 ```
 
-With the current authorization problem it should report an HTTP `401` and
+The current VPS check reports `http_status=200` and `chain_id=0x1237`. If the
+standard RPC call is unauthorized, it reports the HTTP status and
 `chain_id=unavailable`. The script never prints `QUICKNODE_RPC_URL`.
 
 The browser uses `/api/rpc` through this VPS. The proxy prefers

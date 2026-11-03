@@ -522,7 +522,7 @@ Transaction: [Blockscout](https://robinhoodchain.blockscout.com/tx/0x6d9941684ac
 ## M4 QuickNode Stock Token API
 
 Date checked: 2026-11-03 WAT. The implementation is deployed at commit
-`e7faaf7` and the relayer service is active on the VPS. QuickNode-specific
+`f814a9b` and the relayer service is active on the VPS. QuickNode-specific
 requests are server-side only. The browser calls the VPS proxy and never sees
 the QuickNode endpoint.
 
@@ -611,9 +611,9 @@ Vote round 4
 Open
 Closes 9 Nov 2026, 15:00. 0 votes counted.
 Mix rule preview: 50% equal-weight plus 50% vote share. No stock can exceed 50%.
-AAPL 25.01%
-NVDA 24.99%
-MSFT 50%
+AAPL 33.34%
+NVDA 33.33%
+MSFT 33.33%
 Corporate actions
 Shares update automatically
 No recent corporate actions are available for this mix.
@@ -1378,7 +1378,14 @@ Added `deploy/check-quicknode-chain.sh`. Run it on the VPS with:
 sudo /opt/flatstock/deploy/check-quicknode-chain.sh
 ```
 
-It prints only `http_status` and `chain_id`, never the endpoint. Expected
-healthy output is `http_status=200` and `chain_id=0x1237`. With the current
-authorization issue it reports `http_status=401` and
-`chain_id=unavailable`.
+It prints only `http_status` and `chain_id`, never the endpoint. Observed on
+the VPS after deployment:
+
+```text
+http_status=200
+chain_id=0x1237
+```
+
+The standard RPC credential works. The separate Stock Token API method probes
+still return upstream HTTP 401, so the QuickNode Stock Token add-on or method
+authorization remains unresolved.
