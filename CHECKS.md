@@ -1927,6 +1927,55 @@ Links:
 - [Blockscout contract](https://robinhoodchain.blockscout.com/address/0xf6E2944E801CeDbfa5f489eCD0D3BF7578aE2A9D?tab=contract)
 - [Sourcify verification job](https://sourcify.dev/server/verify-ui/jobs/c1bce528-4114-42ef-9867-d88926651a04)
 
+### FlatstockVotes renamed deployment
+
+Exact command:
+
+```sh
+set -a; source .env; set +a
+forge create src/FlatstockVotes.sol:FlatstockVotes \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
+  --broadcast --json \
+  --constructor-args "$WIF_ADDRESS" "$LOCK_CONTRACT_ADDRESS"
+```
+
+Observed output:
+
+```text
+deployer=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+deployedTo=0x4BB945800d588E6B4DB287b3fCe9C13f7825A968
+transactionHash=0x5eae4a577c38300da0d529b4d74d59f92a13aa00f8ed9ad7877ac22cc6db9924
+status=1
+blockNumber=105299013
+gasUsed=1443803
+effectiveGasPrice=20096000 wei
+gasCost=0.000029014665088 ETH
+gasCostAtRecorded2252.50USD=0.06535553 USD
+owner()=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+wif()=0x5173b8eA6923c2d40267890D45C46a3480954773
+lockContract()=0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121
+latestRoundId()=0
+```
+
+Verification:
+
+```text
+Sourcify: exact_match
+Sourcify job: 29ca6a5f-0b14-4ca0-af3a-a2abb39cdf01
+Blockscout: Contract source code verified (exact match)
+Contract name: FlatstockVotes
+Compiler: v0.8.24+commit.e11b9ed9
+EVM: cancun
+Optimizer: enabled, 200 runs
+Contract file path: src/FlatstockVotes.sol
+```
+
+Links:
+
+- [Deployment transaction](https://robinhoodchain.blockscout.com/tx/0x5eae4a577c38300da0d529b4d74d59f92a13aa00f8ed9ad7877ac22cc6db9924)
+- [Blockscout contract](https://robinhoodchain.blockscout.com/address/0x4BB945800d588E6B4DB287b3fCe9C13f7825A968?tab=contract)
+- [Sourcify verification job](https://sourcify.dev/server/verify-ui/jobs/29ca6a5f-0b14-4ca0-af3a-a2abb39cdf01)
+
 ## Product-name contract migration
 
 Date checked: 2026-11-03 WAT.
@@ -1937,12 +1986,11 @@ directories are disposable build artifacts and are not tracked.
 
 | Local target | Mainnet status | Vercel value |
 | --- | --- | --- |
-| `FlatstockVotes` | Not deployed under the renamed source yet. Existing signature-safe vote address remains `0xf6E2944E801CeDbfa5f489eCD0D3BF7578aE2A9D` and is verified for the pre-rename artifact. | `VITE_VOTES_ADDRESS` and `VITE_META_VOTES_ADDRESS` remain on the existing address until the replacement is approved and verified. |
+| `FlatstockVotes` | Deployed at `0x4BB945800d588E6B4DB287b3fCe9C13f7825A968`; exact-match verified on Sourcify and Blockscout. | `VITE_VOTES_ADDRESS=0x4BB945800d588E6B4DB287b3fCe9C13f7825A968` and `VITE_META_VOTES_ADDRESS=0x4BB945800d588E6B4DB287b3fCe9C13f7825A968`. |
 | `FlatstockRouter` | Not deployed. No address or verification can be reported yet. | `VITE_META_ROUTER_ADDRESS` remains unset until deployment and verification. |
 | `FlatstockLock` | Existing lock address is retained and no redeploy is required by this rename. | No new Vercel value. |
 
-The renamed vote deployment would be a new mainnet transaction even though no
-real votes have been cast on the current signature-safe vote address. It is
-therefore pending explicit approval before sending. The router deployment is
-also pending separate approval. Sourcify and Blockscout verification for those
-new addresses can only be recorded after their deployments.
+The renamed vote deployment was approved and sent. It has no round open yet
+(`latestRoundId=0`), so no votes have been cast on it. The router deployment is
+still pending separate approval. Sourcify and Blockscout verification for the
+router can only be recorded after its deployment.
