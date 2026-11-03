@@ -20,6 +20,7 @@ import {
   buildSellCall,
   buildSellPlan,
   connectWallet,
+  delegateWallet,
   formatDate,
   formatEth,
   formatWeightBps,
@@ -255,6 +256,23 @@ function App() {
       await refresh();
     } catch (error) {
       setMessage({ tone: "error", text: error instanceof Error ? error.message : "Lock cancelled or failed." });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const runDelegation = async () => {
+    if (!wallet || !account) return;
+    if (chainId !== chain.id) return setMessage({ tone: "error", text: "Switch to chain 4663 before enabling relayed gas." });
+    try {
+      setBusy("delegate");
+      setMessage(null);
+      const hash = await delegateWallet(wallet, account);
+      await publicClient.waitForTransactionReceipt({ hash });
+      setMessage({ tone: "success", text: "Relayed gas enabled for this wallet." });
+      await refresh();
+    } catch (error) {
+      setMessage({ tone: "error", text: error instanceof Error ? error.message : "Delegation was cancelled or failed." });
     } finally {
       setBusy(null);
     }
@@ -502,6 +520,9 @@ function App() {
           <button className="secondary full" disabled={!account || chainId !== chain.id || busy !== null || (walletState?.locked || 0n) > 0n} onClick={() => void runLock()}>
             {busy === "lock" ? "Waiting for confirmation..." : walletState?.locked ? "WIF lock active" : "Lock 10 WIF for no gas"}
           </button>
+          {account && walletState && !walletState.delegated && <button className="secondary full" disabled={chainId !== chain.id || busy !== null} onClick={() => void runDelegation()}>
+            {busy === "delegate" ? "Enabling relayed gas..." : "Enable relayed gas"}
+          </button>}
           {account && !hasSponsorLock && <p className="helper">No WIF is locked. This buy approves and burns 0.01 WIF for gas reimbursement.{walletState?.delegated ? " The relayer submits the transaction." : " This wallet is not delegated, so it also pays native gas directly."}</p>}
           {health && <p className="helper">Sponsor: {health.killSwitch ? "paused" : health.enabled ? `${health.usage || 0}/${health.dailyCap} used today` : "offline"}.</p>}
         </section>

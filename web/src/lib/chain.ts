@@ -15,6 +15,7 @@ import {
   addresses,
   assets,
   chain,
+  delegateImplementation,
   delegateAbi,
   erc20Abi,
   feedAbi,
@@ -599,6 +600,21 @@ export async function sendDirect(
   const hash = await wallet.sendTransaction({ account, to: target, data, chain });
   await publicClient.waitForTransactionReceipt({ hash });
   return hash;
+}
+
+export async function delegateWallet(wallet: ConnectedWallet, account: Address) {
+  const nonce = await publicClient.getTransactionCount({ address: account });
+  return wallet.sendTransaction({
+    account,
+    to: account,
+    value: 0n,
+    chain,
+    authorizationList: [{
+      address: delegateImplementation,
+      chainId: chain.id,
+      nonce,
+    }],
+  });
 }
 
 export function formatWif(value: bigint) {

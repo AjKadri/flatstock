@@ -37,6 +37,7 @@ export const addresses = {
   quoter: "0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7" as Address,
   uniswap: "0xCaf681a66D020601342297493863E78C959E5cb2" as Address,
 };
+export const delegateImplementation = "0x8BDD498234E2272c97ACb1aA19Dc136BE8B2914C" as Address;
 export const legacyVotesAddress = "0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9" as Address;
 export const previousReplacementVotesAddress = "0xD49249D2a5CffBCF35B6560857d1d1C703802e78" as Address;
 export const voteStatsAddresses = Array.from(
