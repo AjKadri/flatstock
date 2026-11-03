@@ -1736,3 +1736,61 @@ The missing wallet popup is expected after EIP-7702 delegation. The wallet
 approved the delegation earlier; the current UI confirmation is not a new
 cryptographic wallet signature. This is a documented limitation of the current
 relayer flow and should be made explicit before judging.
+
+### Locked-wallet full-mix buy
+
+Verdict: pass with limits.
+
+The user supplied this transaction after confirming the gasless full-mix buy
+from the locked wallet in the phone UI:
+
+```text
+tx=0x063d01815192fdaf9b1f1ead196ed57cc0e15df601bed5dbe845b8a504ef624f
+chainId=4663
+from=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+to=0x3554121694a2472300f079Afa4B1fC7F9aAFac01
+status=1
+block=105120398
+gasUsed=470626
+effectiveGasPrice=20082000 wei
+gasCost=0.000009451111332 ETH
+```
+
+The batch spent `1.000000 USDG` across the current 50%/25%/25% mix through
+the Uniswap v3 fallback. All three Stock Tokens were transferred to the user
+wallet:
+
+| Asset | USDG in | Shares out | Chainlink | Fill | Difference |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| AAPL | `0.500000` | `0.001536048640581653` | `$325.65424207` | `$325.51052538` | `-0.0441%` |
+| NVDA | `0.250000` | `0.001205990524587727` | `$207.67961006` | `$207.29847781` | `-0.1835%` |
+| MSFT | `0.250000` | `0.000492241556382576` | `$506.11891683` | `$507.88072798` | `+0.3481%` |
+
+All legs were within the 2% guard. The user wallet held 0 ETH and the relayer
+paid the gas. The per-wallet relayer usage became `2/3`.
+
+QuickNode finality through the VPS proxy:
+
+```json
+{"txHash":"0x063d01815192fdaf9b1f1ead196ed57cc0e15df601bed5dbe845b8a504ef624f","blockNumber":"0x644028e","stage":"POSTED","stages":{"soft":true,"posted":true,"safe":false,"finalized":false},"batchNumber":370487,"l1Confirmations":0,"warnings":[]}
+```
+
+The app's finality gate accepts `stages.soft=true`, so the buy-complete path
+was gated by QuickNode finality. The response had advanced to `POSTED` when
+recorded, but was not yet `SAFE` or `FINALIZED`; that is the limit on this
+verdict.
+
+QuickNode portfolio response through the VPS proxy after the buy:
+
+```json
+{"blockNumber":"0x64405aa","holdings":[{"symbol":"AAPL","balanceUiDecimal":"0.002112737603843737","priceUsd":"325.65424207","valueUsd":"0.68763270"},{"symbol":"MSFT","balanceUiDecimal":"0.003867069708416794","priceUsd":"506.11891683","valueUsd":"1.95638923"},{"symbol":"NVDA","balanceUiDecimal":"0.024955813728479834","priceUsd":"207.67961006","valueUsd":"5.17879927"}],"totalValueUsd":"7.82282120","totalValueUsdComplete":true,"warnings":[]}
+```
+
+Relayer balance after the vote and buy:
+
+```text
+0.000302108697444223 ETH
+```
+
+The balance reduction from the preflight value was exactly
+`0.000012275751332 ETH`, matching the recorded vote and buy gas costs.
