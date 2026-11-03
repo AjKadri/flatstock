@@ -1592,3 +1592,74 @@ Self-custody only. The app never holds your funds. Live data from chain 4663.
 The signed-out acceptance is pass. Wallet-gated portfolio balances remain
 intentionally unavailable until a wallet connects; the four real QuickNode
 responses above are the data source used when it does.
+
+## Live end-to-end judging test prepared: 3 Nov 2026
+
+Status: ready for the user's phone. US market-hours window today is 15:30–22:00 WAT.
+No new mainnet transaction has been sent by the agent for this test.
+
+### Preflight
+
+The relayer kill switch was turned off through the VPS admin endpoint at
+14:58:18 WAT. The per-wallet daily cap remains 3.
+
+Exact read-only and control commands:
+
+```sh
+ssh root@2.29.11.26 'curl -fsS http://127.0.0.1:8788/api/health'
+ssh root@2.29.11.26 'set -a; . /etc/flatstock/flatstock.env; set +a; port=${M3_RELAYER_PORT:-8787}; curl -fsS -X POST "http://127.0.0.1:${port}/api/relay/kill-switch" -H "Authorization: Bearer ${M3_RELAYER_ADMIN_TOKEN}" -H "Content-Type: application/json" --data-binary "{\"enabled\":false}"'
+```
+
+Observed output:
+
+```text
+{"killSwitch":false}
+{"enabled":true,"killSwitch":false,"dailyCap":3,"usage":0,"relayer":"0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4","quickNode":true}
+```
+
+Relayer balance before the test:
+
+```text
+address=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+nativeBalance=0.000314384448776223 ETH
+```
+
+The QuickNode endpoint and admin token were not printed.
+
+### User-controlled transaction checklist
+
+The agent must ask immediately before each transaction and must not submit the
+user's vote from a script.
+
+1. Vote 1 WIF in round 4 from the phone UI. Record the wallet confirmation,
+   receipt, exactly 1 WIF burned, and the updated mix.
+2. During 15:30–22:00 WAT, connect the locked wallet and run one gasless buy
+   of the full AAPL/NVDA/MSFT mix. Record every quote, Chainlink comparison,
+   relayer gas cost, finality response, and QuickNode share balances.
+3. Connect a wallet with no WIF lock and run the smallest buy. Record the WIF
+   gas payment, burn transaction, and relayer gas cost.
+4. Sell one Stock Token to USDG. Record the sell quote, receipt, USDG received,
+   and relayer gas cost.
+
+For each item the record must include the exact command or UI action, tx hash,
+receipt output, verdict, and any limits. The kill switch remains off only for
+this test window and will be re-enabled after the final check unless the user
+instructs otherwise.
+
+### Relayer funding estimate
+
+The current balance is enough for the four planned tiny transactions under the
+observed gas range, but it is not a judging reserve. Prior sponsored activity
+used approximately `0.0000144–0.0000198 ETH` for a buy and deployment-scale
+transactions were higher. Planning at `0.00002 ETH` per sponsored transaction:
+
+```text
+10 judging wallets x 3 sponsored transactions x 0.00002 ETH = 0.0006 ETH
+2x operating reserve target = 0.0012 ETH total
+current balance = 0.000314384448776223 ETH
+recommended top-up = approximately 0.0009 ETH
+```
+
+This is a planning estimate, not a transaction. A smaller five-wallet judging
+pool needs about `0.0006 ETH` total including reserve. The daily cap is per
+wallet, so a larger or repeated judging pool needs a larger reserve.
