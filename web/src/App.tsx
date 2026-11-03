@@ -124,6 +124,22 @@ function App() {
     }
   };
 
+  const disconnect = () => {
+    setAccount(null);
+    setWallet(null);
+    setChainId(null);
+    setWalletState(null);
+    setHoldings([]);
+    setHealth(null);
+    setPlan([]);
+    setSellPlan(null);
+    setSubmittedTx(null);
+    setConfirmingVote(false);
+    setConfirmingBuy(false);
+    setConfirmingSell(false);
+    setMessage({ tone: "info", text: "Wallet disconnected from this page." });
+  };
+
   useEffect(() => {
     void refresh();
   }, [refresh]);
@@ -410,9 +426,12 @@ function App() {
             {chainId === null ? "Read-only" : chainId === chain.id ? "Chain 4663" : "Wrong network"}
           </span>
           {account ? (
-            <button className="wallet-chip" onClick={() => void refresh()} title={account}>
-              {account.slice(0, 6)}...{account.slice(-4)}
-            </button>
+            <>
+              <button className="wallet-chip" onClick={() => void refresh()} title={account}>
+                {account.slice(0, 6)}...{account.slice(-4)}
+              </button>
+              <button className="secondary small" onClick={disconnect}>Disconnect</button>
+            </>
           ) : (
             <button className="primary small" onClick={() => void connect()}>Connect wallet</button>
           )}
