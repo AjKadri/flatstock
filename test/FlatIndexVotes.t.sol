@@ -107,6 +107,12 @@ contract FlatIndexVotesTest {
         require(votes.weightBps(3, 1) == 3_333, "equal second weight mismatch");
         require(votes.weightBps(3, 2) == 3_333, "equal third weight mismatch");
         require(votes.weightBps(3, 0) + votes.weightBps(3, 1) + votes.weightBps(3, 2) == 10_000, "zero vote weights do not sum to 100%");
+
+        vm.warp(block.timestamp + 1 days);
+        votes.closeRound(3);
+        require(votes.finalWeightBps(3, 0) == 3_334, "zero vote final first mismatch");
+        require(votes.finalWeightBps(3, 1) == 3_333, "zero vote final second mismatch");
+        require(votes.finalWeightBps(3, 2) == 3_333, "zero vote final third mismatch");
     }
 
     function testOneNvdaVoteProducesCappedRoundThreeMix() public {
@@ -117,9 +123,9 @@ contract FlatIndexVotesTest {
         vm.warp(block.timestamp + 1 days);
         votes.closeRound(4);
 
-        require(votes.weightBps(4, 0) == 2_500, "AAPL round-three mix mismatch");
-        require(votes.weightBps(4, 1) == 5_000, "NVDA round-three mix mismatch");
-        require(votes.weightBps(4, 2) == 2_500, "MSFT round-three mix mismatch");
+        require(votes.finalWeightBps(4, 0) == 2_500, "AAPL one-vote final mismatch");
+        require(votes.finalWeightBps(4, 1) == 5_000, "NVDA one-vote final mismatch");
+        require(votes.finalWeightBps(4, 2) == 2_500, "MSFT one-vote final mismatch");
     }
 
     function testManyVotesBlendSharesAndCapAtFiftyPercent() public {

@@ -1389,3 +1389,58 @@ chain_id=0x1237
 The standard RPC credential works. The separate Stock Token API method probes
 still return upstream HTTP 401, so the QuickNode Stock Token add-on or method
 authorization remains unresolved.
+
+## M4 QuickNode response acceptance after add-on
+
+The Stock Token API add-on is now active. All four probes were run through the
+VPS proxy on chain `4663`. The endpoint was not printed.
+
+### `qn_getStockTokenBalances`
+
+Observed response excerpt:
+
+```json
+{"blockNumber":"0x643a017","holdings":[{"symbol":"AAPL","balanceRaw":"575493661266855","balanceUiDecimal":"0.000575819436753783","priceUsd":"325.78431566","valueUsd":"0.18748680"},{"symbol":"MSFT","balanceRaw":"3373231894814291","balanceUiDecimal":"0.003374624879615394","priceUsd":"506.11891683","valueUsd":"1.70725647"},{"symbol":"NVDA","balanceRaw":"23730493459797947","balanceUiDecimal":"0.023748888369284515","priceUsd":"206.53097037","valueUsd":"4.90108184"}],"totalValueUsd":"6.79582511","totalValueUsdComplete":true,"warnings":[]}
+```
+
+Verdict: pass. The UI maps `balanceUiDecimal` to shares and `valueUsd` to
+portfolio value.
+
+### `qn_getCorporateActions`
+
+Observed response excerpt:
+
+```json
+{"blockNumber":"0x643a017","actions":[{"symbol":"MSFT","type":"CASH_DIVIDEND","status":"EFFECTIVE","ratio":"1.000412952576205964","effectiveAtIso":"2026-09-11T15:10:30Z"},{"symbol":"NVDA","type":"CASH_DIVIDEND","status":"EFFECTIVE","ratio":"1.000775159164630595","effectiveAtIso":"2026-09-10T00:00:30Z"},{"symbol":"AAPL","type":"CASH_DIVIDEND","status":"EFFECTIVE","ratio":"1.000566080061092436","effectiveAtIso":"2026-08-14T15:12:46Z"}],"nextCursor":null,"warnings":[]}
+```
+
+Verdict: pass. Live app text:
+
+```text
+MSFT paid a dividend, your shares grew.
+NVDA paid a dividend, your shares grew.
+AAPL paid a dividend, your shares grew.
+```
+
+### `qn_getOracleHealth`
+
+Observed response excerpt:
+
+```json
+{"blockNumber":"0x643a017","feeds":[{"symbol":"AAPL","answer":"32578431566","ageSeconds":2221,"stale":false,"oraclePaused":false,"status":"OK"},{"symbol":"MSFT","answer":"50611891683","ageSeconds":36,"stale":false,"oraclePaused":false,"status":"OK"},{"symbol":"NVDA","answer":"20653097037","ageSeconds":298,"stale":false,"oraclePaused":false,"status":"OK"}],"warnings":["SEQUENCER_STATUS_UNKNOWN"]}
+```
+
+Verdict: pass for all requested stock feeds. The `SEQUENCER_STATUS_UNKNOWN`
+warning is global metadata; each feed is fresh, unpaused, and `status=OK`.
+
+### `qn_getTransactionFinality`
+
+Observed response excerpt:
+
+```json
+{"txHash":"0x0042c543774d2eb67f1a392094e766485ff64af2766646746b4ca6d3f2038f14","blockNumber":"0x61fa3af","stage":"FINALIZED","stages":{"soft":true,"posted":true,"safe":true,"finalized":true},"l1Confirmations":20254,"warnings":[]}
+```
+
+Verdict: pass. The finality gate now accepts `stages.soft === true` and the
+live response is `FINALIZED`. The previous code incorrectly expected `soft`
+at the top level.

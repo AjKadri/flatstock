@@ -88,6 +88,12 @@ export type TransactionFinality = {
   posted?: boolean;
   safe?: boolean;
   finalized?: boolean;
+  stages?: {
+    soft?: boolean;
+    posted?: boolean;
+    safe?: boolean;
+    finalized?: boolean;
+  };
   warnings?: string[];
 };
 
@@ -384,7 +390,8 @@ export async function waitForTransactionFinality(hash: Hex): Promise<Transaction
       );
       const payload = await response.json() as TransactionFinality & { error?: string };
       if (!response.ok) throw new Error(payload.error || "Finality service unavailable.");
-      if (payload.soft === true && payload.stage && payload.stage !== "REORGED") return payload;
+      const softConfirmed = payload.soft === true || payload.stages?.soft === true;
+      if (softConfirmed && payload.stage && payload.stage !== "REORGED") return payload;
       lastError = `Finality stage is ${payload.stage || "unknown"}.`;
     } catch (error) {
       lastError = error instanceof Error ? error.message : lastError;
