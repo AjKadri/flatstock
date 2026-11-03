@@ -36,7 +36,7 @@ export const addresses = {
   usdg: "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" as Address,
   votes: (import.meta.env.VITE_VOTES_ADDRESS || "0x4BB945800d588E6B4DB287b3fCe9C13f7825A968") as Address,
   lock: "0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121" as Address,
-  buyRouter: (import.meta.env.VITE_META_ROUTER_ADDRESS || "0x5B08a91F8C8666C85e636bbE61Aed3b059B61FfA") as Address,
+  buyRouter: (import.meta.env.VITE_META_ROUTER_ADDRESS || "0x8799a2eF390dE8b0Ef97919C7e040C44DdFadbe7") as Address,
   quoter: "0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7" as Address,
   uniswap: "0xCaf681a66D020601342297493863E78C959E5cb2" as Address,
 };

@@ -1987,10 +1987,59 @@ directories are disposable build artifacts and are not tracked.
 | Local target | Mainnet status | Vercel value |
 | --- | --- | --- |
 | `FlatstockVotes` | Deployed at `0x4BB945800d588E6B4DB287b3fCe9C13f7825A968`; exact-match verified on Sourcify and Blockscout. | `VITE_VOTES_ADDRESS=0x4BB945800d588E6B4DB287b3fCe9C13f7825A968` and `VITE_META_VOTES_ADDRESS=0x4BB945800d588E6B4DB287b3fCe9C13f7825A968`. |
-| `FlatstockRouter` | Not deployed. No address or verification can be reported yet. | `VITE_META_ROUTER_ADDRESS` remains unset until deployment and verification. |
+| `FlatstockRouter` | Deployed at `0x8799a2eF390dE8b0Ef97919C7e040C44DdFadbe7`; Sourcify exact match. Blockscout public verification page is still showing its stub while propagation is pending. | `VITE_META_ROUTER_ADDRESS=0x8799a2eF390dE8b0Ef97919C7e040C44DdFadbe7`. |
 | `FlatstockLock` | Existing lock address is retained and no redeploy is required by this rename. | No new Vercel value. |
 
 The renamed vote deployment was approved and sent. It has no round open yet
-(`latestRoundId=0`), so no votes have been cast on it. The router deployment is
-still pending separate approval. Sourcify and Blockscout verification for the
-router can only be recorded after its deployment.
+(`latestRoundId=0`), so no votes have been cast on it. The router deployment
+was also approved and sent. Its Blockscout page is being rechecked after
+Sourcify propagation.
+
+### FlatstockRouter deployment
+
+Exact command:
+
+```sh
+set -a; source .env; set +a
+forge create src/FlatstockRouter.sol:FlatstockRouter \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
+  --broadcast --json \
+  --constructor-args "$USDG_ADDRESS" "$LOCK_CONTRACT_ADDRESS" "$UNISWAP_ROUTER_ADDRESS"
+```
+
+Observed output:
+
+```text
+deployer=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+deployedTo=0x8799a2eF390dE8b0Ef97919C7e040C44DdFadbe7
+transactionHash=0x0f7acc85d7b39bc7322bea607fe1871f578a7ad9bd594126265c36af7290e808
+status=1
+blockNumber=105345656
+gasUsed=1416765
+effectiveGasPrice=20184000 wei
+gasCost=0.00002859598476 ETH
+gasCostAtRecorded2252.50USD=0.06441246 USD
+usdg()=0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168
+lockContract()=0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121
+swapRouter()=0xCaf681a66D020601342297493863E78C959E5cb2
+```
+
+Verification:
+
+```text
+Sourcify: exact_match
+Sourcify job: 0917366e-6b0b-467c-b21e-6c2873ad186a
+Sourcify v2: creationMatch=exact_match, runtimeMatch=exact_match
+Blockscout: submission attempted, but the public page still showed the stub
+  contract after reload; the API was blocked by Cloudflare HTTP 403.
+Contract name submitted: FlatstockRouter
+Compiler: v0.8.24+commit.e11b9ed9
+EVM: cancun
+Optimizer: enabled, 200 runs
+```
+
+Links:
+
+- [Deployment transaction](https://robinhoodchain.blockscout.com/tx/0x0f7acc85d7b39bc7322bea607fe1871f578a7ad9bd594126265c36af7290e808)
+- [Blockscout contract](https://robinhoodchain.blockscout.com/address/0x8799a2eF390dE8b0Ef97919C7e040C44DdFadbe7?tab=contract)
+- [Sourcify verification job](https://sourcify.dev/server/verify-ui/jobs/0917366e-6b0b-467c-b21e-6c2873ad186a)
