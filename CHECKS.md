@@ -1870,3 +1870,59 @@ provider accepted the ordinary zero-value self-transfer and ignored the
 EIP-7702 authorization field. The transaction cost approximately `$0.00126`
 at the recorded `$2,252.50` ETH/USD observation, but no delegation was
 installed and no buy was sent.
+
+## Signature-safe vote contract deployment
+
+Date checked: 2026-11-03 WAT. The user approved this deployment only. The
+router deployment and opening a round remain separately gated.
+
+Exact command:
+
+```sh
+set -a; source .env; set +a
+forge create src/FlatIndexVotesMeta.sol:FlatIndexVotesMeta \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
+  --broadcast --json \
+  --constructor-args "$WIF_ADDRESS" "$LOCK_CONTRACT_ADDRESS"
+```
+
+Observed output:
+
+```text
+deployer=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+deployedTo=0xf6E2944E801CeDbfa5f489eCD0D3BF7578aE2A9D
+transactionHash=0x863603d2bc1e8e4518a098acdd5d43df23858cedc7c9f5f41e7f15a0939c499b
+status=1
+blockNumber=105290252
+gasUsed=1444676
+effectiveGasPrice=20000000 wei
+gasCost=0.00002889352 ETH
+```
+
+At the recorded `$2,252.50` ETH/USD observation, deployment gas was
+approximately `$0.06508`. Read-only constructor checks returned:
+
+```text
+owner()=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+wif()=0x5173b8eA6923c2d40267890D45C46a3480954773
+lockContract()=0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121
+latestRoundId()=0
+```
+
+Verification:
+
+```text
+Sourcify: exact_match
+Sourcify job: c1bce528-4114-42ef-9867-d88926651a04
+Blockscout: Contract source code verified (exact match)
+Contract name: FlatIndexVotesMeta
+Compiler: v0.8.24+commit.e11b9ed9
+EVM: cancun
+Optimizer: enabled, 200 runs
+```
+
+Links:
+
+- [Deployment transaction](https://robinhoodchain.blockscout.com/tx/0x863603d2bc1e8e4518a098acdd5d43df23858cedc7c9f5f41e7f15a0939c499b)
+- [Blockscout contract](https://robinhoodchain.blockscout.com/address/0xf6E2944E801CeDbfa5f489eCD0D3BF7578aE2A9D?tab=contract)
+- [Sourcify verification job](https://sourcify.dev/server/verify-ui/jobs/c1bce528-4114-42ef-9867-d88926651a04)
