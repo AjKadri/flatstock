@@ -1828,3 +1828,22 @@ and `Wallet gas`, and explains that a no-lock buy approves and burns `0.01 WIF`.
 For the relayer-paid version of this check, the no-lock wallet must first be
 delegated. The current wallet instead pays native gas directly if the swap is
 confirmed.
+
+### No-lock delegation preparation
+
+Status: ready for the user's wallet approval. No delegation transaction has
+been sent yet.
+
+The app now exposes `Enable relayed gas` when the connected wallet has no
+EIP-7702 delegation. It submits an EIP-7702 authorization for the verified
+implementation `0x8BDD498234E2272c97ACb1aA19Dc136BE8B2914C`, waits for the
+receipt, and refreshes the wallet state. The user must approve this one wallet
+transaction before the relayer can submit the no-lock buy.
+
+Verification:
+
+```text
+npm run build --prefix web: passed
+Vercel deployment: 6EBYKuUc8e5gQHEsLNn8Hhiujkuw, Ready
+current source commit: d060918
+```
