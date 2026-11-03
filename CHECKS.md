@@ -1444,3 +1444,148 @@ Observed response excerpt:
 Verdict: pass. The finality gate now accepts `stages.soft === true` and the
 live response is `FINALIZED`. The previous code incorrectly expected `soft`
 at the top level.
+
+## Current replacement-contract migration
+
+This section supersedes earlier replacement-contract entries in this file.
+
+### Fixed vote-contract deployment
+
+Verdict: pass.
+
+The user approved deployment before the transaction was sent.
+
+Exact commands used:
+
+```sh
+set -a; source .env; set +a
+forge build
+cast send --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" \
+  --create "$(cat out/FlatIndexVotes.sol/FlatIndexVotes.bin)$(cast abi-encode 'f(address)' "$WIF_ADDRESS" | cut -c3-)" \
+  --json
+cast receipt 0x39fe0c7813c84d8a7866d1dca6f63e9636a19b36e98915414fcd45cd0c2b16dc \
+  --rpc-url "$RPC_URL"
+```
+
+Observed output:
+
+```text
+contract=0x68d2622f3bbf6BE80CdfED679489de344410C7Db
+transactionHash=0x39fe0c7813c84d8a7866d1dca6f63e9636a19b36e98915414fcd45cd0c2b16dc
+blockNumber=105102888
+status=1
+gasUsed=1475306
+effectiveGasPrice=20112000 wei
+gasCost=0.000029671354272 ETH
+owner=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+wif=0x5173b8eA6923c2d40267890D45C46a3480954773
+```
+
+The deployment used approximately `$0.06686` at the recorded `$2,252.50`
+ETH/USD observation.
+
+Sourcify verification:
+
+```text
+job=54011ba7-a930-48f2-a785-1d7438be4c3a
+result=exact_match
+```
+
+Verification URL: https://sourcify.dev/server/verify-ui/jobs/54011ba7-a930-48f2-a785-1d7438be4c3a
+
+Blockscout verification page:
+
+https://robinhoodchain.blockscout.com/address/0x68d2622f3bbf6BE80CdfED679489de344410C7Db?tab=contract
+
+Observed page text: `Contract source code verified (exact match)`, contract
+`FlatIndexVotes`, compiler `0.8.24+commit.e11b9ed9`, EVM `cancun`, optimization
+enabled with 200 runs.
+
+### Round 4 opening on the fixed contract
+
+Verdict: pass.
+
+The user approved opening round 4 before the transaction was sent.
+
+Exact command:
+
+```sh
+set -a; source .env; set +a
+NEW=0x68d2622f3bbf6BE80CdfED679489de344410C7Db
+cast send "$NEW" 'openRound(uint256,uint8,uint64,uint16)' 4 3 1794232800 5000 \
+  --rpc-url "$RPC_URL" --private-key "$M1_RELAYER_PRIVATE_KEY" --json
+cast receipt 0x00361329781db6930e6ac8ab5b36eb57e063b884e3303564c62feff94887f0c4 \
+  --rpc-url "$RPC_URL"
+cast call "$NEW" 'latestRoundId()(uint256)' --rpc-url "$RPC_URL"
+cast call "$NEW" 'rounds(uint256)(uint64,uint64,uint8,uint256,bool)' 4 --rpc-url "$RPC_URL"
+cast call "$NEW" 'voteShareBps(uint256)(uint16)' 4 --rpc-url "$RPC_URL"
+cast call "$NEW" 'weightBps(uint256,uint256)(uint256)' 4 0 --rpc-url "$RPC_URL"
+cast call "$NEW" 'weightBps(uint256,uint256)(uint256)' 4 1 --rpc-url "$RPC_URL"
+cast call "$NEW" 'weightBps(uint256,uint256)(uint256)' 4 2 --rpc-url "$RPC_URL"
+```
+
+Observed output:
+
+```text
+transactionHash=0x00361329781db6930e6ac8ab5b36eb57e063b884e3303564c62feff94887f0c4
+status=1
+latestRoundId=4
+round4=1793713616 1794232800 3 0 false
+voteShareBps=5000
+weightBps=3334
+3333
+3333
+finalWeightBps=0
+0
+0
+```
+
+The open round has zero votes, so the live preview is equal-weight with the
+largest remainder assigned deterministically to the first stock. Final
+weights remain unset until the close function runs.
+
+### App address migration and live signed-out proof
+
+Verdict: pass.
+
+The app now reads `latestRoundId()` from the single configured
+`VITE_VOTES_ADDRESS`. It no longer reads the old empty round 4. The burn
+counter reads vote events from all three vote contracts:
+
+```text
+VITE_VOTES_ADDRESS=0x68d2622f3bbf6BE80CdfED679489de344410C7Db
+voteStatsAddresses[0]=0x68d2622f3bbf6BE80CdfED679489de344410C7Db
+voteStatsAddresses[1]=0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9
+voteStatsAddresses[2]=0xD49249D2a5CffBCF35B6560857d1d1C703802e78
+```
+
+The Vercel Production `VITE_VOTES_ADDRESS` was updated to the new address and
+redeployed. Deployment created: `Cj3UyR48RtWQqijRczqLYvh1dVhM`.
+
+Observed live text from `https://app.flatstock.ajkadri.dev/`:
+
+```text
+Flatstock
+Read-only
+Notice Not available to US persons. Not investment advice.
+Buy the US stocks the community picked, in one tap, with no gas.
+WIF burned by votes
+3 WIF
+Vote round 4
+Open
+Closes 9 Nov 2026, 15:00. 0 votes counted.
+Mix rule preview: 50% equal-weight plus 50% vote share. No stock can exceed 50%.
+AAPL 33.34%
+NVDA 33.33%
+MSFT 33.33%
+MSFT paid a dividend, your shares grew.
+NVDA paid a dividend, your shares grew.
+AAPL paid a dividend, your shares grew.
+Portfolio
+Connect a wallet to see Stock Tokens held by that wallet.
+Self-custody only. The app never holds your funds. Live data from chain 4663.
+```
+
+The signed-out acceptance is pass. Wallet-gated portfolio balances remain
+intentionally unavailable until a wallet connects; the four real QuickNode
+responses above are the data source used when it does.
