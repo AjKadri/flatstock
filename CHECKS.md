@@ -519,6 +519,130 @@ to round 4 and later.
 
 Transaction: [Blockscout](https://robinhoodchain.blockscout.com/tx/0x6d9941684acf235d255fa8ab3ef47f721f8754dee8b79a0df06ea89c06b5bc47).
 
+## M4 QuickNode Stock Token API
+
+Date checked: 2026-11-03 WAT. The implementation is deployed at commit
+`e7faaf7` and the relayer service is active on the VPS. QuickNode-specific
+requests are server-side only. The browser calls the VPS proxy and never sees
+the QuickNode endpoint.
+
+### Method contract used
+
+The proxy calls these official Stock Token API methods:
+
+- `qn_getStockTokenBalances(wallet, { symbols, includeUsd, blockTag })`
+- `qn_getCorporateActions({ symbols, includeScheduled, limit })`
+- `qn_getOracleHealth({ symbols, blockTag })`
+- `qn_getTransactionFinality(txHash)`
+
+The UI uses the balances response for share quantities and USD values, shows
+corporate-action messages such as `AAPL paid a dividend, your shares grew`,
+blocks a buy when any requested oracle is missing, stale, paused, invalid, or
+has an unacceptable status, and waits for `soft: true` finality before showing
+`Buy complete`.
+
+### VPS health and live method probes
+
+Verdict: pass with limits for proxy configuration. The QuickNode credential or
+endpoint authorization is rejected upstream, so successful Stock Token API
+responses remain unresolved.
+
+Exact read-only command, with the endpoint kept inside the VPS environment:
+
+```sh
+ssh -o BatchMode=yes root@2.29.11.26 'curl -sS http://127.0.0.1:8788/api/health; printf "\\n--- balances ---\\n"; curl -sS -w "\\nHTTP %{http_code}\\n" "http://127.0.0.1:8788/api/stock-token/balances?address=0x3554121694a2472300f079Afa4B1fC7F9aAFac01&symbols=AAPL,NVDA,MSFT"; printf "\\n--- corporate ---\\n"; curl -sS -w "\\nHTTP %{http_code}\\n" "http://127.0.0.1:8788/api/stock-token/corporate-actions?symbols=AAPL,NVDA,MSFT"; printf "\\n--- oracle ---\\n"; curl -sS -w "\\nHTTP %{http_code}\\n" "http://127.0.0.1:8788/api/stock-token/oracle-health?symbols=AAPL,NVDA,MSFT"; printf "\\n--- finality ---\\n"; curl -sS -w "\\nHTTP %{http_code}\\n" "http://127.0.0.1:8788/api/stock-token/finality?txHash=0x0042c543774d2eb67f1a392094e766485ff64af2766646746b4ca6d3f2038f14"'
+```
+
+Observed output, with no endpoint or secret printed:
+
+```text
+{"enabled":true,"killSwitch":true,"dailyCap":3,"usage":0,"relayer":"0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4","quickNode":true}
+--- balances ---
+{"error":"QuickNode request failed with HTTP 401."}
+HTTP 400
+--- corporate ---
+{"error":"QuickNode request failed with HTTP 401."}
+HTTP 400
+--- oracle ---
+{"error":"QuickNode request failed with HTTP 401."}
+HTTP 400
+--- finality ---
+{"error":"QuickNode request failed with HTTP 401."}
+HTTP 400
+```
+
+These are real proxy responses, but they are not successful method responses.
+The live M4 data acceptance check is therefore unresolved until the VPS
+QuickNode endpoint credentials or endpoint authorization are corrected. No
+mainnet transaction was sent for this check.
+
+### M4 code and browser acceptance
+
+Verdict: pass with limits. The code paths are present in the deployed build,
+with the live QuickNode data gate above unresolved.
+
+Exact checks:
+
+```sh
+npm run build --prefix web
+git diff --check
+```
+
+Observed output:
+
+```text
+vite v8.3.5
+✓ 440 modules transformed
+✓ built successfully
+git diff --check: exit 0, no output
+```
+
+Live signed-out page text from `https://app.flatstock.ajkadri.dev/`:
+
+```text
+Flatstock
+Read-only
+Connect wallet
+Notice Not available to US persons. Not investment advice.
+Buy the US stocks the community picked, in one tap, with no gas.
+WIF burned by votes
+3 WIF
+Vote round 4
+Open
+Closes 9 Nov 2026, 15:00. 0 votes counted.
+Mix rule preview: 50% equal-weight plus 50% vote share. No stock can exceed 50%.
+AAPL 25.01%
+NVDA 24.99%
+MSFT 50%
+Corporate actions
+Shares update automatically
+No recent corporate actions are available for this mix.
+Portfolio
+Connect a wallet to see Stock Tokens held by that wallet.
+Self-custody only. The app never holds your funds. Live data from chain 4663.
+```
+
+This proves signed-out round discovery, current mix, vote count, the combined
+burn counter, legal notice, read-only state, and the wrong-network behavior
+boundary. Portfolio share data and corporate actions cannot be populated until
+the upstream QuickNode 401 is fixed. The finality guard and oracle refusal are
+implemented but are not production-verified against a successful QuickNode
+response in this run.
+
+### Replacement vote contract and round 4 status
+
+The replacement contract is deployed and verified:
+
+- Contract: `0xD49249D2a5CffBCF35B6560857d1d1C703802e78`
+- Deployment tx: `0x714948e2fd8ec201c85639523deca8ba4e268e14c5a3f85d020f20410122f886`
+- Round 3 close on the old contract: `0x6d9941684acf235d255fa8ab3ef47f721f8754dee8b79a0df06ea89c06b5bc47`
+- Round 4 open on the replacement: `0x1316106102a193db6371fc4734d2270f6bc2dd536b0ca87980acb829d261267a`
+- Round 4: 3 stocks, `voteShareBps=5000`, close `1794232800`
+
+The app reads `latestRoundId()` from `VITE_VOTES_ADDRESS`, so it discovers
+round 4 without a weekly `VITE_ROUND_ID` redeploy. The relayer kill switch
+remains on.
+
 ### Round 4 opening on the replacement contract
 
 Verdict: pass.
