@@ -15,10 +15,12 @@ const chain = defineChain({
   rpcUrls: { default: { http: [quickNodeRpcUrl || publicRpcUrl] } },
 });
 
+const voteContractAddress = (process.env.VOTE_CONTRACT_ADDRESS || "0x68d2622f3bbf6BE80CdfED679489de344410C7Db") as Address;
+
 const addresses = {
   wif: "0x5173b8eA6923c2d40267890D45C46a3480954773" as Address,
   usdg: "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" as Address,
-  votes: "0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9" as Address,
+  votes: voteContractAddress,
   lock: "0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121" as Address,
   buyRouter: "0x5B08a91F8C8666C85e636bbE61Aed3b059B61FfA" as Address,
 };

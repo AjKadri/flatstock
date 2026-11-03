@@ -1663,3 +1663,22 @@ recommended top-up = approximately 0.0009 ETH
 This is a planning estimate, not a transaction. A smaller five-wallet judging
 pool needs about `0.0006 ETH` total including reserve. The daily cap is per
 wallet, so a larger or repeated judging pool needs a larger reserve.
+
+### Vote approval warning diagnosis
+
+The phone warning `Token approval target is not allowed` is a real relayer
+configuration mismatch, not a request to approve an arbitrary spender.
+
+Observed state:
+
+```text
+frontend VITE_VOTES_ADDRESS=0x68d2622f3bbf6BE80CdfED679489de344410C7Db
+VPS VOTE_CONTRACT_ADDRESS=0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9
+relayer response=Token approval target is not allowed.
+```
+
+The frontend correctly builds `WIF.approve(newVoteContract, 1 WIF)`, but the
+VPS relayer had the old vote contract hard-coded as its allowed approval target.
+The fix makes the relayer read `VOTE_CONTRACT_ADDRESS` from its VPS-only env,
+defaulting to the current verified contract, then restarts it with the new
+address. No user funds or mainnet transaction are sent by this fix.
