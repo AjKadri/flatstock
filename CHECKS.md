@@ -2095,7 +2095,10 @@ cast call "$STOCK_TOKEN_ADDRESS" 'balanceOf(address)(uint256)' "$USER" --rpc-url
 cast call "$MSFT_TOKEN_ADDRESS" 'balanceOf(address)(uint256)' "$USER" --rpc-url "$RPC_URL"
 ```
 
-The live bundle check found the new vote address but not the renamed router:
+The live bundle check found the new vote address but not the renamed router.
+The user also confirmed that the VPS environment has no `META_ROUTER_ADDRESS`
+or `VITE_META_ROUTER_ADDRESS` entry and that the running relayer still points
+at the legacy router `0x5B08a91F8C8666C85e636bbE61Aed3b059B61FfA`:
 
 ```text
 live_bundle=/assets/index-Bn1QHEGK.js
@@ -2105,9 +2108,9 @@ old_router_fallback_present=true
 ```
 
 Therefore the live sell is `pending configuration`, not pass. The user must
-not sign or submit it until Vercel has `VITE_META_ROUTER_ADDRESS` set to
-`0x8799a2eF390dE8b0Ef97919C7e040C44DdFadbe7` and the VPS relayer has the same
-router address. After the user selects the token and amount, ask immediately
-before the sell transaction. A successful `TradeExecuted` event will make the
-sell appear automatically in the app History; no History event exists for this
-preflight.
+not sign or submit it until the frontend is rebuilt with
+`VITE_META_ROUTER_ADDRESS=0x8799a2eF390dE8b0Ef97919C7e040C44DdFadbe7` and the
+VPS relayer environment has `META_ROUTER_ADDRESS` set to the same address.
+After the user selects the token and amount, ask immediately before the sell
+transaction. A successful `TradeExecuted` event will make the sell appear
+automatically in the app History; no History event exists for this preflight.
