@@ -1314,3 +1314,71 @@ router tests. It emitted only cache and Etherscan-config warnings.
 
 M2 is complete with the quote-refresh limit documented above. M3 has not
 started.
+
+## Mix correction and QuickNode diagnostic
+
+### Round 4 zero-vote root cause
+
+Read-only mainnet check through the VPS RPC proxy, chain `4663`:
+
+```text
+latestRoundId=4
+round4=opensAt 1793704615, closesAt 1794232800, assetCount 3, totalVotes 0, closed false
+voteShareBps=5000
+weightBps(AAPL,NVDA,MSFT)=2501 2499 5000
+finalWeightBps(AAPL,NVDA,MSFT)=0 0 0
+```
+
+Round 4 has no stored final weights yet because it is open. The incorrect live
+preview is caused by the zero-vote case in the deployed contract: it blended
+the equal-weight half with zero vote weight, assigned the missing 50% to the
+last asset, then capped and redistributed it. There is no round-3 carry-over.
+
+The source fix returns the equal allocation directly when `totalVotes == 0`.
+The browser mirror now does the same, and displays integer basis points as
+exact two-decimal percentages. Three assets therefore display `33.34%`,
+`33.33%`, `33.33%`, summing to `100.00%`.
+
+The deployed round-4 contract still returns the old `weightBps` preview until a
+replacement contract is deployed. No mainnet transaction was sent. The stored
+round-4 weights are not wrong because they are still unset. Any replacement
+deployment or round migration requires separate approval first.
+
+### Mix regression acceptance
+
+Added contract tests for zero votes, one vote, and many votes. The many-vote
+case also closes the round and checks that final weights persist.
+
+```text
+forge test -vv
+Ran 4 test suites: 10 tests passed, 0 failed, 0 skipped
+npm run build --prefix web
+vite v8.3.5
+✓ 440 modules transformed
+✓ built successfully
+git diff --check: exit 0, no output
+```
+
+The local signed-out page now shows:
+
+```text
+Vote round 4
+Open
+Closes 9 Nov 2026, 15:00. 0 votes counted.
+AAPL 33.34%
+NVDA 33.33%
+MSFT 33.33%
+```
+
+### QuickNode chain diagnostic
+
+Added `deploy/check-quicknode-chain.sh`. Run it on the VPS with:
+
+```sh
+sudo /opt/flatstock/deploy/check-quicknode-chain.sh
+```
+
+It prints only `http_status` and `chain_id`, never the endpoint. Expected
+healthy output is `http_status=200` and `chain_id=0x1237`. With the current
+authorization issue it reports `http_status=401` and
+`chain_id=unavailable`.

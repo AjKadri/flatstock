@@ -137,6 +137,23 @@ Then test:
 curl -fsS https://api.flatstock.ajkadri.dev/api/health
 ```
 
+To diagnose QuickNode authentication without revealing the endpoint, run this
+on the VPS:
+
+```sh
+sudo /opt/flatstock/deploy/check-quicknode-chain.sh
+```
+
+It prints only `http_status` and `chain_id`. A healthy chain-4663 response is:
+
+```text
+http_status=200
+chain_id=0x1237
+```
+
+With the current authorization problem it should report an HTTP `401` and
+`chain_id=unavailable`. The script never prints `QUICKNODE_RPC_URL`.
+
 The browser uses `/api/rpc` through this VPS. The proxy prefers
 `QUICKNODE_RPC_URL` when it exists and falls back to `RPC_URL`; the QuickNode
 endpoint is never sent to the browser. The relayer submits transactions using

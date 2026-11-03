@@ -42,18 +42,23 @@ contract FlatIndexVotesTest {
     VmVote private constant vm = VmVote(address(uint160(uint256(keccak256("hevm cheat code")))));
     uint256 private constant ALICE_KEY = 0xA11CE;
     uint256 private constant BOB_KEY = 0xB0B;
+    uint256 private constant CAROL_KEY = 0xCA11;
 
     address private alice = vm.addr(ALICE_KEY);
     address private bob = vm.addr(BOB_KEY);
+    address private carol = vm.addr(CAROL_KEY);
     MockWifVoteToken private wif = new MockWifVoteToken();
     FlatIndexVotes private votes = new FlatIndexVotes(address(wif));
 
     function setUp() public {
         wif.mint(alice, 3 ether);
         wif.mint(bob, 2 ether);
+        wif.mint(carol, 2 ether);
         vm.prank(alice);
         wif.approve(address(votes), type(uint256).max);
         vm.prank(bob);
+        wif.approve(address(votes), type(uint256).max);
+        vm.prank(carol);
         wif.approve(address(votes), type(uint256).max);
     }
 
@@ -64,7 +69,7 @@ contract FlatIndexVotesTest {
         votes.vote(1, 0);
 
         require(wif.balanceOf(alice) == 2 ether, "vote did not cost one WIF");
-        require(wif.totalSupply() == 4 ether, "WIF was not burned");
+        require(wif.totalSupply() == 6 ether, "WIF was not burned");
         require(votes.votesFor(1, 0) == 1, "vote not counted");
 
         vm.expectRevert(FlatIndexVotes.AlreadyVoted.selector);
@@ -95,12 +100,13 @@ contract FlatIndexVotesTest {
     }
 
     function testNoVotesUseEqualWeightsAndBlendRatioIsParameter() public {
-        votes.openRound(3, 3, uint64(block.timestamp + 1 days), 0);
+        votes.openRound(3, 3, uint64(block.timestamp + 1 days), 5_000);
 
-        require(votes.voteShareBps(3) == 0, "zero vote blend was not stored");
+        require(votes.voteShareBps(3) == 5_000, "blend ratio was not stored");
         require(votes.weightBps(3, 0) == 3_334, "equal first weight mismatch");
         require(votes.weightBps(3, 1) == 3_333, "equal second weight mismatch");
         require(votes.weightBps(3, 2) == 3_333, "equal third weight mismatch");
+        require(votes.weightBps(3, 0) + votes.weightBps(3, 1) + votes.weightBps(3, 2) == 10_000, "zero vote weights do not sum to 100%");
     }
 
     function testOneNvdaVoteProducesCappedRoundThreeMix() public {
@@ -114,5 +120,27 @@ contract FlatIndexVotesTest {
         require(votes.weightBps(4, 0) == 2_500, "AAPL round-three mix mismatch");
         require(votes.weightBps(4, 1) == 5_000, "NVDA round-three mix mismatch");
         require(votes.weightBps(4, 2) == 2_500, "MSFT round-three mix mismatch");
+    }
+
+    function testManyVotesBlendSharesAndCapAtFiftyPercent() public {
+        votes.openRound(5, 3, uint64(block.timestamp + 1 days), 5_000);
+
+        vm.prank(alice);
+        votes.vote(5, 0);
+        vm.prank(bob);
+        votes.vote(5, 0);
+        vm.prank(carol);
+        votes.vote(5, 1);
+
+        require(votes.weightBps(5, 0) == 5_000, "many vote first weight mismatch");
+        require(votes.weightBps(5, 1) == 3_333, "many vote second weight mismatch");
+        require(votes.weightBps(5, 2) == 1_667, "many vote third weight mismatch");
+        require(votes.weightBps(5, 0) + votes.weightBps(5, 1) + votes.weightBps(5, 2) == 10_000, "many vote weights do not sum to 100%");
+
+        vm.warp(block.timestamp + 1 days);
+        votes.closeRound(5);
+        require(votes.finalWeightBps(5, 0) == 5_000, "many vote final first mismatch");
+        require(votes.finalWeightBps(5, 1) == 3_333, "many vote final second mismatch");
+        require(votes.finalWeightBps(5, 2) == 1_667, "many vote final third mismatch");
     }
 }

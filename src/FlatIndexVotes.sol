@@ -136,6 +136,17 @@ contract FlatIndexVotes {
         uint256 totalVotes = current.totalVotes;
         uint256 voteShare = voteShareBps[roundId];
         uint256 equalShare = BPS - voteShare;
+
+        // No votes means there is no vote-share signal. Return the equal
+        // allocation directly instead of blending zeros and redistributing
+        // the missing vote-share half to the final asset.
+        if (totalVotes == 0) {
+            for (uint8 i; i < count; ++i) {
+                weights[i] = equalBase + (i < equalRemainder ? 1 : 0);
+            }
+            return weights;
+        }
+
         uint256 voteSum;
         uint256 weightSum;
 

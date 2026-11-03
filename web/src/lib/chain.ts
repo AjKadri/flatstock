@@ -199,6 +199,11 @@ export function calculateMixWeights(
   const totalVotes = votes.slice(0, assetCount).reduce((sum, value) => sum + value, 0n);
   const equalBase = 10_000n / count;
   const equalRemainder = 10_000n % count;
+  if (totalVotes === 0n) {
+    return Array.from({ length: assetCount }, (_, index) =>
+      equalBase + (BigInt(index) < equalRemainder ? 1n : 0n),
+    );
+  }
   const equalShare = 10_000n - voteShareBps;
   const weights = Array.from({ length: assetCount }, () => 0n);
   let voteSum = 0n;
@@ -249,6 +254,12 @@ export function calculateMixWeights(
     excess = nextExcess;
   }
   return weights;
+}
+
+export function formatWeightBps(weight: bigint): string {
+  const whole = weight / 100n;
+  const hundredths = (weight % 100n).toString().padStart(2, "0");
+  return `${whole}.${hundredths}%`;
 }
 
 export async function readVoteBurned() {

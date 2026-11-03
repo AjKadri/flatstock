@@ -22,6 +22,7 @@ import {
   connectWallet,
   formatDate,
   formatEth,
+  formatWeightBps,
   formatUsdg,
   formatWif,
   publicClient,
@@ -446,7 +447,7 @@ function App() {
               <div className="asset-list">
                 {assets.map((asset, index) => (
                   <button key={asset.symbol} className={`asset-row ${selectedAsset === index ? "selected" : ""}`} onClick={() => setSelectedAsset(index)} disabled={!round.isOpen || index >= round.assetCount}>
-                    <span className="asset-symbol">{asset.symbol}</span><span className="weight">{Number(round.weights[index] || 0n) / 100}%</span>
+                    <span className="asset-symbol">{asset.symbol}</span><span className="weight">{formatWeightBps(round.weights[index] || 0n)}</span>
                   </button>
                 ))}
               </div>
