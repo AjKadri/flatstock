@@ -2043,3 +2043,71 @@ Links:
 - [Deployment transaction](https://robinhoodchain.blockscout.com/tx/0x0f7acc85d7b39bc7322bea607fe1871f578a7ad9bd594126265c36af7290e808)
 - [Blockscout contract](https://robinhoodchain.blockscout.com/address/0x8799a2eF390dE8b0Ef97919C7e040C44DdFadbe7?tab=contract)
 - [Sourcify verification job](https://sourcify.dev/server/verify-ui/jobs/0917366e-6b0b-467c-b21e-6c2873ad186a)
+
+## Live test step (d): Stock Token sell-back preflight
+
+Date checked: 2026-11-03 WAT. This is a read-only preflight. No sell
+transaction has been sent yet.
+
+Wallet and path:
+
+```text
+wallet=0x3554121694a2472300f079Afa4B1fC7F9aAFac01
+chain_id=4663
+eth_balance=0 ETH
+locked_wif=10 WIF
+is_locked=true
+path=EIP-712 signed sell via relayer, if the live app and VPS are configured with the renamed router
+```
+
+The wallet has enough Stock Tokens for a tiny test sell:
+
+```text
+AAPL=0.002111542301848508 shares
+NVDA=0.024936483984385674 shares
+MSFT=0.003865473451196867 shares
+USDG=0.167257
+```
+
+For a `0.001`-share read-only preview, the current Uniswap v3 and Chainlink
+checks returned:
+
+| Asset | USDG quote | Minimum output | Chainlink | Difference | Oracle age | Verdict |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| AAPL | 0.331035 | 0.324414 | 331.49134447 | 0.14% | 1,739 sec | pass |
+| NVDA | 0.207449 | 0.203300 | 206.84671493 | 0.29% | 4,621 sec | pass |
+| MSFT | 0.520207 | 0.509802 | 522.92380359 | 0.52% | 2,777 sec | pass |
+
+All three quotes were present, had nonzero quoter gas estimates, and were
+within the 2% guard. All three Chainlink answers were positive and fresh under
+the 86,400-second freshness limit.
+
+Exact read-only commands:
+
+```sh
+set -a; source .env; set +a
+USER=$(cast wallet address --private-key "$M1_USER_PRIVATE_KEY")
+cast balance "$USER" --rpc-url "$RPC_URL" --ether
+cast call "$LOCK_CONTRACT_ADDRESS" 'locked(address)(uint256)' "$USER" --rpc-url "$RPC_URL"
+cast call "$LOCK_CONTRACT_ADDRESS" 'isLocked(address)(bool)' "$USER" --rpc-url "$RPC_URL"
+cast call "$AAPL_TOKEN_ADDRESS" 'balanceOf(address)(uint256)' "$USER" --rpc-url "$RPC_URL"
+cast call "$STOCK_TOKEN_ADDRESS" 'balanceOf(address)(uint256)' "$USER" --rpc-url "$RPC_URL"
+cast call "$MSFT_TOKEN_ADDRESS" 'balanceOf(address)(uint256)' "$USER" --rpc-url "$RPC_URL"
+```
+
+The live bundle check found the new vote address but not the renamed router:
+
+```text
+live_bundle=/assets/index-Bn1QHEGK.js
+new_votes_address_present=true
+new_router_address_present=false
+old_router_fallback_present=true
+```
+
+Therefore the live sell is `pending configuration`, not pass. The user must
+not sign or submit it until Vercel has `VITE_META_ROUTER_ADDRESS` set to
+`0x8799a2eF390dE8b0Ef97919C7e040C44DdFadbe7` and the VPS relayer has the same
+router address. After the user selects the token and amount, ask immediately
+before the sell transaction. A successful `TradeExecuted` event will make the
+sell appear automatically in the app History; no History event exists for this
+preflight.
