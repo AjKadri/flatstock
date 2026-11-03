@@ -2114,3 +2114,29 @@ VPS relayer environment has `META_ROUTER_ADDRESS` set to the same address.
 After the user selects the token and amount, ask immediately before the sell
 transaction. A successful `TradeExecuted` event will make the sell appear
 automatically in the app History; no History event exists for this preflight.
+
+### Deployment confirmation after environment update
+
+The user supplied a Vercel settings screenshot showing these matching public
+values in Production and Preview:
+
+```text
+VITE_VOTES_ADDRESS=0x4BB945800d588E6B4DB287b3fCe9C13f7825A968
+VITE_META_VOTES_ADDRESS=0x4BB945800d588E6B4DB287b3fCe9C13f7825A968
+VITE_META_ROUTER_ADDRESS=0x8799a2eF390dE8b0Ef97919C7e040C44DdFadbe7
+```
+
+Read-only live checks after the VPS restart returned:
+
+```text
+live_bundle=/assets/index-Bn1QHEGK.js
+new_votes_address_present=true
+new_router_address_present=false
+old_router_fallback_present=true
+api_health={"enabled":true,"killSwitch":true,"dailyCap":3,"usage":0,"relayer":"0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4","quickNode":true}
+```
+
+Verdict: configuration values match, but the Vercel production bundle has not
+been redeployed. The live sell remains pending until a new deployment contains
+the renamed router address. The relayer health endpoint is healthy, but does
+not expose its configured router address.
