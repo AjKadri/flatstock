@@ -1,5 +1,5 @@
 # Add this site block to the existing Caddyfile. Do not replace other sites.
 api.flatstock.ajkadri.dev {
     encode gzip
-    reverse_proxy 127.0.0.1:8787
+    reverse_proxy 127.0.0.1:8788
 }

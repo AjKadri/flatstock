@@ -58,10 +58,10 @@ back to `RPC_URL`, and submits the close through `RPC_URL`.
 
 The VPS already owns ports 80 and 443 with Caddy. Add the site block from
 `deploy/Caddyfile.template` to the existing Caddyfile. It reverse-proxies
-`api.flatstock.ajkadri.dev` to `127.0.0.1:8787`; Caddy obtains and renews TLS.
+`api.flatstock.ajkadri.dev` to `127.0.0.1:8788`; Caddy obtains and renews TLS.
 
 The relayer defaults to `M3_RELAYER_HOST=127.0.0.1` and
-`M3_RELAYER_PORT=8787`. Choose another unused local port if needed, set both
+`M3_RELAYER_PORT=8788`. Choose another unused local port if needed, set both
 the environment variable and the Caddy upstream to the same port, then run:
 
 ```sh

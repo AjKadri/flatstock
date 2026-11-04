@@ -126,7 +126,7 @@ sudo systemctl reload caddy
 
 Caddy will obtain and renew the certificate for
 `api.flatstock.ajkadri.dev`. The prepared block reverse-proxies to
-`127.0.0.1:8787`.
+`127.0.0.1:8788`.
 
 Start the relayer only after TLS and the environment file are verified:
 
