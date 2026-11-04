@@ -863,10 +863,17 @@ export async function signMetaBuy(
     primaryType: "BuyMix",
     message: { user: account, legsHash: hashMetaLegs(metaLegs), amountIn, nonce, deadline },
   });
+  const relayLegs = metaLegs.map((leg) => ({
+    token: leg.token,
+    fee: leg.fee,
+    amountIn: leg.amountIn.toString(),
+    amountOutMinimum: leg.amountOutMinimum.toString(),
+    sqrtPriceLimitX96: leg.sqrtPriceLimitX96.toString(),
+  }));
   const response = await fetch(`${RELAYER_API}/meta/buy`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ user: account, legs: metaLegs, amountIn: amountIn.toString(), nonce: nonce.toString(), deadline: deadline.toString(), permit: { value: amountIn.toString(), deadline: permitDeadline.toString(), v, r, s }, signature: actionSignature }),
+    body: JSON.stringify({ user: account, legs: relayLegs, amountIn: amountIn.toString(), nonce: nonce.toString(), deadline: deadline.toString(), permit: { value: amountIn.toString(), deadline: permitDeadline.toString(), v, r, s }, signature: actionSignature }),
   });
   const payload = await response.json() as { txHash?: Hex; error?: string };
   if (!response.ok || !payload.txHash) throw new Error(payload.error || "The signature relay rejected this buy.");
