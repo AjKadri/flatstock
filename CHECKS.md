@@ -2166,4 +2166,6 @@ wrong token, expired permit, allowance failure, successful permit plus sell,
 replay rejection, and a failed sell after a successful permit. The failed path
 left the Stock Token balance unchanged, left only the exact router allowance,
 did not consume the sell nonce, and rejected the signed action after its
-deadline.
+deadline. Because the deployed router's legacy sell type does not include
+`sqrtPriceLimitX96`, the relayer rejects every nonzero value and the UI always
+sends zero.

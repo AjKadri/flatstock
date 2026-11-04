@@ -278,6 +278,7 @@ async function relaySell(payload: Record<string, unknown>) {
   const deadline = BigInt(String(payload.deadline));
   const signature = requireHex(payload.signature, "signature");
   if (!Number.isInteger(fee) || amountIn <= 0n || amountOutMinimum <= 0n) fail("Invalid sell guard.");
+  if (sqrtPriceLimitX96 !== 0n) fail("Sell price limit must be zero for the deployed signature format.");
   if (!stockTokenAddresses.has(sellToken.toLowerCase())) fail("Sell token is not an enabled Stock Token.");
   if (!payload.permit || typeof payload.permit !== "object") fail("An exact Stock Token permit is required for a relayed sell.");
   const rawPermit = payload.permit as Record<string, unknown>;
