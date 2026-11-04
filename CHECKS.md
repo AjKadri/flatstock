@@ -2140,3 +2140,30 @@ Verdict: configuration values match, but the Vercel production bundle has not
 been redeployed. The live sell remains pending until a new deployment contains
 the renamed router address. The relayer health endpoint is healthy, but does
 not expose its configured router address.
+# 2026-11-04 signed Stock Token permit sell fix
+
+Status: local and fork verified. No mainnet sell transaction was sent.
+
+The locked-wallet sell path now signs an exact EIP-2612 permit for the enabled
+Stock Token, FlatstockRouter, exact share amount, and a five-minute deadline,
+then signs the exact `sellBySig` action. The relayer verifies both signatures
+and current nonces, submits the permit, waits for its receipt, then submits the
+sell. A relayed sell consumes two sponsored transaction slots. The frontend
+labels chain 4663 as `Robinhood Chain` and shows the independence footer.
+
+Acceptance output:
+
+```text
+forge test -vv: 21 passed; 0 failed; 0 skipped
+forge test --fork-url "$RPC_URL" -vv: 21 passed; 0 failed; 0 skipped
+npm run build --prefix web: passed
+forge fmt --check: exit 0
+git diff --check: exit 0
+```
+
+The unit and live-NVDA fork tests cover exact permit amount, wrong amount,
+wrong token, expired permit, allowance failure, successful permit plus sell,
+replay rejection, and a failed sell after a successful permit. The failed path
+left the Stock Token balance unchanged, left only the exact router allowance,
+did not consume the sell nonce, and rejected the signed action after its
+deadline.

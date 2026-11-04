@@ -8,6 +8,7 @@ import {
   LEGAL_NOTICE,
   lockAbi,
   MIX_RULES_ENABLED,
+  NETWORK_LABEL,
   ONE_WIF,
   RELAYER_API,
   SIGNATURE_SAFE_WRITES_ENABLED,
@@ -165,10 +166,10 @@ function App() {
       setChainId(Number.isFinite(nextChainId) ? nextChainId : null);
       setPlan([]);
       if (nextChainId === chain.id) {
-        setMessage({ tone: "success", text: "Connected to chain 4663." });
+        setMessage({ tone: "success", text: `Connected to ${NETWORK_LABEL} (4663).` });
         void refresh();
       } else {
-        setMessage({ tone: "error", text: "Wrong network. Switch to chain 4663." });
+        setMessage({ tone: "error", text: `Wrong network. Switch to ${NETWORK_LABEL} (4663).` });
       }
     };
 
@@ -206,7 +207,7 @@ function App() {
 
   const runVote = async () => {
     if (!wallet || !account || !round) return;
-    if (chainId !== chain.id) return setMessage({ tone: "error", text: "Switch to chain 4663 before voting." });
+    if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before voting.` });
     if (!round.isOpen) return setMessage({ tone: "info", text: "No vote round is open on mainnet." });
     try {
       setBusy("vote");
@@ -238,7 +239,7 @@ function App() {
 
   const runLock = async () => {
     if (!wallet || !account) return;
-    if (chainId !== chain.id) return setMessage({ tone: "error", text: "Switch to chain 4663 before locking WIF." });
+    if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before locking WIF.` });
     try {
       setBusy("lock");
       setMessage(null);
@@ -265,7 +266,7 @@ function App() {
 
   const previewBuy = async () => {
     if (!round) return;
-    if (chainId !== chain.id) return setMessage({ tone: "error", text: "Switch to chain 4663 before checking prices." });
+    if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before checking prices.` });
     try {
       setBusy("quote");
       setMessage(null);
@@ -282,7 +283,7 @@ function App() {
 
   const runBuy = async () => {
     if (!wallet || !account || !round) return;
-    if (chainId !== chain.id) return setMessage({ tone: "error", text: "Switch to chain 4663 before buying." });
+    if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before buying.` });
     if (!round.isOpen) return setMessage({ tone: "info", text: "No vote round is open on mainnet." });
     if (plan.length === 0) return setMessage({ tone: "info", text: "Check prices before buying." });
     try {
@@ -316,7 +317,7 @@ function App() {
 
   const previewSell = async () => {
     if (!account) return;
-    if (chainId !== chain.id) return setMessage({ tone: "error", text: "Switch to chain 4663 before checking prices." });
+    if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before checking prices.` });
     try {
       setBusy("sell-quote");
       setMessage(null);
@@ -333,7 +334,7 @@ function App() {
 
   const runSell = async () => {
     if (!wallet || !account || !sellPlan) return;
-    if (chainId !== chain.id) return setMessage({ tone: "error", text: "Switch to chain 4663 before selling." });
+    if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before selling.` });
     try {
       setBusy("sell");
       setConfirmingSell(false);
@@ -400,7 +401,7 @@ function App() {
         </div>
         <div className="topbar-actions">
           <span className={`network-pill ${chainId === null ? "" : chainId === chain.id ? "good" : "warn"}`}>
-            {chainId === null ? "Read-only" : chainId === chain.id ? "Chain 4663" : "Wrong network"}
+            {chainId === null ? "Read-only" : chainId === chain.id ? NETWORK_LABEL : "Wrong network"}
           </span>
           {account ? (
             <>
@@ -418,7 +419,7 @@ function App() {
       <section className="notice"><span>Notice</span>{LEGAL_NOTICE}</section>
 
       {chainId !== null && chainId !== chain.id && (
-        <section className="alert error"><strong>Wrong network.</strong> Connect to chain 4663 to use the live contracts.
+        <section className="alert error"><strong>Wrong network.</strong> Connect to {NETWORK_LABEL} (4663) to use the live contracts.
           <button className="text-button" onClick={() => void switchNetwork()}>Switch network</button>
         </section>
       )}
@@ -510,8 +511,8 @@ function App() {
           <button className="secondary" disabled={!account || chainId !== chain.id || busy !== null} onClick={() => void previewSell()}>{busy === "sell-quote" ? "Checking price..." : "Check sell price"}</button>
         </div>
         {sellPlan && <div className="quote-table"><div className="quote-header"><span>Asset</span><span>Quote vs Chainlink</span><span>Guard</span></div><div className="quote-row"><span>{sellPlan.symbol}</span><span>${sellPlan.quotePrice.toFixed(2)} / ${sellPlan.chainlinkPrice.toFixed(2)}</span><span className="good-text">{(sellPlan.differenceBps / 100).toFixed(2)}%</span></div></div>}
-        <button className="primary full" disabled={!account || chainId !== chain.id || !sellPlan || busy !== null} onClick={requestSell}>{busy === "sell" ? "Submitting sell..." : sellPlan ? `Review ${sellPlan.symbol} sell` : "Check sell price first"}</button>
-        {confirmingSell && sellPlan && <div className="confirmation"><strong>{hasSponsorLock ? `Sign ${sellPlan.symbol} sell` : `Confirm ${sellPlan.symbol} sell`}</strong><p>This action sells {sellAmount} shares back to USDG and sends the output directly to your wallet. {hasSponsorLock ? "Your wallet signs the exact token, amount, minimum output, nonce and deadline. The relayer pays the ETH gas." : "Your wallet signs the exact transaction and pays the ETH gas."} The price guard passed.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runSell()}>Sign and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingSell(false)}>Cancel</button></div></div>}
+        <button className="primary full" disabled={!account || chainId !== chain.id || !sellPlan || busy !== null} onClick={requestSell}>{busy === "sell" ? "Submitting permit and sell..." : sellPlan ? `Review ${sellPlan.symbol} sell` : "Check sell price first"}</button>
+        {confirmingSell && sellPlan && <div className="confirmation"><strong>{hasSponsorLock ? `Sign ${sellPlan.symbol} sell` : `Confirm ${sellPlan.symbol} sell`}</strong><p>This action sells {sellAmount} shares back to USDG and sends the output directly to your wallet. {hasSponsorLock ? "You will sign two exact messages: a Stock Token permit for this token and amount, then the sell action. The relayer submits the permit first and sellBySig second in separate transactions, and pays both gas costs. Both signatures expire in 5 minutes. A failed sell cannot use a different token or amount, and it cannot be submitted after the signed action expires." : "Your wallet signs the exact transaction and pays the ETH gas."} The price guard passed.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runSell()}>Sign and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingSell(false)}>Cancel</button></div></div>}
         {submittedTx?.action === "sell" && <div className="tx-proof"><strong>Sell submitted.</strong><a href={`${EXPLORER_URL}/tx/${submittedTx.hash}`} target="_blank" rel="noreferrer">View transaction</a></div>}
         <p className="helper">Every sell quote must exist, be fresh, and stay within 2% of Chainlink.</p>
       </section>
@@ -526,7 +527,7 @@ function App() {
         {!account ? <p className="muted">Connect any wallet to load its history from contract events.</p> : history.length === 0 ? <p className="muted">No votes, buys or sells found for this wallet.</p> : <div className="action-list">{history.slice(0, 20).map((item) => <div className="action-row" key={`${item.hash}-${item.kind}`}><strong>{item.title}</strong><small>{item.date} · {item.amount} · <a href={item.link} target="_blank" rel="noreferrer">Blockscout</a></small></div>)}</div>}
       </section>
 
-      <footer><span>Self-custody only. The app never holds your funds.</span><span>Live data from chain 4663.</span></footer>
+      <footer><span>Self-custody only. The app never holds your funds.</span><span>Live data from {NETWORK_LABEL} (4663).</span><span>Flatstock is independent and not affiliated with Robinhood.</span></footer>
     </main>
   );
 }

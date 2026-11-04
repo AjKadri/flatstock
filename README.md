@@ -2,7 +2,7 @@
 
 Buy the US stocks the community picked, in one tap, with no gas.
 
-Flatstock is a self-custody web app on chain 4663. Stock Tokens go directly to
+Flatstock is a self-custody web app on Robinhood Chain (chain 4663). Stock Tokens go directly to
 the connected wallet. The app does not hold user funds.
 
 Locked-WIF users sign the exact vote or trade action and the relayer submits

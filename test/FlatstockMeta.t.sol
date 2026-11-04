@@ -7,6 +7,7 @@ import {FlatstockVotes} from "../src/FlatstockVotes.sol";
 
 interface VmMeta {
     function addr(uint256 privateKey) external returns (address);
+    function expectRevert() external;
     function expectRevert(bytes4 selector) external;
     function prank(address sender) external;
     function warp(uint256 newTimestamp) external;
@@ -58,6 +59,45 @@ contract MockPermitToken is MockMetaToken {
     }
 }
 
+contract MockEip2612Token is MockMetaToken {
+    bytes32 private constant DOMAIN_TYPEHASH =
+        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    bytes32 public constant PERMIT_TYPEHASH =
+        keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    bytes32 public immutable DOMAIN_SEPARATOR;
+    mapping(address => uint256) public nonces;
+
+    error InvalidPermit();
+
+    constructor() {
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                DOMAIN_TYPEHASH,
+                keccak256(bytes("NVDA Stock Token")),
+                keccak256(bytes("1")),
+                block.chainid,
+                address(this)
+            )
+        );
+    }
+
+    function name() external pure returns (string memory) {
+        return "NVDA Stock Token";
+    }
+
+    function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
+        external
+    {
+        if (deadline < block.timestamp) revert InvalidPermit();
+        uint256 nonce = nonces[owner];
+        bytes32 structHash = keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonce, deadline));
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
+        if (ecrecover(digest, v, r, s) != owner) revert InvalidPermit();
+        nonces[owner] = nonce + 1;
+        allowance[owner][spender] = value;
+    }
+}
+
 contract MockMetaSwapRouter {
     function exactInputSingle(IMetaSwapRouter.ExactInputSingleParams calldata params)
         external
@@ -65,6 +105,7 @@ contract MockMetaSwapRouter {
     {
         MockMetaToken(params.tokenIn).transferFrom(msg.sender, address(this), params.amountIn);
         amountOut = params.amountIn * 2;
+        require(amountOut >= params.amountOutMinimum, "minimum output");
         MockMetaToken(params.tokenOut).mint(params.recipient, amountOut);
     }
 }
@@ -175,6 +216,7 @@ contract FlatstockRouterTest {
     MockPermitToken private usdg = new MockPermitToken();
     MockMetaToken private stockA = new MockMetaToken();
     MockMetaToken private stockB = new MockMetaToken();
+    MockEip2612Token private permitStock = new MockEip2612Token();
     FlatstockLock private lock = new FlatstockLock(address(wif), 10 ether);
     MockMetaSwapRouter private swap = new MockMetaSwapRouter();
     FlatstockRouter private router = new FlatstockRouter(address(usdg), address(lock), address(swap));
@@ -197,6 +239,47 @@ contract FlatstockRouterTest {
         bytes32 legsHash = keccak256(abi.encode(legs));
         bytes32 structHash = keccak256(abi.encode(router.BUY_TYPEHASH(), user, legsHash, amountIn, nonce, deadline));
         return keccak256(abi.encodePacked("\x19\x01", router.DOMAIN_SEPARATOR(), structHash));
+    }
+
+    function _permitDigest(address owner, address spender, uint256 value, uint256 nonce, uint256 deadline)
+        private
+        view
+        returns (bytes32)
+    {
+        bytes32 structHash =
+            keccak256(abi.encode(permitStock.PERMIT_TYPEHASH(), owner, spender, value, nonce, deadline));
+        return keccak256(abi.encodePacked("\x19\x01", permitStock.DOMAIN_SEPARATOR(), structHash));
+    }
+
+    function _sellDigest(
+        address user,
+        address token,
+        uint24 fee,
+        uint256 amountIn,
+        uint256 amountOutMinimum,
+        uint256 nonce,
+        uint256 deadline
+    ) private view returns (bytes32) {
+        bytes32 structHash = keccak256(
+            abi.encode(router.SELL_TYPEHASH(), user, token, fee, amountIn, amountOutMinimum, nonce, deadline)
+        );
+        return keccak256(abi.encodePacked("\x19\x01", router.DOMAIN_SEPARATOR(), structHash));
+    }
+
+    function _applyPermit(uint256 value, uint256 nonce, uint256 deadline) private {
+        (uint8 v, bytes32 r, bytes32 s) =
+            vm.sign(ALICE_KEY, _permitDigest(alice, address(router), value, nonce, deadline));
+        permitStock.permit(alice, address(router), value, deadline, v, r, s);
+    }
+
+    function _signSell(uint256 amountIn, uint256 amountOutMinimum, uint256 nonce, uint256 deadline)
+        private
+        returns (bytes memory)
+    {
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            ALICE_KEY, _sellDigest(alice, address(permitStock), 500, amountIn, amountOutMinimum, nonce, deadline)
+        );
+        return abi.encodePacked(r, s, v);
     }
 
     function testExactRelayedBuyUsesPermitAndReplayIsRejected() public {
@@ -245,5 +328,70 @@ contract FlatstockRouterTest {
         router.buyUniswap(address(usdg), address(stockA), 500, 1 ether, 2 ether, 0);
         require(stockA.balanceOf(alice) == 2 ether, "direct buy not delivered");
         require(wif.balanceOf(alice) == 10 ether, "direct buy touched WIF");
+    }
+
+    function testSellPermitExactAmountAndFailedSellCannotBeReused() public {
+        uint256 amountIn = 1 ether;
+        uint256 deadline = block.timestamp + 5 minutes;
+        permitStock.mint(alice, 2 ether);
+
+        _applyPermit(amountIn, 0, deadline);
+        require(permitStock.allowance(alice, address(router)) == amountIn, "permit was not exact");
+
+        uint256 amountOutMinimum = 3 ether;
+        bytes memory sellSignature = _signSell(amountIn, amountOutMinimum, 0, deadline);
+        vm.expectRevert(FlatstockRouter.SwapFailed.selector);
+        router.sellBySig(alice, address(permitStock), 500, amountIn, amountOutMinimum, 0, 0, deadline, sellSignature);
+
+        require(permitStock.balanceOf(alice) == 2 ether, "failed sell moved Stock Tokens");
+        require(permitStock.allowance(alice, address(router)) == amountIn, "failed sell widened allowance");
+        require(router.sellNonces(alice) == 0, "failed sell consumed action nonce");
+
+        vm.warp(deadline + 1);
+        vm.expectRevert(FlatstockRouter.SignatureExpired.selector);
+        router.sellBySig(alice, address(permitStock), 500, amountIn, amountOutMinimum, 0, 0, deadline, sellSignature);
+        require(permitStock.allowance(alice, address(router)) == amountIn, "expired action changed allowance");
+    }
+
+    function testSellPermitRejectsWrongAmountAndExpiredPermit() public {
+        permitStock.mint(alice, 2 ether);
+        uint256 deadline = block.timestamp + 5 minutes;
+        (uint8 v, bytes32 r, bytes32 s) =
+            vm.sign(ALICE_KEY, _permitDigest(alice, address(router), 1 ether, 0, deadline));
+
+        vm.expectRevert(MockEip2612Token.InvalidPermit.selector);
+        permitStock.permit(alice, address(router), 2 ether, deadline, v, r, s);
+        require(permitStock.allowance(alice, address(router)) == 0, "wrong amount permit was accepted");
+
+        vm.warp(deadline + 1);
+        vm.expectRevert(MockEip2612Token.InvalidPermit.selector);
+        permitStock.permit(alice, address(router), 1 ether, deadline, v, r, s);
+    }
+
+    function testSellSignatureCommitsToTokenAndAllowanceIsRequired() public {
+        uint256 amountIn = 1 ether;
+        uint256 deadline = block.timestamp + 5 minutes;
+        bytes memory sellSignature = _signSell(amountIn, 1 ether, 0, deadline);
+
+        vm.expectRevert(FlatstockEIP712.InvalidSignature.selector);
+        router.sellBySig(alice, address(stockB), 500, amountIn, 1 ether, 0, 0, deadline, sellSignature);
+
+        vm.expectRevert();
+        router.sellBySig(alice, address(permitStock), 500, amountIn, 1 ether, 0, 0, deadline, sellSignature);
+    }
+
+    function testSuccessfulSellConsumesPermitAllowanceAndRejectsReplay() public {
+        uint256 amountIn = 1 ether;
+        uint256 deadline = block.timestamp + 5 minutes;
+        permitStock.mint(alice, amountIn);
+        _applyPermit(amountIn, 0, deadline);
+        bytes memory sellSignature = _signSell(amountIn, 1 ether, 0, deadline);
+
+        router.sellBySig(alice, address(permitStock), 500, amountIn, 1 ether, 0, 0, deadline, sellSignature);
+        require(permitStock.allowance(alice, address(router)) == 0, "permit allowance not consumed");
+        require(router.sellNonces(alice) == 1, "sell nonce not consumed");
+
+        vm.expectRevert(FlatstockRouter.InvalidNonce.selector);
+        router.sellBySig(alice, address(permitStock), 500, amountIn, 1 ether, 0, 0, deadline, sellSignature);
     }
 }

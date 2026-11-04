@@ -12,7 +12,7 @@ const privateKeyRaw = process.env.M3_CLOSE_BOT_PRIVATE_KEY || process.env.M1_REL
 
 const chain = defineChain({
   id: 4663,
-  name: "Chain 4663",
+  name: "Robinhood Chain",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: { default: { http: [quickNodeRpcUrl || publicRpcUrl] } },
 });

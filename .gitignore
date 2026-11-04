@@ -3,6 +3,7 @@
 !.env.example
 .agent/
 HANDOFF.md
+SESSION-HANDOFF.md
 work/
 node_modules/
 out/

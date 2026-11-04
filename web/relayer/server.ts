@@ -21,7 +21,7 @@ const publicRpcUrl = process.env.RPC_URL || "https://rpc.mainnet.chain.robinhood
 const quickNodeRpcUrl = process.env.QUICKNODE_RPC_URL?.trim();
 const chain = defineChain({
   id: 4663,
-  name: "Chain 4663",
+  name: "Robinhood Chain",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: { default: { http: [quickNodeRpcUrl || publicRpcUrl] } },
 });
@@ -51,6 +51,11 @@ const votesAbi = parseAbi([
 const routerAbi = parseAbi([
   "function buyMixBySig(address user, (address token, uint24 fee, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96)[] legs, uint256 amountIn, uint256 nonce, uint256 deadline, (uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) permitData, bytes signature) returns (uint256[] amountsOut)",
   "function sellBySig(address user, address sellToken, uint24 fee, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96, uint256 nonce, uint256 deadline, bytes signature) returns (uint256 amountOut)",
+]);
+const permitAbi = parseAbi([
+  "function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)",
+  "function name() view returns (string)",
+  "function nonces(address owner) view returns (uint256)",
 ]);
 
 const usage = new Map<string, { day: string; count: number }>();
@@ -93,6 +98,21 @@ const sellTypes = {
     { name: "deadline", type: "uint256" },
   ],
 } as const;
+const permitTypes = {
+  Permit: [
+    { name: "owner", type: "address" },
+    { name: "spender", type: "address" },
+    { name: "value", type: "uint256" },
+    { name: "nonce", type: "uint256" },
+    { name: "deadline", type: "uint256" },
+  ],
+} as const;
+const permitWindowSeconds = 5n * 60n;
+const stockTokenAddresses = new Set([
+  "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
+  "0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec",
+  "0xe93237c50d904957cf27e7b1133b510c669c2e74",
+]);
 
 async function quickNodeCall(method: string, params: unknown[]) {
   if (!quickNodeRpcUrl) throw new Error("QuickNode Stock Token API is not configured.");
@@ -139,17 +159,28 @@ function requireHex(value: unknown, label: string) {
   return value as Hex;
 }
 
+function requireBytes32(value: unknown, label: string) {
+  if (typeof value !== "string" || !/^0x[0-9a-fA-F]{64}$/.test(value)) fail(`${label} must be bytes32.`);
+  return value as Hex;
+}
+
 function requireConfigured(address: Address, label: string): asserts address is Address {
   if (!address || !isAddress(address)) fail(`${label} is not configured.`);
 }
 
-function requireBudget(user: Address) {
+function requireBudget(user: Address, requestedTransactions = 1) {
   if (killSwitch) fail("Signature relay is paused by the kill switch.");
   const today = dayKey();
   const current = usage.get(user.toLowerCase());
   const entry = current?.day === today ? current : { day: today, count: 0 };
-  if (entry.count >= dailyCap) fail("Daily sponsored transaction cap reached.");
+  if (entry.count + requestedTransactions > dailyCap) fail("Daily sponsored transaction cap reached.");
   return { today, entry };
+}
+
+function recordSponsoredTransaction(user: Address, today: string) {
+  const current = usage.get(user.toLowerCase());
+  const count = current?.day === today ? current.count : 0;
+  usage.set(user.toLowerCase(), { day: today, count: count + 1 });
 }
 
 async function relayVote(payload: Record<string, unknown>) {
@@ -160,7 +191,7 @@ async function relayVote(payload: Record<string, unknown>) {
   const nonce = BigInt(String(payload.nonce));
   const deadline = BigInt(String(payload.deadline));
   const signature = requireHex(payload.signature, "signature");
-  const { today, entry } = requireBudget(voter);
+  const { today } = requireBudget(voter);
   const valid = await verifyTypedData({
     address: voter,
     domain: { name: "Flatstock Votes", version: "1", chainId: 4663, verifyingContract: metaVotesAddress },
@@ -176,9 +207,8 @@ async function relayVote(payload: Record<string, unknown>) {
     functionName: "voteBySig",
     args: [voter, roundId, assetIndex, nonce, deadline, signature],
   });
-  entry.count += 1;
-  usage.set(voter.toLowerCase(), { day: today, count: entry.count });
-  return { txHash, day: today, usage: entry.count, dailyCap };
+  recordSponsoredTransaction(voter, today);
+  return { txHash, day: today, usage: usage.get(voter.toLowerCase())?.count || 0, dailyCap };
 }
 
 function parseLegs(value: unknown) {
@@ -208,7 +238,7 @@ async function relayBuy(payload: Record<string, unknown>) {
   const total = legs.reduce((sum, leg) => sum + leg.amountIn, 0n);
   if (total !== amountIn) fail("Buy amount does not match the signed legs.");
   const legsHash = keccak256(encodeAbiParameters([{ type: "tuple[]", components: metaLegComponents }], [legs]));
-  const { today, entry } = requireBudget(user);
+  const { today } = requireBudget(user);
   const valid = await verifyTypedData({
     address: user,
     domain: { name: "Flatstock Trades", version: "1", chainId: 4663, verifyingContract: metaRouterAddress },
@@ -232,9 +262,8 @@ async function relayBuy(payload: Record<string, unknown>) {
     functionName: "buyMixBySig",
     args: [user, legs, amountIn, nonce, deadline, permit, signature],
   });
-  entry.count += 1;
-  usage.set(user.toLowerCase(), { day: today, count: entry.count });
-  return { txHash, day: today, usage: entry.count, dailyCap };
+  recordSponsoredTransaction(user, today);
+  return { txHash, day: today, usage: usage.get(user.toLowerCase())?.count || 0, dailyCap };
 }
 
 async function relaySell(payload: Record<string, unknown>) {
@@ -249,7 +278,27 @@ async function relaySell(payload: Record<string, unknown>) {
   const deadline = BigInt(String(payload.deadline));
   const signature = requireHex(payload.signature, "signature");
   if (!Number.isInteger(fee) || amountIn <= 0n || amountOutMinimum <= 0n) fail("Invalid sell guard.");
-  const { today, entry } = requireBudget(user);
+  if (!stockTokenAddresses.has(sellToken.toLowerCase())) fail("Sell token is not an enabled Stock Token.");
+  if (!payload.permit || typeof payload.permit !== "object") fail("An exact Stock Token permit is required for a relayed sell.");
+  const rawPermit = payload.permit as Record<string, unknown>;
+  const permitValue = BigInt(String(rawPermit.value));
+  const permitNonce = BigInt(String(rawPermit.nonce));
+  const permitDeadline = BigInt(String(rawPermit.deadline));
+  const permitV = Number(rawPermit.v);
+  const permitR = requireBytes32(rawPermit.r, "permit.r");
+  const permitS = requireBytes32(rawPermit.s, "permit.s");
+  if (permitValue !== amountIn || permitDeadline !== deadline) fail("Sell permit must match the exact sell amount and deadline.");
+  if (!Number.isInteger(permitV) || (permitV !== 27 && permitV !== 28)) fail("Invalid permit signature.");
+  const latest = await publicClient.getBlock({ blockTag: "latest" });
+  if (deadline <= latest.timestamp || deadline > latest.timestamp + permitWindowSeconds) fail("Sell permit deadline must be within 5 minutes.");
+  const { today } = requireBudget(user, 2);
+  const [sellNonceOnChain, permitNonceOnChain, tokenName] = await Promise.all([
+    publicClient.readContract({ address: metaRouterAddress, abi: routerAbi, functionName: "sellNonces", args: [user] }) as Promise<bigint>,
+    publicClient.readContract({ address: sellToken, abi: permitAbi, functionName: "nonces", args: [user] }) as Promise<bigint>,
+    publicClient.readContract({ address: sellToken, abi: permitAbi, functionName: "name" }) as Promise<string>,
+  ]);
+  if (nonce !== sellNonceOnChain) fail("Sell nonce is stale.");
+  if (permitNonce !== permitNonceOnChain) fail("Stock Token permit nonce is stale.");
   const valid = await verifyTypedData({
     address: user,
     domain: { name: "Flatstock Trades", version: "1", chainId: 4663, verifyingContract: metaRouterAddress },
@@ -259,15 +308,37 @@ async function relaySell(payload: Record<string, unknown>) {
     signature,
   });
   if (!valid) fail("Sell signature is invalid.");
+  const permitSignature = `0x${permitR.slice(2)}${permitS.slice(2)}${permitV.toString(16).padStart(2, "0")}` as Hex;
+  const permitValid = await verifyTypedData({
+    address: user,
+    domain: { name: tokenName, version: "1", chainId: 4663, verifyingContract: sellToken },
+    types: permitTypes,
+    primaryType: "Permit",
+    message: { owner: user, spender: metaRouterAddress, value: permitValue, nonce: permitNonce, deadline: permitDeadline },
+    signature: permitSignature,
+  });
+  if (!permitValid) fail("Stock Token permit signature is invalid.");
+
+  const permitTxHash = await walletClient.writeContract({
+    address: sellToken,
+    abi: permitAbi,
+    functionName: "permit",
+    args: [user, metaRouterAddress, permitValue, permitDeadline, permitV, permitR, permitS],
+  });
+  recordSponsoredTransaction(user, today);
+  const permitReceipt = await publicClient.waitForTransactionReceipt({ hash: permitTxHash });
+  if (permitReceipt.status !== "success") fail("Stock Token permit transaction reverted.");
+
   const txHash = await walletClient.writeContract({
     address: metaRouterAddress,
     abi: routerAbi,
     functionName: "sellBySig",
     args: [user, sellToken, fee, amountIn, amountOutMinimum, sqrtPriceLimitX96, nonce, deadline, signature],
   });
-  entry.count += 1;
-  usage.set(user.toLowerCase(), { day: today, count: entry.count });
-  return { txHash, day: today, usage: entry.count, dailyCap };
+  recordSponsoredTransaction(user, today);
+  const sellReceipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+  if (sellReceipt.status !== "success") fail("Sell transaction reverted after the exact permit was accepted.");
+  return { txHash, permitTxHash, day: today, usage: usage.get(user.toLowerCase())?.count || 0, dailyCap };
 }
 
 async function proxyRpc(request: http.IncomingMessage, response: http.ServerResponse) {

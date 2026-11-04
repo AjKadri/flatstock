@@ -778,6 +778,14 @@ export async function readPermitNonce(account: Address) {
   }) as bigint;
 }
 
+async function readPermitTokenDetails(token: Address, account: Address) {
+  const [name, nonce] = await Promise.all([
+    publicClient.readContract({ address: token, abi: permitAbi, functionName: "name" }) as Promise<string>,
+    publicClient.readContract({ address: token, abi: permitAbi, functionName: "nonces", args: [account] }) as Promise<bigint>,
+  ]);
+  return { name, nonce };
+}
+
 export async function signMetaVote(
   wallet: ConnectedWallet,
   account: Address,
@@ -868,8 +876,24 @@ export async function signMetaBuy(
 
 export async function signMetaSell(wallet: ConnectedWallet, account: Address, leg: SellLeg) {
   if (!metaRouterAddress || !SIGNATURE_SAFE_WRITES_ENABLED) throw new Error("Signature-safe trade contract is not configured.");
-  const nonce = await publicClient.readContract({ address: metaRouterAddress, abi: routerAbi, functionName: "sellNonces", args: [account] }) as bigint;
-  const deadline = (await getLatestTimestamp()) + 15n * 60n;
+  const [nonce, permit] = await Promise.all([
+    publicClient.readContract({ address: metaRouterAddress, abi: routerAbi, functionName: "sellNonces", args: [account] }) as Promise<bigint>,
+    readPermitTokenDetails(leg.token, account),
+  ]);
+  const deadline = (await getLatestTimestamp()) + 5n * 60n;
+  const permitSignature = await wallet.signTypedData({
+    account,
+    domain: { name: permit.name, version: "1", chainId: chain.id, verifyingContract: leg.token },
+    types: { Permit: [
+      { name: "owner", type: "address" },
+      { name: "spender", type: "address" },
+      { name: "value", type: "uint256" },
+      { name: "nonce", type: "uint256" },
+      { name: "deadline", type: "uint256" },
+    ] },
+    primaryType: "Permit",
+    message: { owner: account, spender: metaRouterAddress, value: leg.amountIn, nonce: permit.nonce, deadline },
+  });
   const signature = await wallet.signTypedData({
     account,
     domain: { name: "Flatstock Trades", version: "1", chainId: chain.id, verifyingContract: metaRouterAddress },
@@ -885,10 +909,27 @@ export async function signMetaSell(wallet: ConnectedWallet, account: Address, le
     primaryType: "SellStock",
     message: { user: account, token: leg.token, fee: leg.fee, amountIn: leg.amountIn, amountOutMinimum: leg.minOut, nonce, deadline },
   });
+  const permitParts = splitSignature(permitSignature);
   const response = await fetch(`${RELAYER_API}/meta/sell`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ user: account, sellToken: leg.token, fee: leg.fee, amountIn: leg.amountIn.toString(), amountOutMinimum: leg.minOut.toString(), sqrtPriceLimitX96: "0", nonce: nonce.toString(), deadline: deadline.toString(), signature }),
+    body: JSON.stringify({
+      user: account,
+      sellToken: leg.token,
+      fee: leg.fee,
+      amountIn: leg.amountIn.toString(),
+      amountOutMinimum: leg.minOut.toString(),
+      sqrtPriceLimitX96: "0",
+      nonce: nonce.toString(),
+      deadline: deadline.toString(),
+      permit: {
+        value: leg.amountIn.toString(),
+        nonce: permit.nonce.toString(),
+        deadline: deadline.toString(),
+        ...permitParts,
+      },
+      signature,
+    }),
   });
   const payload = await response.json() as { txHash?: Hex; error?: string };
   if (!response.ok || !payload.txHash) throw new Error(payload.error || "The signature relay rejected this sell.");

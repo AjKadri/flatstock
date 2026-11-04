@@ -6,6 +6,7 @@ import {
 } from "viem";
 
 export const CHAIN_ID = 4663;
+export const NETWORK_LABEL = "Robinhood Chain";
 export const RPC_URL =
   import.meta.env.VITE_RPC_URL || "/api/rpc";
 export const EXPLORER_URL =
@@ -26,7 +27,7 @@ export const LEGAL_NOTICE =
 
 export const chain = defineChain({
   id: CHAIN_ID,
-  name: "Chain 4663",
+  name: NETWORK_LABEL,
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
   rpcUrls: { default: { http: [RPC_URL] } },
 });
@@ -125,6 +126,7 @@ export const feedAbi = parseAbi([
 ]);
 
 export const permitAbi = parseAbi([
+  "function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)",
   "function nonces(address owner) view returns (uint256)",
   "function DOMAIN_SEPARATOR() view returns (bytes32)",
   "function name() view returns (string)",
