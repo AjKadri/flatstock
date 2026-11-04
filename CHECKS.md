@@ -2194,3 +2194,153 @@ The permit Approval log set the router allowance to exactly 0.02 NVDA. The
 sell receipt transferred exactly 0.02 NVDA from the user wallet and emitted
 4.158288 USDG to the user wallet. The app displayed `NVDA sold`, the sell
 transaction link, `Robinhood Chain`, and the required independence footer.
+
+## 2026-11-04 live test acceptance
+
+Status: pass with an operational top-up recommendation. The requested live
+test completed on chain 4663. The relayer kill switch is enabled again and the
+daily sponsored transaction cap is restored to 3.
+
+### Round 4
+
+An initial command used the stale local `VOTE_CONTRACT_ADDRESS` and opened
+round 4 on the retired contract `0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9`:
+
+```text
+tx=0x36266d10b4276f018f902888de1922d3166ff7b53df0770cc99654baf4b1c412
+block=105937568
+status=0x1
+```
+
+No user funds moved and the app ignored that retired contract. The command was
+corrected to use the requested current contract `0x4BB945800d588E6B4DB287b3fCe9C13f7825A968`.
+
+```text
+tx=0x7776a75a5da7e8f2067a2ff23bfbcadac810bd0168b41f58713e81aa082dfe80
+block=105938625
+status=0x1
+target=0x4BB945800d588E6B4DB287b3fCe9C13f7825A968
+call=openRound(4,3,1794232800)
+assetCount=3
+voteShareBps=5000
+round4.totalVotes=0 before voting
+```
+
+The live app showed round 4 open with the zero-vote preview AAPL 33.34%,
+NVDA 33.33%, and MSFT 33.33%.
+
+### WIF approval and gasless vote
+
+The user wallet first received ETH because WIF has no permit and the one-time
+approval must be a normal wallet transaction:
+
+```text
+topUp1=0x26c1487036ef1d7b117786cb206a841d8bb03f79726ef031eb7abecff5c05aa6
+topUp1Amount=0.00001 ETH
+topUp2=0xf52e8e36577daeed410beab7ab496132d3fe43c9b673efdf86883fb196c66d49
+topUp2Amount=0.0001 ETH
+```
+
+The old EIP-7702 delegation blocked the first top-up attempt. It was revoked
+before retrying the top-up:
+
+```text
+revokeTx=0xc5dd3155f3124e871d313e936f77a863c095a21d60bef7cbac5f9c8c130057f2
+revokeBlock=105944252
+revokeStatus=0x1
+codeBefore=0xef01008bdd498234e2272c97acb1aa19dc136be8b2914c
+codeAfter=0x
+```
+
+The one-time WIF approval then confirmed:
+
+```text
+approvalTx=0xedc5ffca74479d84613ce94e6615706bf18afbd46daffec043b9509047f86c97
+approvalBlock=105947831
+approvalStatus=0x1
+spender=0x4BB945800d588E6B4DB287b3fCe9C13f7825A968
+value=1 WIF
+```
+
+The signed AAPL vote was relayed while the kill switch was temporarily off:
+
+```text
+voteTx=0x8b119890df6bc15c41e5bf23879c8aa9db7f6637bcd77dcc18fe5c9530873524
+voteBlock=105948988
+voteStatus=0x1
+from=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+round=4
+asset=AAPL
+burn=1 WIF
+```
+
+The receipt contained the exact 1 WIF transfer to FlatstockVotes and burn to
+the zero address. The app showed 1 vote counted and updated the mix to AAPL
+50.00%, NVDA 25.00%, and MSFT 25.00%. The kill switch was re-enabled after
+the receipt.
+
+### Gasless full-mix buy
+
+The first buy attempt reached the wallet signatures but stopped in the
+frontend before the relayer request because BigInt values were passed directly
+to `JSON.stringify`. No USDG moved and no buy transaction was sent. The fix
+serializes the relayed leg integer fields as strings while preserving the
+original values for EIP-712 hashing. It is committed as `574abe1` and live on
+the existing Flatstock Vercel project.
+
+The corrected 3 USDG buy completed through the signature-safe router:
+
+```text
+buyTx=0x0542cc7ec4daaef168325e20a143c83fd014dbf1f25cb6ec09f5f5eae01c2fa4
+buyBlock=105963056
+buyStatus=0x1
+from=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+amountIn=3 USDG
+AAPL=1.5 USDG -> 0.00441798412505307 shares
+NVDA=0.75 USDG -> 0.003673248375996948 shares
+MSFT=0.75 USDG -> 0.001388000034572657 shares
+quoteGuard=AAPL 0.14%, NVDA 0.01%, MSFT 0.31%
+finality=SOFT
+```
+
+The app displayed `Buy complete at SOFT finality`, the three shares in the
+portfolio, and all three History entries. The kill switch was re-enabled after
+the receipt, and the temporary cap of 4 was restored to 3.
+
+### Unlocked-wallet normal buy
+
+Wallet `0x571B19687cdd91176B79b990EdFbed18Fb373dCF` had no WIF locked, held
+3.121275 USDG and 0.00017 ETH before the buy, and used wallet gas:
+
+```text
+buyTx=0xcb9f199c8780b6f44e20b329a8bf678162e228da2664941c197125369a017800
+buyBlock=105967231
+buyStatus=0x1
+from=0x571B19687cdd91176B79b990EdFbed18Fb373dCF
+gasUsed=437702
+amountIn=3 USDG
+AAPL=1.5 USDG -> 0.00441944863066695 shares
+NVDA=0.75 USDG -> 0.003672671816295346 shares
+MSFT=0.75 USDG -> 0.00138800477269138 shares
+```
+
+The app showed `Buy complete at SOFT finality`, the three shares in Portfolio,
+and the three matching History entries. The receipt sender was the unlocked
+wallet, not the relayer.
+
+### Final relayer state and runway
+
+```text
+health={"enabled":true,"killSwitch":true,"dailyCap":3,"usage":0,"signatureRelay":true}
+relayer=0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4
+relayerBalance=0.000082446419572223 ETH
+observedGasPrice=0.020002 gwei
+```
+
+Observed relayer costs were approximately 0.0000031 ETH for the vote and
+0.0000095 ETH for the full-mix buy. For one wallet doing one vote plus one
+gasless buy per day over the 12 days after 4 Nov through 16 Nov, the minimum
+additional runway is about 0.000068 ETH after the current balance. A practical
+top-up recommendation is 0.0002 ETH to allow fee movement and retries. This is
+for one active wallet; each additional daily vote plus buy adds about 0.0000125
+ETH under the observed fee level. No runway top-up was sent in this pass.
