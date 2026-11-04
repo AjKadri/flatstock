@@ -2169,3 +2169,28 @@ did not consume the sell nonce, and rejected the signed action after its
 deadline. Because the deployed router's legacy sell type does not include
 `sqrtPriceLimitX96`, the relayer rejects every nonzero value and the UI always
 sends zero.
+
+## Mainnet permit sell acceptance
+
+The earlier no-transaction status above was superseded after the tested
+frontend deployment was assigned to `app.flatstock.ajkadri.dev` and the
+relayer ABI was corrected to include `sellNonces(address)`.
+
+The approved 0.02 NVDA sell completed successfully:
+
+```text
+permitTx=0x7eb8cbee774ca45f850282889468df165290977f75e45baf3db6a767ad782335
+permitBlock=105796314
+permitStatus=0x1
+sellTx=0xd55536195ee06463bbb6bfb64606c175182e089fb273dbdcc192728361f9c77f
+sellBlock=105796320
+sellStatus=0x1
+amountIn=0.02 NVDA
+amountOut=4.158288 USDG
+healthAfter={"enabled":true,"killSwitch":true,"dailyCap":3,"usage":0,"signatureRelay":true}
+```
+
+The permit Approval log set the router allowance to exactly 0.02 NVDA. The
+sell receipt transferred exactly 0.02 NVDA from the user wallet and emitted
+4.158288 USDG to the user wallet. The app displayed `NVDA sold`, the sell
+transaction link, `Robinhood Chain`, and the required independence footer.
