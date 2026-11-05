@@ -1,0 +1,161 @@
+# Regenerates landing/docs/*.html. Run: python3 scripts/gen-docs.py
+import os, html
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "landing", "docs")
+EX = "https://robinhoodchain.blockscout.com"
+def a(addr, label=None): return f'<a href="{EX}/address/{addr}" target="_blank" rel="noopener noreferrer"><code>{label or addr}</code></a>'
+def tx(h): return f'<a href="{EX}/tx/{h}" target="_blank" rel="noopener noreferrer"><code>{h[:10]}…{h[-6:]}</code></a>'
+VOTES="0x4BB945800d588E6B4DB287b3fCe9C13f7825A968"; ROUTER="0x8799a2eF390dE8b0Ef97919C7e040C44DdFadbe7"; LOCK="0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121"
+WIF="0x5173b8eA6923c2d40267890D45C46a3480954773"; USDG="0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
+NOTICE = 'Not available to US persons, or in Canada, the UK, Switzerland or other restricted jurisdictions. Not investment advice. <a href="https://docs.robinhood.com/rhj/restricted-jurisdictions" target="_blank" rel="noopener noreferrer">Restricted jurisdictions</a>'
+NAV = [("", "Overview"), ("getting-started","Getting started"), ("voting","Voting"), ("trading","Buying and selling"), ("gas-and-lock","Gas and the 10 $WIF lock"),
+       ("security","Security model"), ("contracts","Contracts and addresses"), ("fees","Fees"), ("risks","Eligibility and risks"), ("faq","FAQ"), ("changelog","Changelog"), ("terms","Terms"), ("privacy","Privacy"), ("credits","Credits")]
+P = {}
+P[""] = ("Overview", """
+<p class="lede">Flatstock lets you buy the US stocks the community picked, in one tap, with no gas. $WIF holders vote each round on a three-stock mix; you buy that mix into your own wallet on Robinhood Chain.</p>
+<h2>The idea in four lines</h2>
+<ol class="num"><li><b>Vote.</b> Each vote burns 1 $WIF and nudges next week's mix toward your pick.</li>
+<li><b>Close.</b> When a round closes, its mix is final.</li>
+<li><b>Buy.</b> One signature buys the final mix of the most recent closed round. Stock Tokens go straight to your wallet.</li>
+<li><b>Hold or sell.</b> They are yours. Sell back to USDG any time.</li></ol>
+<h2>This week and next week</h2>
+<p>Buying uses the <b>final mix of the most recent closed round</b> ("This week's mix, Round N, final"). Voting always happens on the <b>open round</b> ("Vote for next week, Round N+1"). Rounds are closed and opened back to back, so buying and voting do not stop. Before the very first round has closed, the app shows a clearly labelled live preview instead.</p>
+<h2>What it is not</h2>
+<p>Flatstock is a hackathon project: it has not been audited, it is independent and not affiliated with Robinhood, and it does not give investment advice. See <a href="/docs/risks">Eligibility and risks</a>.</p>
+<div class="cards"><a href="/docs/getting-started">Getting started</a><a href="/docs/voting">How voting works</a><a href="/docs/trading">Buying and selling</a><a href="/docs/security">Security model</a></div>
+""")
+P["getting-started"] = ("Getting started", f"""
+<h2>1. A wallet</h2><p>Use any browser wallet that supports custom networks (the app also works inside wallet in-app browsers). Self-custody only: Flatstock never holds your funds.</p>
+<h2>2. Add Robinhood Chain</h2>
+<p>The app has an "Add Robinhood Chain" button (More tab, or the wrong-network banner). To add it by hand:</p>
+<table><tr><th>Field</th><th>Value</th></tr><tr><td>Network name</td><td>Robinhood Chain</td></tr><tr><td>Chain ID</td><td><code>4663</code></td></tr><tr><td>RPC URL</td><td><code>https://rpc.mainnet.chain.robinhood.com</code></td></tr><tr><td>Currency</td><td>ETH</td></tr><tr><td>Explorer</td><td><code>{EX}</code></td></tr></table>
+<h2>3. What you need to hold</h2>
+<ul><li><b>USDG</b> to buy with ({a(USDG)}).</li><li><b>$WIF</b> to vote ({a(WIF)}). Each vote burns 1.</li><li><b>ETH</b> for gas, unless your wallet has the <a href="/docs/gas-and-lock">10 $WIF lock</a>.</li></ul>
+<p>Flatstock does not sell these. Get them on Robinhood Chain through the venue you prefer.</p>
+<h2>4. First steps</h2>
+<ol class="num"><li>Open <a href="https://app.flatstock.ajkadri.dev">the app</a> and connect.</li><li>Check Home for this week's mix and the round countdown.</li><li>Optional: Vote for next week, and lock 10 $WIF for free gas.</li><li>Buy: enter an amount, check prices, review, sign.</li></ol>
+<p class="small">Stock Tokens are not available to everyone. Read <a href="/docs/risks">Eligibility and risks</a> first.</p>
+""")
+P["voting"] = ("Voting", """
+<h2>Rounds</h2><p>A round has a list of stocks (three today: AAPL, NVDA, MSFT), an opening time and a closing time. The app always votes on the <b>open</b> round. After a round closes, its mix is frozen and used for buying.</p>
+<h2>Casting a vote</h2><ul><li><b>One vote per wallet per round.</b> A second attempt is rejected, and the app tells you so before spending anything.</li><li>Each vote <b>burns exactly 1 $WIF</b>, permanently.</li><li>The first vote on a contract may ask for a one-time $WIF approval.</li><li>With the 10 $WIF lock, you sign the vote and the relayer pays the gas. Without it, your wallet sends the transaction and you pay the ETH gas.</li><li>Signed votes expire after 15 minutes.</li></ul>
+<h2>How the mix is computed</h2>
+<p>The mix is a blend: <b>50% equal weight + 50% vote share</b>, then <b>no stock may exceed 50%</b> (any excess is redistributed to the others). With zero votes, every stock gets an equal share.</p>
+<table><tr><th>Example (3 stocks, 1 vote for AAPL)</th><th>Equal part (50%)</th><th>Vote part (50%)</th><th>Result</th></tr>
+<tr><td>AAPL</td><td>16.67%</td><td>50.00%</td><td>66.67% → capped at 50%</td></tr><tr><td>NVDA</td><td>16.67%</td><td>0%</td><td>25%</td></tr><tr><td>MSFT</td><td>16.67%</td><td>0%</td><td>25%</td></tr></table>
+<p class="small">The cap-excess goes to the other stocks equally, which is why round 4 shows 50 / 25 / 25.</p>
+<h2>Closing</h2><p>After a round's closing time, anyone can call <code>closeRound</code> on the contract. That stores the final weights. A closed round cannot be voted on again. Rounds on the current contract start at Round 4; earlier rounds ran on retired test contracts and are listed separately under "Test rounds".</p>
+<h2>Past rounds</h2><p>The app (More tab) and the <a href="/#rounds">landing page</a> show each round's final mix, votes and $WIF burned, read straight from the chain, with Blockscout links.</p>
+""")
+P["trading"] = ("Buying and selling", """
+<h2>Buying the mix</h2>
+<ol class="num"><li>Choose an amount in USDG.</li><li>The app splits it by the mix weights (the final mix of the last closed round) into one swap per stock.</li><li><b>Check prices.</b> For each stock the app quotes the swap and compares it with the Chainlink price.</li><li>Review and sign. Tokens are sent directly to your wallet.</li></ol>
+<h3>The price guard</h3><p>Every leg must be within <b>2% of Chainlink</b>. Each leg also needs a quote and a fresh, working Chainlink price (older than 24 hours counts as stale). If <b>any</b> leg fails, the whole buy is blocked. The minimum output of each leg is set 2% below its quote.</p>
+<h3>Free gas or your gas</h3><p>With the 10 $WIF lock and the relayer available, you sign two messages (a USDG permit for the exact amount, and the exact buy) and the relayer submits them and pays the gas. Otherwise your wallet sends the transaction, after a one-time USDG approval if needed, and you pay the gas. Signed buys expire after 15 minutes.</p>
+<h3>Buy complete</h3><p>The app waits for the chain's finality service before saying "Buy complete" and shows the finality stage. If it cannot confirm, it says the buy was submitted but finality was not confirmed, and links the transaction.</p>
+<h2>Selling</h2><p>Pick a Stock Token and an amount in shares. The same price guard applies (fresh price, within 2% of Chainlink). With free gas you sign two messages (a permit for that token and amount, then the sell) that expire after <b>5 minutes</b>; the relayer submits both. USDG is sent straight to your wallet.</p>
+<h2>Market hours</h2><p>Stock Token liquidity follows US market hours: roughly 15:30–22:00 Lagos time (WAT) on weekdays. Outside those hours quotes may be missing or stale, and the guard will block the trade rather than guess.</p>
+<h2>Corporate actions</h2><p>Dividends and splits are handled by the Stock Token itself, so your share count updates automatically. The Portfolio tab lists recent actions.</p>
+""")
+P["gas-and-lock"] = (f"Gas and the 10 $WIF lock", f"""
+<h2>The idea</h2><p>Lock <b>10 $WIF</b> and the relayer pays the gas for your votes and buys. The lock is your own $WIF, held in the lock contract ({a(LOCK)}); it has no owner and cannot move one user's balance to another account.</p>
+<h2>Limits</h2><ul><li>Up to <b>3 sponsored transactions per wallet per day</b> (the day follows Lagos time). A vote or buy uses 1, a sell uses 2 (permit plus sell).</li><li>Sponsorship <b>pauses automatically</b> if the relayer's ETH balance falls below 0.0003 ETH, and there is a kill switch. When paused, the app says so and you can still buy and pay your own gas.</li><li>The relayer can only submit exactly what you signed.</li></ul>
+<h2>Locking</h2><p>In the app: More tab → "Lock 10 $WIF for free gas". Your wallet asks for a $WIF approval and then the lock transaction (you pay that gas).</p>
+<h2>Unlocking</h2><p>The lock contract has an <code>unlock(amount)</code> function: you can take back all of your locked $WIF, or part of it as long as what remains is still at least 10 $WIF. <b>The app does not have an unlock button yet.</b> Until it does, call <code>unlock</code> directly from the contract page on Blockscout (Write contract) with your own wallet.</p>
+<h2>Without a lock</h2><p>Nothing breaks. Every action is a normal wallet transaction and you pay the small ETH gas.</p>
+""")
+P["security"] = ("Security model", """
+<p class="lede">Flatstock is built so it can only do what you signed. This page lists what the code does. It is a hackathon project and <b>has not been audited</b>.</p>
+<h2>Self-custody</h2><p>Stock Tokens go directly to your wallet. The app never holds your funds, and there is no account.</p>
+<h2>A signature for every action</h2><ul><li>Votes, buys and sells are authorised by your own EIP-712 signature for that exact action (round and stock, exact legs and minimum outputs, or exact token and amount), plus a nonce and a deadline.</li><li>Token movement uses standard EIP-2612 permits for the exact amount.</li><li>There is no account delegation (no EIP-7702) and nothing is paid in $WIF as gas.</li><li>The relayer can only submit what you signed and cannot change it.</li></ul>
+<h2>Price and oracle guards</h2><ul><li>Every swap leg must be within 2% of Chainlink, or the whole buy is blocked.</li><li>Missing quotes, stale prices (older than 24 hours) and unhealthy feeds fail closed.</li><li>Each leg has a minimum output.</li></ul>
+<h2>Relayer limits</h2><ul><li>3 sponsored transactions per wallet per day.</li><li>Automatic pause when the relayer's ETH is low (below 0.0003 ETH); the pause fails closed if the balance cannot be read.</li><li>An operator kill switch.</li><li>The relayer's key is held only on the server; the website holds no secrets.</li></ul>
+<h2>Contracts</h2><p>The votes and router contracts are verified on Blockscout and the source is in the <a href="https://github.com/AjKadri/flatstock" target="_blank" rel="noopener noreferrer">repository</a>. See <a href="/docs/contracts">Contracts and addresses</a>. The vote contract has one owner who can open rounds; closing a round is open to anyone after its closing time.</p>
+<h2>What we do not claim</h2><p>No audit, no insurance, no guarantee of availability. Use small amounts. Report a problem through the repository.</p>
+""")
+stocks = [("AAPL","0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9","0x6B22A786bAa607d76728168703a39Ea9C99f2cD0","0.05%"),("NVDA","0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC","0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15","0.05%"),("MSFT","0xe93237C50D904957Cf27E7B1133b510C669c2e74","0x45C3C877C15E6BA2EBB19eA114Ea508d14C1Af2E","0.3%")]
+rows = "".join(f"<tr><td>{s}</td><td>{a(t, t[:6]+'…'+t[-4:])}</td><td>{a(f, f[:6]+'…'+f[-4:])}</td><td>{fee}</td></tr>" for s,t,f,fee in stocks)
+P["contracts"] = ("Contracts and addresses", f"""
+<p>Robinhood Chain, chain ID 4663. Every address links to Blockscout.</p>
+<h2>Flatstock</h2><table><tr><th>Contract</th><th>Address</th><th>Notes</th></tr>
+<tr><td>FlatstockVotes (current)</td><td>{a(VOTES)}</td><td>Rounds from Round 4. Verified on Blockscout and Sourcify.</td></tr>
+<tr><td>FlatstockRouter</td><td>{a(ROUTER)}</td><td>Buys and sells. Blockscout "exact match" checked 5 Nov 2026.</td></tr>
+<tr><td>FlatstockLock</td><td>{a(LOCK)}</td><td>10 $WIF minimum lock. Source in the repository.</td></tr>
+<tr><td>Relayer wallet</td><td>{a("0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4")}</td><td>Pays sponsored gas. Holds only gas ETH.</td></tr></table>
+<h2>Tokens and venues</h2><table><tr><th>Name</th><th>Address</th></tr><tr><td>$WIF</td><td>{a(WIF)}</td></tr><tr><td>USDG</td><td>{a(USDG)}</td></tr><tr><td>Uniswap router</td><td>{a("0xCaf681a66D020601342297493863E78C959E5cb2")}</td></tr><tr><td>Uniswap quoter</td><td>{a("0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7")}</td></tr></table>
+<h2>Stocks in the mix</h2><table><tr><th>Stock</th><th>Stock Token</th><th>Chainlink feed</th><th>Pool fee</th></tr>{rows}</table>
+<h2>Retired test contracts</h2><p>These ran before the current contract. They are retired, the app ignores them for rounds, and their votes are included in the $WIF burned total.</p>
+<ul><li>{a("0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9")} · 3 votes</li><li>{a("0xD49249D2a5CffBCF35B6560857d1d1C703802e78")} · 0 votes</li><li>{a("0x68d2622f3bbf6BE80CdfED679489de344410C7Db")} · 1 vote</li></ul>
+<p class="small">Source code: <a href="https://github.com/AjKadri/flatstock" target="_blank" rel="noopener noreferrer">github.com/AjKadri/flatstock</a> (Apache-2.0). Live relayer status: <a href="https://api.flatstock.ajkadri.dev/api/health" target="_blank" rel="noopener noreferrer">/api/health</a>.</p>
+""")
+P["fees"] = ("Fees", """
+<h2>Flatstock fee: 0%</h2><p>Flatstock takes no trading fee today. The fee switch is off.</p>
+<h2>What you do pay</h2><ul><li><b>The swap price</b>, including the Uniswap pool fee of each stock's pool (0.05% for AAPL and NVDA, 0.3% for MSFT) and market spread, which the price guard keeps within 2% of Chainlink.</li><li><b>ETH gas</b> for your own transactions: the one-time approvals, the lock transaction, and any action when you have no lock. With the lock, votes and buys are sponsored (up to 3 per day).</li><li><b>1 $WIF</b> burned per vote.</li></ul>
+<p class="small">Typical relayer costs we measured on mainnet: about 0.000003 ETH per vote and about 0.00001 ETH per gasless buy.</p>
+""")
+P["risks"] = ("Eligibility and risks", f"""
+<h2>Availability</h2><p>{NOTICE}</p>
+<p>Stock Tokens are <b>restricted</b> for the United States and U.S. persons, Canada, the United Kingdom and Switzerland, and <b>prohibited</b> for Cuba, Belarus, Iran, North Korea, Russia, Syria, Ukraine, South Sudan, Sudan, Myanmar and Venezuela. Source: <a href="https://docs.robinhood.com/rhj/restricted-jurisdictions" target="_blank" rel="noopener noreferrer">docs.robinhood.com/rhj/restricted-jurisdictions</a>, checked 5 Nov 2026. The list may change. You are responsible for following the rules where you live.</p>
+<h2>Not investment advice</h2><p>Flatstock shows a community-voted mix. It is not a recommendation, and stock prices can fall. You can lose money.</p>
+<h2>Technical risks</h2><ul><li>Hackathon software, <b>not audited</b>. Smart contracts can have bugs.</li><li>Prices come from onchain pools; the guard blocks trades more than 2% from Chainlink but cannot remove market risk.</li><li>Stock Tokens trade against USDG on-chain, and liquidity can be thin, especially outside US market hours.</li><li>The relayer is run by one operator and can be paused or run out of gas funds. You can always use normal wallet transactions instead.</li></ul>
+<h2>Independence</h2><p>Flatstock is independent and not affiliated with Robinhood. "Robinhood Chain" is used only to name the network.</p>
+""")
+P["faq"] = ("FAQ", """
+<h2>Can I vote more than once?</h2><p>No. One vote per wallet per round, 1 $WIF burned.</p>
+<h2>My vote did not count. Why?</h2><p>Most likely your wallet already voted in this round. The app now checks before it asks you to sign.</p>
+<h2>Which round does my buy use?</h2><p>The final mix of the most recent closed round.</p>
+<h2>Why does the app say "preview mix"?</h2><p>The first round has not closed yet, so there is no final mix. The preview shows the live vote result and is replaced by the final mix after the round closes.</p>
+<h2>Why was my buy blocked?</h2><p>The price guard blocked it: a quote was missing, a price was stale, or a leg was more than 2% from Chainlink. This happens most outside US market hours. Try again later.</p>
+<h2>Do I need ETH?</h2><p>Only if your wallet has no 10 $WIF lock, or for the one-time approvals and the lock itself.</p>
+<h2>Is it safe?</h2><p>It is designed so every action needs your own signature and nothing is held for you, but it is unaudited. Read the <a href="/docs/security">security model</a> and use small amounts.</p>
+<h2>Can I take my $WIF back from the lock?</h2><p>Yes, with <code>unlock</code> on the lock contract. See <a href="/docs/gas-and-lock">Gas and the lock</a>.</p>
+""")
+P["changelog"] = ("Changelog", f"""
+<h2>5 Nov 2026</h2><ul><li>New app UI: mobile-first tabs, vote orbit, mix ring, past rounds.</li><li>Buys now use the final mix of the most recent closed round; voting runs on the open round.</li><li>New landing page and these docs.</li><li>The $WIF burned total now includes all retired test contracts (5 in all).</li><li>Clear message when a wallet has already voted in a round.</li><li>Relayer pauses sponsorship when its ETH balance is low.</li></ul>
+<h2>4 Nov 2026</h2><ul><li>Live mainnet test passed: signed permit sell, gasless 3 USDG full-mix buy, normal-wallet buy. Round 4 opened on the current contract ({tx("0x7776a75a5da7e8f2067a2ff23bfbcadac810bd0168b41f58713e81aa082dfe80")}).</li></ul>
+<p class="small">Mainnet results are recorded in <code>CHECKS.md</code> in the repository.</p>
+""")
+P["terms"] = ("Terms", """
+<p class="small"><b>Draft for the project team to review before submission.</b> This is a plain-language summary, not legal advice.</p>
+<h2>1. What this is</h2><p>Flatstock is a hackathon project that helps you buy a community-voted mix of Stock Tokens on Robinhood Chain. It is provided as is, without warranties.</p>
+<h2>2. Your responsibility</h2><p>You are responsible for your wallet, your keys and your signatures, and for following the laws where you live. You must not use Flatstock if you are in, or are, a person from a restricted or prohibited jurisdiction listed in <a href="/docs/risks">Eligibility and risks</a>.</p>
+<h2>3. No advice</h2><p>Nothing here is investment, legal or tax advice.</p>
+<h2>4. Risk</h2><p>Smart contracts and markets carry risk, including total loss. The software is unaudited. Votes burn $WIF permanently and cannot be reversed.</p>
+<h2>5. Availability</h2><p>The app, the relayer and gas sponsorship may be paused, limited or stopped at any time. You can always use ordinary wallet transactions with the public contracts.</p>
+<h2>6. Independence</h2><p>Flatstock is independent and not affiliated with Robinhood.</p>
+<h2>7. Open source</h2><p>The code is Apache-2.0 licensed in the repository.</p>
+""")
+P["privacy"] = ("Privacy", """
+<p class="small"><b>Draft for the project team to review before submission.</b></p>
+<h2>What we ask for</h2><p>No name, email or account. You connect a wallet and sign.</p>
+<h2>What our servers see</h2><ul><li>When you use the app, requests go to our RPC proxy and relayer API. They see your IP address, your wallet address (for the daily cap) and the requests you make. Daily usage counters are kept in memory. Standard web server logs may keep IP addresses for a limited time.</li><li>On-chain data (votes, buys, sells, locks) is public by nature.</li></ul>
+<h2>Third parties</h2><ul><li>Fonts are loaded from Google Fonts.</li><li>The landing page reads public data directly from the Robinhood Chain RPC.</li><li>Links to Blockscout and other sites are governed by their own policies.</li></ul>
+<h2>No tracking</h2><p>We do not use advertising trackers or analytics cookies on the app or the landing page.</p>
+""")
+P["credits"] = ("Credits", """
+<h2>Fonts</h2><ul><li>Anton, Inter Tight and JetBrains Mono, via Google Fonts (SIL Open Font License).</li></ul>
+<h2>Libraries</h2><ul><li>React, Vite and viem (MIT).</li><li>GSAP and ScrollTrigger (GreenSock standard licence, free to use).</li><li>Lenis (MIT).</li></ul>
+<h2>Data</h2><ul><li>Prices: Chainlink feeds on Robinhood Chain. Quotes: Uniswap. Explorer: Blockscout.</li></ul>
+<h2>Imagery</h2><p>All visuals are drawn in code. The site uses no third-party photos and no company logos.</p>
+<h2>Independence</h2><p>Flatstock is independent and not affiliated with Robinhood.</p>
+""")
+
+def page(slug, title, body):
+    nav = "".join(f'<a href="/docs{"/"+s if s else ""}"{" class=on aria-current=page" if s==slug else ""}>{html.escape(t)}</a>' for s,t in NAV)
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="theme-color" content="#07110C" />
+<title>{html.escape(title)} · Flatstock docs</title><meta name="description" content="Flatstock docs: {html.escape(title)}." />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" /><link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter+Tight:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/docs/docs.css" /></head>
+<body><header class="top"><a class="brand" href="/"><img src="/logo.svg" alt="" width="30" height="30" /><span>Flatstock</span></a><nav class="top-links"><a href="/docs">Docs</a><a href="https://github.com/AjKadri/flatstock" target="_blank" rel="noopener noreferrer">GitHub</a><a class="open" href="https://app.flatstock.ajkadri.dev">Open app</a></nav></header>
+<div class="layout"><details class="side" open><summary>Docs menu</summary><nav aria-label="Docs">{nav}</nav></details>
+<main><p class="eyebrow">Docs</p><h1>{html.escape(title)}</h1>{body}
+<p class="notice"><b>Notice</b> {NOTICE}</p></main></div>
+<footer><span>Flatstock is independent and not affiliated with Robinhood.</span><a href="/docs/terms">Terms</a><a href="/docs/privacy">Privacy</a><a href="/docs/credits">Credits</a></footer>
+<script>if(matchMedia("(max-width:860px)").matches){{var d=document.querySelector(".side");if(d)d.removeAttribute("open");}}</script>
+</body></html>"""
+os.makedirs(OUT, exist_ok=True)
+for slug,(title,body) in P.items():
+    path = os.path.join(OUT, (slug or "index")+".html")
+    open(path,"w").write(page(slug,title,body))
+print(len(P),"pages")

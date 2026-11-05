@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="theme-color" content="#07110C" />
+<title>Getting started · Flatstock docs</title><meta name="description" content="Flatstock docs: Getting started." />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" /><link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter+Tight:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/docs/docs.css" /></head>
+<body><header class="top"><a class="brand" href="/"><img src="/logo.svg" alt="" width="30" height="30" /><span>Flatstock</span></a><nav class="top-links"><a href="/docs">Docs</a><a href="https://github.com/AjKadri/flatstock" target="_blank" rel="noopener noreferrer">GitHub</a><a class="open" href="https://app.flatstock.ajkadri.dev">Open app</a></nav></header>
+<div class="layout"><details class="side" open><summary>Docs menu</summary><nav aria-label="Docs"><a href="/docs">Overview</a><a href="/docs/getting-started" class=on aria-current=page>Getting started</a><a href="/docs/voting">Voting</a><a href="/docs/trading">Buying and selling</a><a href="/docs/gas-and-lock">Gas and the 10 $WIF lock</a><a href="/docs/security">Security model</a><a href="/docs/contracts">Contracts and addresses</a><a href="/docs/fees">Fees</a><a href="/docs/risks">Eligibility and risks</a><a href="/docs/faq">FAQ</a><a href="/docs/changelog">Changelog</a><a href="/docs/terms">Terms</a><a href="/docs/privacy">Privacy</a><a href="/docs/credits">Credits</a></nav></details>
+<main><p class="eyebrow">Docs</p><h1>Getting started</h1>
+<h2>1. A wallet</h2><p>Use any browser wallet that supports custom networks (the app also works inside wallet in-app browsers). Self-custody only: Flatstock never holds your funds.</p>
+<h2>2. Add Robinhood Chain</h2>
+<p>The app has an "Add Robinhood Chain" button (More tab, or the wrong-network banner). To add it by hand:</p>
+<table><tr><th>Field</th><th>Value</th></tr><tr><td>Network name</td><td>Robinhood Chain</td></tr><tr><td>Chain ID</td><td><code>4663</code></td></tr><tr><td>RPC URL</td><td><code>https://rpc.mainnet.chain.robinhood.com</code></td></tr><tr><td>Currency</td><td>ETH</td></tr><tr><td>Explorer</td><td><code>https://robinhoodchain.blockscout.com</code></td></tr></table>
+<h2>3. What you need to hold</h2>
+<ul><li><b>USDG</b> to buy with (<a href="https://robinhoodchain.blockscout.com/address/0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168" target="_blank" rel="noopener noreferrer"><code>0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168</code></a>).</li><li><b>$WIF</b> to vote (<a href="https://robinhoodchain.blockscout.com/address/0x5173b8eA6923c2d40267890D45C46a3480954773" target="_blank" rel="noopener noreferrer"><code>0x5173b8eA6923c2d40267890D45C46a3480954773</code></a>). Each vote burns 1.</li><li><b>ETH</b> for gas, unless your wallet has the <a href="/docs/gas-and-lock">10 $WIF lock</a>.</li></ul>
+<p>Flatstock does not sell these. Get them on Robinhood Chain through the venue you prefer.</p>
+<h2>4. First steps</h2>
+<ol class="num"><li>Open <a href="https://app.flatstock.ajkadri.dev">the app</a> and connect.</li><li>Check Home for this week's mix and the round countdown.</li><li>Optional: Vote for next week, and lock 10 $WIF for free gas.</li><li>Buy: enter an amount, check prices, review, sign.</li></ol>
+<p class="small">Stock Tokens are not available to everyone. Read <a href="/docs/risks">Eligibility and risks</a> first.</p>
+
+<p class="notice"><b>Notice</b> Not available to US persons, or in Canada, the UK, Switzerland or other restricted jurisdictions. Not investment advice. <a href="https://docs.robinhood.com/rhj/restricted-jurisdictions" target="_blank" rel="noopener noreferrer">Restricted jurisdictions</a></p></main></div>
+<footer><span>Flatstock is independent and not affiliated with Robinhood.</span><a href="/docs/terms">Terms</a><a href="/docs/privacy">Privacy</a><a href="/docs/credits">Credits</a></footer>
+<script>if(matchMedia("(max-width:860px)").matches){var d=document.querySelector(".side");if(d)d.removeAttribute("open");}</script>
+</body></html>
