@@ -1,5 +1,8 @@
 # World is Flat Hackathon: rules sheet
 
+> **Dates updated (extension):** submissions close Thu 12 Nov 2026 17:30 UTC (18:30 WAT); round one 12–14 Nov; final 14–16 Nov; app must stay live until 16 Nov 17:30 UTC. The dates in section 2 below are the original ones.
+
+
 Event: https://worldisflat.fun/build · Rules: /build/rules · Terms: /build/terms (v1, updated 28 Oct 2026) · Updates: /build/updates
 Team assumed: solo, based in Lagos, Nigeria.
 All pages read 28 Oct 2026, ~20:20 WAT.
@@ -12,7 +15,7 @@ All pages read 28 Oct 2026, ~20:20 WAT.
 |---|---|---|
 | Age 18+ | PASS (assumed) | rules 10, terms 13 |
 | Country / sanctions: no OFAC, UK or EU sanctions-list persons, no one in a "fully sanctioned country" | PASS: Nigeria is not fully sanctioned | terms 10, rules 15 |
-| Stock Tokens category only: must follow Robinhood's restricted country list | UNKNOWN for Nigeria; check https://docs.robinhood.com/rhj/restricted-jurisdictions before choosing that category | rules 14 |
+| Stock Tokens category only: must follow Robinhood's restricted country list | PASS: Nigeria is not on the list (checked 5 Nov 2026: restricted = US/US persons, Canada, UK, Switzerland; prohibited = Cuba, Belarus, Iran, North Korea, Russia, Syria, Ukraine, South Sudan, Sudan, Myanmar, Venezuela) | rules 14 |
 | Payout: 10,000 USDG to team lead's wallet within 7 days of the result; the wallet must pass "basic screening"; the winner emails name, country and wallet first; entrants handle their own taxes | PASS: crypto payout, no bank or KYC docs named | rules 15–16, terms 8–10 |
 | Team size | PASS: solo allowed, up to 4, one team per person | rules 1 |
 | Pre-existing code | ALLOWED: "existing work is welcome, as long as it puts $wif to work in a real way" | rules 6 |
@@ -81,8 +84,21 @@ Visibility: once a project is approved, its name, one-liner, categories, team an
 
 ## 8. Unknowns and contradictions
 
-- Submission form fields, video length and host: unknown until signed in.
+- Submission form fields, video length and host: captured 5 Nov (see section 9).
 - AI tools and AI voiceover: not addressed.
-- Nigeria on Robinhood's Stock Tokens restricted list: unchecked.
+- Nigeria on Robinhood's Stock Tokens restricted list: checked 5 Nov, not restricted.
 - Judging weights: none given.
 - No contradictions found between the rules, terms and FAQ.
+
+## 9. Submission form (captured 5 Nov 2026 from worldisflat.fun/build/me/submission)
+
+Draft exists: "Flatstock", team "AJ SIDEMEN", status draft. Steps and fields (character limits in brackets):
+
+1. **Your team**: complete.
+2. **Your project** (4 fields missing): project name [60], project logo (square, optional), one-liner "what it is, in one line" [80], category (pick as many as fit; **the first one picked becomes the main category**: hooks and defi, agents and ai, Stock Tokens, games, consumer and payments, onboarding, social and creators, tools and infra), what it does [1500], who it's for [limit not captured].
+3. **How it connects to $wif**: free text "be specific about what $wif does inside your product" [1000]; integration type checkboxes ($wif is the fee or payment / fees buy back $wif / $wif is paired, staked or locked / holding $wif unlocks something / other); contract addresses ("only if your product has its own contracts on Robinhood Chain"); consent checkbox "we're ok with wif linking, featuring or integrating this project on worldisflat.fun".
+4. **Your flywheel**: what does someone do [500]; what happens to $wif when they do it [500]; why does that bring them, or others, back [500].
+5. **Proof of build**: repo [300] (public, or private with GitHub `wifonrh` invited); demo video [300] ("keep it under 3 minutes and show it working rather than slides"; YouTube, Loom, Vimeo or X links); live link [300] ("where we can try it right now"); transactions ("real transactions on Robinhood Chain where your product uses $wif"); how it's made [1500] ("your stack, and the hardest part of building it"); what's next [500].
+6. **Review**.
+
+Footer note on the site: votes burn $wif permanently; the hackathon is not affiliated with Robinhood Markets, Inc.
