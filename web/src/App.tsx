@@ -516,7 +516,7 @@ function App() {
   const adjustedWeights = mixRound ? renormaliseWeights(mixRound.weights, keep) : [];
   const mixRows = communityRows.map((row) => ({ ...row, weight: adjusting ? adjustedWeights[row.index] || 0n : row.weight }));
   const dotRows = (rows: { asset: { symbol: string; name?: string }; index: number; weight: bigint }[]) =>
-    rows.map((row) => ({ symbol: row.asset.symbol, name: row.asset.name, index: row.index, weight: Number(row.weight) / 100 }));
+    rows.map((row) => ({ symbol: row.asset.symbol, name: row.asset.name, index: row.index, weight: Number(row.weight) / 100, price: prices[row.asset.symbol] }));
   const mixHeadline = buyMix && round && buyMix.round.roundId !== round.roundId && voteRoundOpen
     ? `This week: Round ${buyMix.round.roundId} ${buyMix.kind === "final" ? "final mix" : "preview"} (${buyMix.round.assetCount} stocks). Voting now: Round ${round.roundId}, ${round.assetCount} stocks, for next week.`
     : null;
@@ -539,7 +539,7 @@ function App() {
 
   const gasPill = (
     <span className={`gas ${connected ? (useRelay ? "free" : "pay") : "idle"}`} title={sponsorshipPaused ? SPONSORSHIP_PAUSED_MESSAGE : undefined}>
-      <i />{gasBadge}
+      {gasBadge}
     </span>
   );
 
@@ -622,15 +622,13 @@ function App() {
                   <>
                     {buyMix.kind === "preview" && <p className="helper">Round {buyMix.round.roundId.toString()} is still open, so this is the live preview. After it closes, buys use its final mix.</p>}
                     <table className="stocks" aria-label="Stocks in the mix">
-                      <thead><tr><th>{adjusting ? "Include" : ""}</th><th>Stock</th><th>Chainlink price</th><th>Weight</th><th>≈ you buy</th></tr></thead>
+                      <thead><tr>{adjusting && <th>Include</th>}<th>Stock</th><th>Chainlink price</th><th>Weight</th><th>≈ you buy</th></tr></thead>
                       <tbody>
                         {mixRows.map((row) => {
                           const on = !excluded.includes(row.index);
                           return (
                             <tr key={row.asset.symbol} className={adjusting && !on ? "off" : ""}>
-                              <td>{adjusting
-                                ? <input type="checkbox" className="check" checked={on} disabled={row.weight === 0n && !on} onChange={() => toggleStock(row.index)} aria-label={`Include ${row.asset.symbol}`} />
-                                : <i className="mini-dot" style={{ "--w": Math.max(0.3, Number(row.weight) / 5000) } as CSSProperties} />}</td>
+                              {adjusting && <td><input type="checkbox" className="check" checked={on} disabled={row.weight === 0n && !on} onChange={() => toggleStock(row.index)} aria-label={`Include ${row.asset.symbol}`} /></td>}
                               <td><b>{row.asset.symbol}</b><small>{assetLabel(row.asset)}</small></td>
                               <td><PriceTag price={prices[row.asset.symbol]} /></td>
                               <td className="mono">{formatWeightBps(row.weight)}</td>
@@ -842,7 +840,7 @@ function App() {
       </footer>
 
       <nav className="tabs bottom-tabs" aria-label="Sections">
-        {TABS.map((item) => <a key={item.id} href={`#${item.id}`} className={tab === item.id ? "on" : ""} onClick={(event) => { event.preventDefault(); goTab(item.id); }}><TabIcon id={item.id} />{item.label}</a>)}
+        {TABS.map((item) => <a key={item.id} href={`#${item.id}`} className={tab === item.id ? "on" : ""} onClick={(event) => { event.preventDefault(); goTab(item.id); }}>{item.label}</a>)}
       </nav>
     </div>
   );
@@ -858,14 +856,6 @@ const TABS: { id: Tab; label: string }[] = [
 function tabFromHash(): Tab {
   const hash = window.location.hash.replace("#", "");
   return (TABS.find((item) => item.id === hash)?.id ?? "week") as Tab;
-}
-
-// Tab icons use the logo's motif: a flat line with dots.
-function TabIcon({ id }: { id: Tab }) {
-  const dots: Record<Tab, number[]> = { week: [8, 24], vote: [6, 16, 26], portfolio: [10], rounds: [6, 14, 22, 30] };
-  return (
-    <svg width="26" height="18" viewBox="0 0 36 18" aria-hidden="true"><line x1="2" y1="14" x2="34" y2="14" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />{dots[id].map((x, i) => <circle key={x} cx={x} cy={7} r={id === "portfolio" ? 5 : i === 0 ? 4.2 : 3} fill="currentColor" />)}</svg>
-  );
 }
 
 function formatCountdown(seconds: number) {
@@ -908,7 +898,7 @@ function RoundRow({ item, test = false }: { item: PastRound; test?: boolean }) {
   return (
     <li className="round">
       <div className="row-between"><strong className="round-no">Round {item.roundId.toString()}</strong><span className="tag">{test ? "Test · " : ""}{label}</span></div>
-      {rows && <DotLine rows={rows} size="sm" />}
+      {rows && <DotLine rows={rows} size="sm" showPrice={false} />}
       <p className="helper">{item.votes.toString()} vote{item.votes === 1n ? "" : "s"} · {item.votes.toString()} $WIF burned{item.closesAt ? ` · closes ${formatDate(item.closesAt)}` : ""}{test ? ` · ${item.contractLabel}` : ""}</p>
       <p className="helper">
         {item.openTx && <><a href={txLink(item.openTx)} target="_blank" rel="noreferrer">Open tx</a> · </>}
