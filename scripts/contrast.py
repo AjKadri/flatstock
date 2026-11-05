@@ -24,6 +24,13 @@ rows=[
  ("loss chart line on mint (graphic)",LOSS,MINT,3.0),
  ("ink outline on green dot vs mint (selected dot edge, graphic)",INK,MINT,3.0),
  ("ink ticker text on green dot (selected)",INK,GREEN,4.5),
+ ("mint text on tile #1e4f37 (rank 2)","#E6F7D9","#1E4F37",4.5),
+ ("mint text on tile #2f6b4b (rank 3)","#E6F7D9","#2F6B4B",4.5),
+ ("ink text on tile #6fa687 (rank 4)",INK,"#6FA687",4.5),
+ ("ink text on tile #9cc5af (rank 5)",INK,"#9CC5AF",4.5),
+ ("ink text on tile #2bd67b (rank 6)",INK,"#2BD67B",4.5),
+ ("ink text on tile #5ee09b (rank 7)",INK,"#5EE09B",4.5),
+ ("ink text on tile #a5ebc9 (rank 8)",INK,"#A5EBC9",4.5),
  ("disabled button text #5B7064 on #D0E6C3 (exempt, shown for legibility)","#5B7064","#D0E6C3",3.0),
  ("input border #6F8B78 on mint (graphic)","#6F8B78",MINT,3.0),
 ]

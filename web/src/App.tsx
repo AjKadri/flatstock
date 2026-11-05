@@ -53,7 +53,7 @@ import {
 import { addressLink, pickBuyMix, readRoundHistory, txLink, type BuyMix, type PastRound, type RoundHistory } from "./lib/rounds";
 import { renormaliseWeights } from "./lib/rounds-logic";
 import { readPrices, type PriceMap } from "./lib/prices";
-import { DotLine, EmptyLine, Loader, Logo, PriceTag, ProgressLine, Rule } from "./ui";
+import { AllocationBar, EmptyLine, Loader, Logo, MixTable, ProgressLine, Rule, type MixRow } from "./ui";
 
 type Health = {
   enabled: boolean;
@@ -501,6 +501,19 @@ function App() {
     () => new Set(holdings.filter((holding) => holding.balance > 0n).map((holding) => holding.symbol)),
     [holdings],
   );
+  const holdingRows: MixRow[] = holdings.map((holding) => {
+    const index = assets.findIndex((item) => item.symbol === holding.symbol);
+    const sharesText = holding.shares ?? (Number(holding.balance) / 1e18 > 0 ? (Number(holding.balance) / 1e18).toFixed(6) : "0");
+    return {
+      symbol: holding.symbol,
+      name: assets[index]?.name,
+      index,
+      weight: totalValue > 0 && holding.value ? (holding.value / totalValue) * 100 : 0,
+      price: prices[holding.symbol],
+      sub: `${sharesText} shares`,
+      extra: holding.value === null ? "n/a" : `$${holding.value.toFixed(2)}`,
+    };
+  });
   const voteRoundOpen = Boolean(round?.isOpen);
   const mixRound = buyMix?.round ?? null;
   const mixLabel = !mixRound
@@ -515,7 +528,7 @@ function App() {
   const keep = communityRows.filter((row) => row.weight > 0n && !excluded.includes(row.index)).map((row) => row.index);
   const adjustedWeights = mixRound ? renormaliseWeights(mixRound.weights, keep) : [];
   const mixRows = communityRows.map((row) => ({ ...row, weight: adjusting ? adjustedWeights[row.index] || 0n : row.weight }));
-  const dotRows = (rows: { asset: { symbol: string; name?: string }; index: number; weight: bigint }[]) =>
+  const toMix = (rows: { asset: { symbol: string; name?: string }; index: number; weight: bigint }[]): MixRow[] =>
     rows.map((row) => ({ symbol: row.asset.symbol, name: row.asset.name, index: row.index, weight: Number(row.weight) / 100, price: prices[row.asset.symbol] }));
   const mixHeadline = buyMix && round && buyMix.round.roundId !== round.roundId && voteRoundOpen
     ? `This week: Round ${buyMix.round.roundId} ${buyMix.kind === "final" ? "final mix" : "preview"} (${buyMix.round.assetCount} stocks). Voting now: Round ${round.roundId}, ${round.assetCount} stocks, for next week.`
@@ -587,7 +600,7 @@ function App() {
             {mixRows.length === 0 ? (
               !round ? <Loader label="Loading the mix" /> : <EmptyLine>No mix yet: the first round has not closed and has no votes.</EmptyLine>
             ) : (
-              <DotLine rows={dotRows(mixRows)} />
+              <AllocationBar rows={toMix(communityRows)} />
             )}
 
             {round && (
@@ -621,23 +634,18 @@ function App() {
                 ) : (
                   <>
                     {buyMix.kind === "preview" && <p className="helper">Round {buyMix.round.roundId.toString()} is still open, so this is the live preview. After it closes, buys use its final mix.</p>}
-                    <table className="stocks" aria-label="Stocks in the mix">
-                      <thead><tr>{adjusting && <th>Include</th>}<th>Stock</th><th>Chainlink price</th><th>Weight</th><th>≈ you buy</th></tr></thead>
-                      <tbody>
-                        {mixRows.map((row) => {
-                          const on = !excluded.includes(row.index);
-                          return (
-                            <tr key={row.asset.symbol} className={adjusting && !on ? "off" : ""}>
-                              {adjusting && <td><input type="checkbox" className="check" checked={on} disabled={row.weight === 0n && !on} onChange={() => toggleStock(row.index)} aria-label={`Include ${row.asset.symbol}`} /></td>}
-                              <td><b>{row.asset.symbol}</b><small>{assetLabel(row.asset)}</small></td>
-                              <td><PriceTag price={prices[row.asset.symbol]} /></td>
-                              <td className="mono">{formatWeightBps(row.weight)}</td>
-                              <td className="mono">${(buyTotal * Number(row.weight) / 10_000).toFixed(2)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                    <MixTable
+                      rows={communityRows.map((community) => {
+                        const row = mixRows.find((item) => item.index === community.index) ?? community;
+                        return { ...toMix([row])[0], extra: `$${(buyTotal * Number(row.weight) / 10_000).toFixed(2)}` };
+                      })}
+                      extraHead="≈ you buy"
+                      keepOrder
+                      isOff={(row) => adjusting && excluded.includes(row.index)}
+                      lead={adjusting ? (row) => (
+                        <input type="checkbox" className="check" checked={!excluded.includes(row.index)} disabled={row.weight === 0 && excluded.includes(row.index)} onChange={() => toggleStock(row.index)} aria-label={`Include ${row.symbol}`} />
+                      ) : undefined}
+                    />
                     <p className="source mono">Price: Chainlink</p>
                     <div className="adjust-bar">
                       <button className={`btn ghost small ${adjusting ? "on" : ""}`} onClick={() => { setAdjusting(!adjusting); setPlan([]); if (adjusting) setExcluded([]); }}>{adjusting ? "Use the full community mix" : "Adjust"}</button>
@@ -672,7 +680,7 @@ function App() {
             <header className="week-head">
               <p className="eyebrow mono">Vote for next week{round ? ` · Round ${round.roundId}` : ""}</p>
               <h1>Pick the stock you want <em>more of.</em></h1>
-              <p className="lede">One vote per wallet per round. Each vote burns 1 $WIF. Tap a dot to choose.</p>
+              <p className="lede">One vote per wallet per round. Each vote burns 1 $WIF. Tap a stock to choose.</p>
             </header>
             {!round ? <Loader label="Loading the round" /> : !voteRoundOpen ? (
               <EmptyLine>No round is open for voting right now. The next round opens soon, and buying keeps working in the meantime.</EmptyLine>
@@ -681,20 +689,22 @@ function App() {
                 <p className="eyebrow mono">Vote cast</p>
                 <h2>1 $WIF burned.</h2>
                 <p>Your vote for {picked?.symbol} is in. This is how next week's mix looks now:</p>
-                <DotLine rows={dotRows(voteRows)} selected={selectedAsset} size="lg" />
+                <AllocationBar rows={toMix(voteRows)} />
+                <MixTable rows={toMix(voteRows)} market={false} selected={selectedAsset} label="Next week's mix" />
                 <div className="cta-row"><a className="btn dark" href={txLink(submittedTx.hash)} target="_blank" rel="noreferrer">View transaction</a><button className="btn ghost-dark" onClick={() => { setRevealed(false); setSelectedAsset(null); }}>Back</button></div>
               </section>
             ) : (
               <>
-                <DotLine rows={dotRows(voteRows)} selected={selectedAsset} onPick={(index) => setSelectedAsset(index)} disabled={alreadyVoted} />
+                <AllocationBar rows={toMix(voteRows)} />
+                <MixTable rows={toMix(voteRows)} selected={selectedAsset} onPick={(index) => setSelectedAsset(index)} disabled={alreadyVoted} label="Pick a stock to vote for" />
+                <p className="source mono">Price: Chainlink</p>
                 <div className="pick">
                   {picked && selectedAsset !== null ? (
                     <>
                       <div><span className="mono k">You are voting for</span><strong className="pick-name">{picked.symbol}</strong><small>{assetLabel(picked)}</small></div>
-                      <div><PriceTag price={prices[picked.symbol]} /><p className="source mono">Price: Chainlink</p></div>
                       <div className="mono pick-weight">{formatWeightBps(round.weights[selectedAsset] || 0n)}<small>now</small></div>
                     </>
-                  ) : <p className="muted">Nothing selected yet. Tap a stock above to choose.</p>}
+                  ) : <p className="muted">Nothing selected yet. Tap a stock in the list to choose.</p>}
                 </div>
                 <div className="cta-row">
                   <button className="btn primary" disabled={Boolean(voteNeedsWallet) || alreadyVoted || selectedAsset === null || busy !== null} onClick={requestVote}>
@@ -720,22 +730,16 @@ function App() {
               <div>
                 <div className="row-between"><h2>Holdings</h2><strong className="mono total">${totalValue.toFixed(2)}</strong></div>
                 {!connected ? <EmptyLine>Connect a wallet to see the Stock Tokens it holds.</EmptyLine> : (
-                  <table className="stocks">
-                    <thead><tr><th>Stock</th><th>Chainlink price</th><th>Shares</th><th>Value</th></tr></thead>
-                    <tbody>
-                      {holdings.map((holding) => {
-                        const asset = assets.find((item) => item.symbol === holding.symbol);
-                        return (
-                          <tr key={holding.symbol} className="click" onClick={() => { setSellSymbol(holding.symbol); setSellPlan(null); }}>
-                            <td><b>{holding.symbol}</b><small>{assetLabel(asset)}</small></td>
-                            <td><PriceTag price={prices[holding.symbol]} /></td>
-                            <td className="mono">{holding.shares ?? (Number(holding.balance) / 1e18 > 0 ? (Number(holding.balance) / 1e18).toFixed(6) : "0")}</td>
-                            <td className="mono">{holding.value === null ? "n/a" : `$${holding.value.toFixed(2)}`}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  <>
+                    {totalValue > 0 ? <AllocationBar rows={holdingRows} /> : <EmptyLine>No Stock Tokens in this wallet yet. Buy the mix on This week.</EmptyLine>}
+                    <MixTable
+                      rows={holdingRows}
+                      extraHead="Value"
+                      selected={assets.findIndex((item) => item.symbol === sellSymbol)}
+                      onPick={(index) => { setSellSymbol(assets[index].symbol); setSellPlan(null); }}
+                      label="Your Stock Tokens"
+                    />
+                  </>
                 )}
                 {connected && <p className="source mono">Price: Chainlink · Balances: Robinhood Chain</p>}
               </div>
@@ -798,7 +802,12 @@ function App() {
                 {currentRoundCard && round && (
                   <article className="round current">
                     <div className="row-between"><h2>Round {currentRoundCard.roundId.toString()} <span className="tag">{voteRoundOpen ? "Voting now" : "Closed"}</span></h2><span className="mono k">{currentRoundCard.assetCount} stocks</span></div>
-                    {currentRoundCard.weights && <DotLine rows={dotRows(assets.slice(0, currentRoundCard.assetCount).map((asset, index) => ({ asset, index, weight: currentRoundCard.weights?.[index] || 0n })))} />}
+                    {currentRoundCard.weights && (
+                      <>
+                        <AllocationBar rows={toMix(assets.slice(0, currentRoundCard.assetCount).map((asset, index) => ({ asset, index, weight: currentRoundCard.weights?.[index] || 0n })))} />
+                        <MixTable rows={toMix(assets.slice(0, currentRoundCard.assetCount).map((asset, index) => ({ asset, index, weight: currentRoundCard.weights?.[index] || 0n })))} label={`Round ${currentRoundCard.roundId} mix`} />
+                      </>
+                    )}
                     <ProgressLine opensAt={Number(round.opensAt)} closesAt={Number(round.closesAt)} now={now} label={voteRoundOpen && closesIn !== null ? `Closes in ${formatCountdown(closesIn)} · ${formatDate(round.closesAt)}` : formatDate(round.closesAt)} />
                     <p className="helper">{currentRoundCard.votes.toString()} vote{currentRoundCard.votes === 1n ? "" : "s"} · {currentRoundCard.votes.toString()} $WIF burned</p>
                     <p className="helper">{currentRoundCard.openTx && <><a href={txLink(currentRoundCard.openTx)} target="_blank" rel="noreferrer">Open tx</a> · </>}<a href={addressLink(currentRoundCard.contract)} target="_blank" rel="noreferrer">Contract</a></p>
@@ -898,7 +907,12 @@ function RoundRow({ item, test = false }: { item: PastRound; test?: boolean }) {
   return (
     <li className="round">
       <div className="row-between"><strong className="round-no">Round {item.roundId.toString()}</strong><span className="tag">{test ? "Test · " : ""}{label}</span></div>
-      {rows && <DotLine rows={rows} size="sm" showPrice={false} />}
+      {rows && (
+        <>
+          <AllocationBar rows={rows} />
+          <MixTable rows={rows} market={false} label={`Round ${item.roundId} weights`} />
+        </>
+      )}
       <p className="helper">{item.votes.toString()} vote{item.votes === 1n ? "" : "s"} · {item.votes.toString()} $WIF burned{item.closesAt ? ` · closes ${formatDate(item.closesAt)}` : ""}{test ? ` · ${item.contractLabel}` : ""}</p>
       <p className="helper">
         {item.openTx && <><a href={txLink(item.openTx)} target="_blank" rel="noreferrer">Open tx</a> · </>}

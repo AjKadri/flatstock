@@ -40,8 +40,8 @@
   const logs = (address, topic0) => rpc("eth_getLogs", [{ address, topics: [topic0], fromBlock: FROM, toBlock: "latest" }]).catch(() => null);
 
   // ---------- Live Chainlink prices and a short history, in ONE Multicall3 request ----------
-  const PRICES = {}; // symbol -> { price, history[], change }
-  const HISTORY = 20;
+  const PRICES = {}; // symbol -> { price, history[], change } ; change = latest vs 24h earlier
+  const LOOKBACK = 72;
   function encodeAggregate3(calls) {
     const w32 = (hex) => hex.padStart(64, "0");
     const elems = calls.map((c) => {
@@ -62,22 +62,26 @@
     }
     return out;
   }
+  const roundWords = (r) => (r.ok && r.data.length >= 320 ? [0, 1, 2, 3, 4].map((i) => BigInt("0x" + r.data.slice(i * 64, (i + 1) * 64))) : null);
   async function loadPrices() {
     try {
       const res = await call(MULTICALL3, encodeAggregate3(SYMBOLS.map((s) => ({ target: FEEDS[s], data: "0xfeaf968c" }))));
-      const latest = decodeAggregate3(res).map((r) => (r.ok && r.data.length >= 320 ? [0, 1, 2, 3, 4].map((i) => BigInt("0x" + r.data.slice(i * 64, (i + 1) * 64))) : null));
+      const latest = decodeAggregate3(res).map(roundWords);
       const past = [];
-      SYMBOLS.forEach((s, si) => { if (latest[si]) for (let k = 1; k < HISTORY; k++) past.push({ si, id: latest[si][0] - BigInt(k) }); });
+      SYMBOLS.forEach((s, si) => { if (latest[si]) for (let k = 1; k <= LOOKBACK; k++) past.push({ si, id: latest[si][0] - BigInt(k) }); });
       const hist = decodeAggregate3(await call(MULTICALL3, encodeAggregate3(past.map((p) => ({ target: FEEDS[SYMBOLS[p.si]], data: "0x9a6fc8f5" + p.id.toString(16).padStart(64, "0") })))));
       const series = SYMBOLS.map(() => []);
-      past.forEach((p, i) => { const r = hist[i]; if (r.ok && r.data.length >= 320) { const v = Number(BigInt("0x" + r.data.slice(64, 128))) / 1e8; if (v > 0) series[p.si].push(v); } });
+      past.forEach((p, i) => { const w = roundWords(hist[i]); if (w) { const v = Number(w[1]) / 1e8; if (v > 0) series[p.si].push({ t: Number(w[3]), v }); } });
       SYMBOLS.forEach((s, si) => {
         if (!latest[si]) return;
-        const price = Number(latest[si][1]) / 1e8; const history = [...series[si].reverse(), price];
-        PRICES[s] = { price, history, change: history[0] ? (price / history[0] - 1) * 100 : null };
+        const price = Number(latest[si][1]) / 1e8; const at = Number(latest[si][3]);
+        const earlier = series[si].sort((x, y) => x.t - y.t);
+        const inWindow = earlier.filter((p) => p.t >= at - 86400); const before = earlier.filter((p) => p.t < at - 86400);
+        const anchor = before.length ? before[before.length - 1].v : (inWindow[0] ? inWindow[0].v : null);
+        PRICES[s] = { price, history: [...inWindow.map((p) => p.v), price], change: anchor ? (price / anchor - 1) * 100 : null };
       });
-    } catch { /* prices stay unavailable; dots still show weights */ }
-    document.querySelectorAll(".dotline").forEach((el) => { if (el._entries) renderDots(el, el._entries, el._opts); });
+    } catch { /* prices stay unavailable; the mix still shows weights */ }
+    document.querySelectorAll("[data-mix]").forEach((el) => { if (el._redraw) el._redraw(); });
   }
   const fmtPrice = (v) => (v >= 1000 ? Math.round(v).toLocaleString("en-US") : v.toFixed(2));
   function spark(values, up) {
@@ -128,47 +132,56 @@
     return { id, opens: Number(opens), closes: Number(closes), n, total, closed, weights, votes, share: Number(share) };
   }
 
-  // ---------- Dots on a line ----------
-  // Ticker inside each dot, "weight · price" underneath, area proportional to weight, never under 44px.
-  // Rows wrap on narrow screens (8 stocks on a 375px phone = 2 rows of 4). Hover or tap a dot for name + chart.
-  // entries: { s, w (percent, or null = not in this round yet), note }
-  function renderDots(el, entries, opts = {}) {
-    if (!el) return;
-    el._entries = entries; el._opts = opts;
-    const width = el.clientWidth || (el.parentElement && el.parentElement.clientWidth) || 340;
-    const cols = Math.max(1, Math.min(entries.length, Math.floor(width / (opts.noPrice ? 64 : 84))));
-    const cell = width / cols; const maxD = Math.max(44, Math.min(opts.small ? 58 : 96, cell - 12));
-    const real = entries.filter((e) => e.w !== null); const top = Math.max(...real.map((e) => e.w), 0); const wmax = Math.max(top, 1);
-    const lead = real.filter((e) => e.w === top).length === 1 ? entries.findIndex((e) => e.w === top) : -1;
-    const chunks = []; for (let i = 0; i < entries.length; i += cols) chunks.push(entries.slice(i, i + cols).map((e, k) => ({ e, i: i + k })));
-    const label = (e) => {
-      const p = PRICES[e.s]; const price = p ? `<span class="sep"> · </span><span class="px">$${fmtPrice(p.price)}</span>` : "";
-      return e.w === null ? `<span class="dl-label ghost"><b>${e.note || "soon"}</b>${price}</span>` : `<span class="dl-label"><b>${e.w < 10 ? e.w.toFixed(1) : e.w.toFixed(0)}%</b>${opts.noPrice ? "" : price}</span>`;
-    };
-    el.style.setProperty("--chips", cols);
-    el.innerHTML = chunks.map((row) => `<div class="dl-row" style="--cols:${cols}"><div class="dl-dots">${row.map(({ e, i }) => {
-      const d = e.w === null ? 44 : Math.max(44, maxD * Math.sqrt(e.w / wmax));
-      return `<div class="dl-cell"><button type="button" class="dl-dot ${e.w === null ? "ghost" : i === lead ? "lead" : ""}" data-i="${i}" style="width:${d.toFixed(0)}px;height:${d.toFixed(0)}px" aria-label="${NAMES[e.s] || e.s}"><span>${e.s}</span></button></div>`;
-    }).join("")}</div><div class="dl-rail"></div><div class="dl-labels">${row.map(({ e }) => label(e)).join("")}</div></div>`).join("");
-    const popFor = (btn) => {
-      const i = Number(btn.dataset.i); const e = entries[i]; const p = PRICES[e.s]; const cellEl = btn.parentElement;
-      document.querySelectorAll(".dl-pop").forEach((n) => n.remove());
-      const pos = cellEl.parentElement.firstElementChild === cellEl && cols > 1 ? "left" : cellEl.parentElement.lastElementChild === cellEl && cols > 1 ? "right" : "mid";
-      const up = !p || p.change === null || p.change >= 0;
-      const pop = document.createElement("div"); pop.className = `dl-pop ${pos}`; pop.setAttribute("role", "tooltip");
-      pop.innerHTML = `<b>${NAMES[e.s] || e.s}</b><span class="mono">${e.s}${e.w === null ? " · joins in round 5" : ` · ${e.w.toFixed(e.w < 10 ? 2 : 1)}%`}</span>${p ? `${spark(p.history, up)}<span class="mono">$${fmtPrice(p.price)} ${p.change === null ? "" : `<em class="${up ? "up" : "down"}">${up ? "+" : ""}${p.change.toFixed(2)}%</em>`}</span><small>Chainlink price, last ${p.history.length} updates</small>` : "<small>Price not available</small>"}`;
-      cellEl.appendChild(pop);
-    };
-    el.querySelectorAll(".dl-dot").forEach((btn) => {
-      btn.addEventListener("mouseenter", () => popFor(btn));
-      btn.addEventListener("focus", () => popFor(btn));
-      btn.addEventListener("mouseleave", () => btn.parentElement.querySelectorAll(".dl-pop").forEach((n) => n.remove()));
-      btn.addEventListener("click", (ev) => { ev.stopPropagation(); const had = btn.parentElement.querySelector(".dl-pop"); if (had) had.remove(); else popFor(btn); });
-    });
+  // ---------- Mix visuals: treemap tiles (hero), allocation bar + weights (rounds, phone) ----------
+  // Colours: ink -> greens, largest weight first (same ramp as the app). Light text on the first three, ink text on the rest.
+  const COLORS = ["#07110c", "#1e4f37", "#2f6b4b", "#6fa687", "#9cc5af", "#2bd67b", "#5ee09b", "#a5ebc9"];
+  const LIGHT_TEXT = [true, true, true, false, false, false, false, false];
+  const rankOf = (entries) => { const live = entries.filter((e) => e.w !== null).sort((a, b) => b.w - a.w || SYMBOLS.indexOf(a.s) - SYMBOLS.indexOf(b.s)); return new Map(live.map((e, r) => [e.s, r])); };
+  const chg = (p) => (!p || p.change === null ? "" : `${p.change >= 0 ? "+" : "\u2212"}${Math.abs(p.change).toFixed(2)}%`);
+
+  function squarify(items, W, H) {
+    const total = items.reduce((s, i) => s + i.v, 0); const out = []; let x = 0, y = 0, w = W, h = H;
+    let rest = items.map((i) => ({ ...i, a: (i.v / total) * W * H }));
+    const worst = (row, side) => { const s = row.reduce((t, r) => t + r.a, 0); const mx = Math.max(...row.map((r) => r.a)), mn = Math.min(...row.map((r) => r.a)); return Math.max((side * side * mx) / (s * s), (s * s) / (side * side * mn)); };
+    while (rest.length) {
+      const side = Math.min(w, h); const row = [rest[0]]; let i = 1;
+      while (i < rest.length && worst([...row, rest[i]], side) <= worst(row, side)) { row.push(rest[i]); i++; }
+      const s = row.reduce((t, r) => t + r.a, 0);
+      if (w >= h) { const cw = s / h; let cy = y; row.forEach((r) => { const rh = r.a / cw; out.push({ ...r, rx: x, ry: cy, rw: cw, rh }); cy += rh; }); x += cw; w -= cw; }
+      else { const rh = s / w; let cx = x; row.forEach((r) => { const rw = r.a / rh; out.push({ ...r, rx: cx, ry: y, rw, rh }); cx += rw; }); y += rh; h -= rh; }
+      rest = rest.slice(row.length);
+    }
+    return out;
   }
-  document.addEventListener("click", () => document.querySelectorAll(".dl-pop").forEach((n) => n.remove()));
+
+  // Treemap: live stocks as tiles sized by weight; stocks not in the live mix yet as dashed "Round 5" tiles below.
+  // entries: { s, w (percent, null = not in the live mix) }
+  function renderTreemap(el, entries) {
+    if (!el) return;
+    el.setAttribute("data-mix", ""); el._redraw = () => renderTreemap(el, entries);
+    const W = el.clientWidth || 340; const H = W < 560 ? Math.round(W * 0.95) : Math.round(Math.min(W * 0.46, 340));
+    const live = entries.filter((e) => e.w !== null && e.w > 0).sort((a, b) => b.w - a.w || SYMBOLS.indexOf(a.s) - SYMBOLS.indexOf(b.s));
+    const ghosts = entries.filter((e) => e.w === null);
+    const ranks = rankOf(entries); const GAP = 3;
+    const rects = live.length ? squarify(live.map((e) => ({ ...e, v: e.w })), W, H) : [];
+    const tile = (r) => {
+      const p = PRICES[r.s]; const rank = ranks.get(r.s) || 0; const big = r.w >= 20;
+      const sub = p ? `$${fmtPrice(p.price)}${chg(p) ? ` \u00b7 ${chg(p)}` : ""}` : "";
+      return `<div class="tile ${LIGHT_TEXT[Math.min(rank, 7)] ? "lt" : ""}" style="left:${r.rx + GAP / 2}px;top:${r.ry + GAP / 2}px;width:${Math.max(r.rw - GAP, 0)}px;height:${Math.max(r.rh - GAP, 0)}px;background:${COLORS[Math.min(rank, 7)]}" title="${NAMES[r.s]}"><b class="mono">${r.s}</b><span class="tw ${big ? "big" : ""}">${r.w.toFixed(r.w < 10 ? 1 : 1)}%</span>${sub ? `<small class="mono">${sub}</small>` : ""}</div>`;
+    };
+    const ghost = (e) => { const p = PRICES[e.s]; return `<div class="gtile" title="${NAMES[e.s]}"><b class="mono">${e.s}</b><span>Round 5</span>${p ? `<small class="mono">$${fmtPrice(p.price)}${chg(p) ? ` \u00b7 ${chg(p)}` : ""}</small>` : ""}</div>`; };
+    el.innerHTML = (live.length ? `<div class="tm" style="height:${H}px">${rects.map(tile).join("")}</div>` : "") + (ghosts.length ? `<div class="ghosts">${ghosts.map(ghost).join("")}</div>` : "");
+  }
+
+  // Allocation bar (no labels on the bar) with one row per stock underneath: key, ticker, name, weight.
+  function renderBarRows(el, entries) {
+    if (!el) return;
+    const live = entries.filter((e) => e.w !== null && e.w > 0).sort((a, b) => b.w - a.w || SYMBOLS.indexOf(a.s) - SYMBOLS.indexOf(b.s));
+    const ranks = rankOf(entries);
+    el.innerHTML = `<div class="abar" role="img" aria-label="Allocation by weight">${live.map((e) => `<span style="flex-grow:${e.w};background:${COLORS[Math.min(ranks.get(e.s), 7)]}"></span>`).join("")}</div><ul class="mrows">${live.map((e) => `<li><i style="background:${COLORS[Math.min(ranks.get(e.s), 7)]}"></i><b class="mono">${e.s}</b><span class="nm">${NAMES[e.s]}</span><em class="mono">${e.w.toFixed(2)}%</em></li>`).join("")}</ul>`;
+  }
   let resizeTimer;
-  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => document.querySelectorAll(".dotline").forEach((el) => { if (el._entries) renderDots(el, el._entries, el._opts); }), 150); });
+  window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => document.querySelectorAll("[data-mix]").forEach((el) => { if (el._redraw) el._redraw(); }), 150); });
 
   const fmtDate = (s) => new Date(s * 1000).toLocaleString("en-GB", { timeZone: "Africa/Lagos", weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) + " WAT";
   function countdown(sec) {
@@ -177,8 +190,6 @@
     return d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
   }
 
-  // Placeholder dots before data arrives (every stock, not yet weighted).
-  renderDots($("hero-dots"), SYMBOLS.map((s) => ({ s, w: null, note: "…" })));
   void loadPrices();
 
   async function load() {
@@ -192,10 +203,10 @@
     const open = latest && !latest.closed && nowSec() < latest.closes ? latest : null;
 
     // Hero mix: the mix you can buy; stocks that join in round 5 are shown dashed with their ticker.
-    const entries = SYMBOLS.map((s, i) => ({ s, w: buy && i < buy.n ? Number(buy.weights[i]) / 100 : null, note: "round 5" }));
+    const entries = SYMBOLS.map((s, i) => ({ s, w: buy && i < buy.n ? Number(buy.weights[i]) / 100 : null }));
     if (buy) {
-      renderDots($("hero-dots"), entries);
-      $("hero-cap").textContent = lastClosed ? `This week's mix · Round ${buy.id} final · ${buy.n} stocks. Dashed dots join in round ${open && open.n === 8 ? open.id : 5}. Hover or tap a dot for its chart.` : `Preview mix · Round ${buy.id} live · ${buy.n} stocks. Dashed dots join in round 5. Hover or tap a dot for its chart.`;
+      renderTreemap($("hero-dots"), entries);
+      $("hero-cap").textContent = lastClosed ? `This week's mix · Round ${buy.id} final · ${buy.n} stocks. Tile size = weight. Price · 24h change from Chainlink. Dashed tiles join in round ${open && open.n === 8 ? open.id : 5}.` : `Preview mix · Round ${buy.id} live · ${buy.n} stocks. Tile size = weight. Price · 24h change from Chainlink. Dashed tiles join in round 5.`;
     } else {
       $("hero-cap").textContent = "Voting is open: with no votes yet every stock weighs the same.";
     }
@@ -208,7 +219,7 @@
 
     // Phone mockup: the same mix, mini.
     if (buy) {
-      renderDots($("phone-dots"), buy.weights.map((w, i) => ({ s: SYMBOLS[i], w: Number(w) / 100 })), { small: true, noPrice: true });
+      renderBarRows($("phone-dots"), buy.weights.map((w, i) => ({ s: SYMBOLS[i], w: Number(w) / 100 })));
       $("p-eyebrow").textContent = lastClosed ? `This week · Round ${buy.id} final` : `Preview · Round ${buy.id} live`;
     }
     if (open) {
@@ -260,9 +271,9 @@
       const links = [txFor(opened, r.id) && `<a href="${EXPLORER}/tx/${txFor(opened, r.id)}" target="_blank" rel="noopener noreferrer">Open tx</a>`,
         txFor(closedLogs, r.id) && `<a href="${EXPLORER}/tx/${txFor(closedLogs, r.id)}" target="_blank" rel="noopener noreferrer">Close tx</a>`,
         `<a href="${EXPLORER}/address/${VOTES}" target="_blank" rel="noopener noreferrer">Contract</a>`].filter(Boolean).join(" · ");
-      li.innerHTML = `<h3>Round ${r.id}<small class="${r.closed ? "final" : ""}">${status}</small></h3><div class="dotline"></div><p>${r.total} ${plural(r.total, "vote", "votes")} · ${r.total} $WIF burned · ${r.n} stocks · closes ${fmtDate(r.closes)}</p><p>${links}</p>`;
+      li.innerHTML = `<h3>Round ${r.id}<small class="${r.closed ? "final" : ""}">${status}</small></h3><div class="mixbar"></div><p>${r.total} ${plural(r.total, "vote", "votes")} · ${r.total} $WIF burned · ${r.n} stocks · closes ${fmtDate(r.closes)}</p><p>${links}</p>`;
       list.appendChild(li);
-      renderDots(li.querySelector(".dotline"), r.weights.map((w, i) => ({ s: SYMBOLS[i], w: Number(w) / 100 })), { noPrice: true });
+      renderBarRows(li.querySelector(".mixbar"), r.weights.map((w, i) => ({ s: SYMBOLS[i], w: Number(w) / 100 })));
     });
     if (!rounds.length) list.innerHTML = '<li class="muted">No rounds found yet.</li>';
   }

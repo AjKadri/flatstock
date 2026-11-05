@@ -1,150 +1,111 @@
-// Shared visual pieces built from the logo's motif: a flat line with dots on it.
-// Dots only ever stand for stocks (size = weight) or progress. No decorative dots.
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+// Shared pieces. The mix is one rounded allocation bar plus a holdings-style table (Option A in design/refs/mix-options.png).
+import type { ReactNode } from "react";
 import type { StockPrice } from "./lib/prices";
 import { formatPrice } from "./lib/prices";
 
-export type DotRow = {
+// Ink -> greens, largest weight first. The same stock keeps its colour in the bar and in the table key.
+export const MIX_COLORS = ["#07110c", "#1e4f37", "#2f6b4b", "#6fa687", "#9cc5af", "#2bd67b", "#5ee09b", "#a5ebc9"];
+
+export type MixRow = {
   symbol: string;
   name?: string;
-  weight: number; // percent, 0-100
   index: number;
+  weight: number; // percent, 0-100
   price?: StockPrice;
+  sub?: string; // replaces the full name under the ticker (for example "12.3 shares")
+  extra?: ReactNode; // optional last column value
 };
 
-const MIN_DOT = 44; // px: fits the ticker and is a comfortable tap target
-const MIN_CELL = 84; // px: room for the "50% · $350.99" caption
-
-function useWidth<T extends HTMLElement>() {
-  const ref = useRef<T | null>(null);
-  const [width, setWidth] = useState(0);
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-    const update = () => setWidth(node.clientWidth);
-    update();
-    if (typeof ResizeObserver === "undefined") { window.addEventListener("resize", update); return () => window.removeEventListener("resize", update); }
-    const observer = new ResizeObserver(update);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-  return [ref, width] as const;
+// Rank by weight (largest first, ties by on-chain index) and give each stock its colour.
+export function mixColorMap(rows: { index: number; weight: number }[]): Map<number, string> {
+  const ranked = [...rows].sort((a, b) => b.weight - a.weight || a.index - b.index);
+  return new Map(ranked.map((row, rank) => [row.index, MIX_COLORS[Math.min(rank, MIX_COLORS.length - 1)]]));
 }
 
-// Tiny price chart from recent Chainlink rounds.
-export function Spark({ values, up, big }: { values: number[]; up?: boolean; big?: boolean }) {
-  const cls = `spark ${big ? "big" : ""}`;
-  if (values.length < 2) return <svg className={cls} viewBox="0 0 80 24" aria-hidden="true"><line x1="2" y1="12" x2="78" y2="12" className="spark-flat" /></svg>;
+// One flat rounded bar split by weight, 3px gaps, no labels on the bar.
+export function AllocationBar({ rows }: { rows: { symbol: string; index: number; weight: number }[] }) {
+  const colors = mixColorMap(rows);
+  const ranked = [...rows].filter((row) => row.weight > 0).sort((a, b) => b.weight - a.weight || a.index - b.index);
+  return (
+    <div className="abar" role="img" aria-label={`Allocation: ${ranked.map((row) => `${row.symbol} ${row.weight.toFixed(1)} percent`).join(", ")}`}>
+      {ranked.map((row) => <span key={row.symbol} style={{ flexGrow: row.weight, background: colors.get(row.index) }} />)}
+    </div>
+  );
+}
+
+// Tiny price chart from the last 24h of Chainlink rounds.
+export function Spark({ values, up }: { values: number[]; up?: boolean }) {
+  if (values.length < 2) return <svg className="spark" viewBox="0 0 80 24" aria-hidden="true"><line x1="2" y1="12" x2="78" y2="12" className="spark-flat" /></svg>;
   const min = Math.min(...values), max = Math.max(...values), span = max - min || 1;
   const points = values.map((value, i) => `${(2 + (i / (values.length - 1)) * 76).toFixed(1)},${(21 - ((value - min) / span) * 18).toFixed(1)}`);
-  const last = points[points.length - 1].split(",");
   return (
-    <svg className={`${cls} ${up === false ? "down" : "up"}`} viewBox="0 0 80 24" aria-hidden="true">
+    <svg className={`spark ${up === false ? "down" : "up"}`} viewBox="0 0 80 24" aria-hidden="true">
       <polyline points={points.join(" ")} />
-      <circle cx={last[0]} cy={last[1]} r="2.6" />
     </svg>
   );
 }
 
-export function PriceTag({ price }: { price?: StockPrice }) {
-  if (!price || price.price === null) return <span className="price mono muted">n/a</span>;
-  const up = (price.changePct ?? 0) >= 0;
-  return (
-    <span className="price">
-      <Spark values={price.history} up={up} />
-      <span className="mono">${formatPrice(price.price)}</span>
-      {price.changePct !== null && <small className={`mono ${up ? "up" : "down"}`}>{up ? "+" : ""}{price.changePct.toFixed(2)}%</small>}
-    </span>
-  );
+export function ChangeCell({ price }: { price?: StockPrice }) {
+  if (!price || price.changePct === null) return <span className="mono muted">n/a</span>;
+  const up = price.changePct >= 0;
+  return <span className={`mono ${up ? "up" : "down"}`}>{up ? "+" : "−"}{Math.abs(price.changePct).toFixed(2)}%</span>;
 }
 
-function Popover({ row, edge }: { row: DotRow; edge: "left" | "right" | "mid" }) {
-  const price = row.price;
-  const up = (price?.changePct ?? 0) >= 0;
-  return (
-    <div className={`dl-pop ${edge}`} role="tooltip">
-      <b>{row.name || row.symbol}</b>
-      <span className="mono">{row.symbol} · {row.weight.toFixed(row.weight < 10 ? 2 : 1)}%</span>
-      {price && price.price !== null ? (
-        <>
-          <Spark values={price.history} up={up} big />
-          <span className="mono">${formatPrice(price.price)} {price.changePct !== null && <em className={up ? "up" : "down"}>{up ? "+" : ""}{price.changePct.toFixed(2)}%</em>}</span>
-          <small>Chainlink price, last {price.history.length} updates</small>
-        </>
-      ) : <small>Price not available</small>}
-    </div>
-  );
-}
-
-// The mix as dots on a line. Dot area is proportional to weight (diameter = sqrt), never below 44px.
-// Rows wrap on narrow screens so nothing overlaps or is cut off (8 stocks at 6.25% on a 375px phone = 2 rows of 4).
-export function DotLine({ rows, selected, onPick, disabled, size = "lg", showPrice = true }: {
-  rows: DotRow[]; selected?: number | null; onPick?: (index: number) => void; disabled?: boolean; size?: "sm" | "lg"; showPrice?: boolean;
+// Holdings-style table. market=false (past rounds) shows only stock and weight, with no live prices.
+export function MixTable({ rows, market = true, selected, onPick, disabled, lead, extraHead, keepOrder, isOff, label = "Stocks in the mix" }: {
+  rows: MixRow[];
+  market?: boolean;
+  selected?: number | null;
+  onPick?: (index: number) => void;
+  disabled?: boolean;
+  lead?: (row: MixRow) => ReactNode; // replaces the colour key (for example a checkbox in Adjust mode)
+  extraHead?: string;
+  keepOrder?: boolean; // keep the given row order instead of sorting by weight
+  isOff?: (row: MixRow) => boolean; // dim a row (for example an unticked stock in Adjust mode)
+  label?: string;
 }) {
-  const [ref, width] = useWidth<HTMLDivElement>();
-  const [hover, setHover] = useState<number | null>(null);
-  const [pinned, setPinned] = useState<number | null>(null);
-  useEffect(() => {
-    if (pinned === null) return;
-    const close = (event: Event) => { if (!(event.target as HTMLElement).closest?.(".dotline")) setPinned(null); };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, [pinned]);
-
-  const cols = Math.max(1, Math.min(rows.length, width ? Math.floor(width / (showPrice ? MIN_CELL : 64)) : rows.length));
-  const cell = width ? width / cols : 120;
-  const maxDiameter = Math.max(MIN_DOT, Math.min(size === "lg" ? 96 : 58, cell - 12));
-  const wmax = Math.max(...rows.map((row) => row.weight), 1);
-  // The largest-weight stock gets the logo green, but only when it is strictly the largest (no green on ties).
-  const topWeight = Math.max(...rows.map((row) => row.weight));
-  const lead = rows.filter((row) => row.weight === topWeight).length === 1 ? rows.findIndex((row) => row.weight === topWeight) : -1;
-  const chunks: DotRow[][] = [];
-  for (let i = 0; i < rows.length; i += cols) chunks.push(rows.slice(i, i + cols));
-  const open = pinned ?? hover;
-
+  const colors = mixColorMap(rows);
+  const sorted = keepOrder ? rows : [...rows].sort((a, b) => b.weight - a.weight || a.index - b.index);
   return (
-    <div className={`dotline ${size}`} ref={ref} role={onPick ? "radiogroup" : "group"} aria-label="Mix: dot size shows each stock's weight">
-      {chunks.map((chunk, chunkIndex) => (
-        <div className="dl-row" key={chunkIndex} style={{ "--cols": cols } as CSSProperties}>
-          <div className="dl-dots">
-            {chunk.map((row, position) => {
-              const on = selected === row.index;
-              const isLead = !onPick && rows.indexOf(row) === lead;
-              const diameter = Math.max(MIN_DOT, maxDiameter * Math.sqrt(row.weight / wmax)) * (on ? 1.18 : 1);
-              const edge = position === 0 && cols > 1 ? "left" : position === chunk.length - 1 && cols > 1 ? "right" : "mid";
-              return (
-                <div className="dl-cell" key={row.symbol} onMouseEnter={() => setHover(row.index)} onMouseLeave={() => setHover(null)}>
-                  <button
-                    type="button"
-                    className={`dl-dot ${on ? "on" : ""} ${isLead ? "lead" : ""}`}
-                    style={{ width: diameter, height: diameter }}
-                    role={onPick ? "radio" : undefined}
-                    aria-checked={onPick ? on : undefined}
-                    aria-label={`${row.name || row.symbol}, ${row.weight.toFixed(1)} percent${row.price?.price ? `, $${formatPrice(row.price.price)}` : ""}`}
-                    disabled={Boolean(onPick) && disabled}
-                    onFocus={() => setHover(row.index)}
-                    onBlur={() => setHover(null)}
-                    onClick={() => { if (onPick) onPick(row.index); else setPinned(pinned === row.index ? null : row.index); }}
-                  >
-                    <span>{row.symbol}</span>
-                  </button>
-                  {open === row.index && <Popover row={row} edge={edge} />}
-                </div>
-              );
-            })}
-          </div>
-          <div className="dl-rail" />
-          <div className="dl-labels">
-            {chunk.map((row) => (
-              <span key={row.symbol} className={`dl-label ${selected === row.index ? "on" : ""}`}>
-                <b>{row.weight.toFixed(row.weight < 10 ? 1 : 0)}%</b>
-                {showPrice && row.price?.price ? <><span className="sep">{" · "}</span><span className="px">${formatPrice(row.price.price)}</span></> : null}
-              </span>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
+    <table className={`mix ${onPick ? "selectable" : ""}`} aria-label={label}>
+      <thead>
+        <tr>
+          <th className="key" aria-hidden="true" />
+          <th>Stock</th>
+          {market && <th className="c-spark">24h</th>}
+          {market && <th className="r">Price</th>}
+          {market && <th className="r">24h change</th>}
+          <th className="r">Weight</th>
+          {extraHead && <th className="r">{extraHead}</th>}
+        </tr>
+      </thead>
+      <tbody>
+        {sorted.map((row) => {
+          const on = selected === row.index;
+          const p = row.price;
+          const up = (p?.changePct ?? 0) >= 0;
+          return (
+            <tr
+              key={row.symbol}
+              className={`${on ? "sel" : ""} ${isOff?.(row) ? "off" : ""}`}
+              role={onPick ? "radio" : undefined}
+              aria-checked={onPick ? on : undefined}
+              tabIndex={onPick && !disabled ? 0 : undefined}
+              onClick={onPick && !disabled ? () => onPick(row.index) : undefined}
+              onKeyDown={onPick && !disabled ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onPick(row.index); } } : undefined}
+            >
+              <td className="key">{lead ? lead(row) : <i style={{ background: colors.get(row.index) }} />}</td>
+              <td className="stock"><b className="mono">{row.symbol}</b><small>{row.sub ?? row.name ?? ""}</small></td>
+              {market && <td className="c-spark">{p && p.price !== null ? <Spark values={p.history} up={up} /> : null}</td>}
+              {market && <td className="r mono">{p && p.price !== null ? `$${formatPrice(p.price)}` : "n/a"}</td>}
+              {market && <td className="r"><ChangeCell price={p} /></td>}
+              <td className="r mono w">{row.weight.toFixed(2)}%</td>
+              {extraHead && <td className="r mono">{row.extra}</td>}
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 
