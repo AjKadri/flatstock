@@ -50,6 +50,12 @@ sudo systemctl start flatstock-close-round.service
 sudo journalctl -u flatstock-close-round.service -n 50 --no-pager
 ```
 
+With `CLOSE_ROUND_ENABLED=0` the bot is read-only: running
+`npm run close-round --prefix /opt/flatstock/web` prints the contract, round,
+`closesAt` and the decision without sending anything. The bot can only call
+`closeRound`; it never opens a round. It refuses any round whose on-chain
+`closesAt` differs from `CLOSE_ROUND_EXPECTED_CLOSES_AT`.
+
 Keep the timer disabled until the round and close transaction have been
 explicitly approved. The bot reads through QuickNode when configured, falls
 back to `RPC_URL`, and submits the close through `RPC_URL`.
