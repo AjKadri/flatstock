@@ -2398,3 +2398,20 @@ forked relayer balance: 0.000082446419572223 ETH
 ✔ guard follows the forked relayer balance
 tests 1, pass 1, fail 0
 ```
+
+## 2026-11-05 Relayer top-up and kill switch off
+
+No mainnet transaction was sent by the coding agent. The user topped up the relayer.
+
+```text
+relayer 0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4 balance (cast balance, read-only, block 106699534):
+  0.000980506742789447 ETH   (was 0.000082446419572223)
+kill switch turned off by the user on the VPS via the admin endpoint, then made persistent:
+  M3_RELAYER_KILL_SWITCH=0 in /etc/flatstock/flatstock.env (env backed up first), relayer restarted
+GET https://api.flatstock.ajkadri.dev/api/health after restart (pasted by the user):
+  {"enabled":true,"killSwitch":false,"sponsorshipPaused":false,"sponsorshipPausedReason":null,
+   "relayerBalanceEth":"0.000980506742789447","minRelayerBalanceEth":"0.0003","dailyCap":3,"usage":0,
+   "relayer":"0x6956...75F4","quickNode":true,"signatureRelay":true}
+Decision: default OFF so the judged app keeps sponsoring across restarts until 16 Nov.
+  Guards kept: balance floor 0.0003 ETH (fails closed), cap 3 per wallet per day, user signatures.
+  To pause: POST /api/relay/kill-switch {"enabled":true} with the admin token, and set the env back to 1.
