@@ -1,39 +1,183 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Flatstock community-picked stocks in one tap with no gas." />
-    <title>Flatstock</title>
-    <style>
-      :root { color: #edf8f0; background: #08110f; font-family: Inter, system-ui, sans-serif; }
-      body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: radial-gradient(circle at 80% -10%, #174334 0, transparent 42%), #08110f; }
-      main { width: min(720px, calc(100% - 40px)); padding: 32px 0; }
-      .eyebrow { color: #7ed9a1; font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
-      h1 { margin: 12px 0 18px; font-size: clamp(48px, 10vw, 92px); letter-spacing: -.07em; line-height: .9; }
-      p { color: #b6d2bd; font-size: 18px; line-height: 1.5; }
-      .notice { margin: 28px 0; padding: 14px 16px; border: 1px solid #385747; border-radius: 13px; color: #d7e8dc; font-size: 13px; }
-      .notice a.inline { display: inline; padding: 0; border-radius: 0; background: none; color: #a9edbe; font-weight: 600; text-decoration: underline; }
-      .notice details { margin-top: 8px; }
-      .notice summary { cursor: pointer; color: #a9edbe; }
-      .notice details p { margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: #d7e8dc; }
-      a { display: inline-block; padding: 14px 18px; border-radius: 12px; color: #082016; background: #9beab2; font-weight: 800; text-decoration: none; }
-    </style>
-  </head>
-  <body>
-    <main>
-      <div class="eyebrow">Community-picked stocks</div>
-      <h1>Flatstock</h1>
-      <p>Buy the US stocks the community picked, in one tap, with no gas.</p>
-      <div class="notice">
-        Not available to US persons, or in Canada, the UK, Switzerland or other restricted jurisdictions. Not investment advice.
-        <a class="inline" href="https://docs.robinhood.com/rhj/restricted-jurisdictions" target="_blank" rel="noopener noreferrer">Restricted jurisdictions</a>
-        <details>
-          <summary>Full list</summary>
-          <p>Stock Tokens are restricted for the United States and U.S. persons, Canada, the United Kingdom and Switzerland, and prohibited for Cuba, Belarus, Iran, North Korea, Russia, Syria, Ukraine, South Sudan, Sudan, Myanmar and Venezuela. Source: docs.robinhood.com/rhj/restricted-jurisdictions, checked 5 Nov 2026. The list may change.</p>
-        </details>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#07110C" />
+  <title>Flatstock: the stocks the community picked</title>
+  <meta name="description" content="Buy the US stocks the community picked. One tap. No gas. $WIF holders vote weekly; you keep the Stock Tokens in your own wallet on Robinhood Chain." />
+  <meta property="og:title" content="Flatstock" />
+  <meta property="og:description" content="Buy the US stocks the community picked. One tap. No gas." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter+Tight:wght@200;300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/landing.css" />
+  <script>document.documentElement.classList.add("js");</script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav" id="nav">
+    <nav class="pill-group left" aria-label="Main">
+      <a href="#how">How it works</a><a href="#rounds">Rounds</a><a href="#safety">Safety</a>
+    </nav>
+    <a class="logo" href="/" aria-label="Flatstock home"><img src="/logo.svg" alt="" width="40" height="40" /></a>
+    <nav class="pill-group right" aria-label="More">
+      <a href="#why">Why $WIF</a><a href="/docs">Docs</a><a class="open" href="https://app.flatstock.ajkadri.dev">Open app</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <!-- 1 Hero -->
+    <section class="hero" id="top">
+      <svg class="hero-chart" viewBox="0 0 1200 600" preserveAspectRatio="none" aria-hidden="true">
+        <defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2bd67b" stop-opacity=".35"/><stop offset="1" stop-color="#2bd67b" stop-opacity="0"/></linearGradient></defs>
+        <path class="area" d="M0 430 L80 410 L160 440 L240 380 L320 395 L400 330 L480 350 L560 290 L640 310 L720 240 L800 265 L880 190 L960 210 L1040 140 L1120 160 L1200 90 L1200 600 L0 600Z" fill="url(#g1)"/>
+        <path class="line" d="M0 430 L80 410 L160 440 L240 380 L320 395 L400 330 L480 350 L560 290 L640 310 L720 240 L800 265 L880 190 L960 210 L1040 140 L1120 160 L1200 90" fill="none" stroke="#2bd67b" stroke-width="2.5" stroke-linejoin="round"/>
+      </svg>
+      <div class="chips" aria-hidden="true">
+        <span style="--x:12%;--y:22%;--d:0s;--b:3px">AAPL</span><span style="--x:30%;--y:14%;--d:1.2s;--b:1px">NVDA</span>
+        <span style="--x:58%;--y:20%;--d:.6s;--b:4px">MSFT</span><span style="--x:78%;--y:12%;--d:1.8s;--b:2px">$WIF</span>
+        <span style="--x:20%;--y:48%;--d:2.4s;--b:5px">USDG</span><span style="--x:66%;--y:44%;--d:.9s;--b:3px">AAPL</span>
       </div>
-      <a href="https://app.flatstock.ajkadri.dev">Open the app</a>
-    </main>
-  </body>
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow">Community-picked stocks on Robinhood Chain</p>
+          <h1>Buy the US stocks the community picked. <em>One tap. No gas.</em></h1>
+          <div class="cta">
+            <a class="btn primary" href="https://app.flatstock.ajkadri.dev">Open app</a>
+            <a class="btn round" href="#how" aria-label="See how it works">↓</a>
+          </div>
+        </div>
+        <aside class="hero-cards" aria-label="Live data">
+          <div class="card"><span>This week's mix</span><strong id="h-mix">…</strong><small id="h-mix-sub">Loading from chain</small></div>
+          <div class="card"><span>$WIF burned</span><strong id="h-burn" class="mono">…</strong><small>1 $WIF per vote</small></div>
+          <div class="card wide"><span id="h-round-label">Round closes in</span><strong id="h-count" class="mono">…</strong><small id="h-round-sub"></small></div>
+        </aside>
+      </div>
+      <ol class="strip">
+        <li><b>01</b><span>Vote<small>Burn 1 $WIF on next week's mix</small></span></li>
+        <li><b>02</b><span>Buy<small>The final mix, in one tap</small></span></li>
+        <li><b>03</b><span>Hold<small>Your wallet, your keys</small></span></li>
+      </ol>
+    </section>
+
+    <!-- 2 Headline window -->
+    <section class="window" id="window">
+      <div class="window-pin">
+        <h2 class="big top">ONE VOTE</h2>
+        <div class="win" id="win">
+          <div class="win-scene" aria-hidden="true">
+            <div class="scene-step s1"><span>01</span><b>Vote</b><i>1 $WIF burned</i></div>
+            <div class="scene-step s2"><span>02</span><b>Buy</b><i>AAPL · NVDA · MSFT</i></div>
+            <div class="scene-step s3"><span>03</span><b>Hold</b><i>Tokens in your wallet</i></div>
+          </div>
+        </div>
+        <h2 class="big bottom">ONE TAP</h2>
+        <p class="note n1">holders pick the basket</p><p class="note n2">no gas with a lock</p>
+      </div>
+    </section>
+
+    <!-- 3 How it works -->
+    <section class="how" id="how">
+      <p class="eyebrow">How it works</p>
+      <h2 class="section-title">Three steps. No spreadsheets.</h2>
+      <div class="fan">
+        <article class="fcard c1"><b>1</b><h3>Vote</h3><p>Pick the stock you want more of in next week's mix. Each vote burns 1 $WIF. One vote per wallet per round.</p></article>
+        <article class="fcard c2"><b>2</b><h3>Buy the mix</h3><p>Buy the final mix of the last closed round with one signature. Stock Tokens go straight to your wallet.</p></article>
+        <article class="fcard c3"><b>3</b><h3>Hold</h3><p>Your shares, your keys. Sell back to USDG any time. Corporate actions like dividends show up in your share count.</p></article>
+      </div>
+    </section>
+
+    <!-- 4 Live stats -->
+    <section class="stats-band" id="stats">
+      <p class="eyebrow dark">Live from chain</p>
+      <h2 class="stats-title">THE NUMBERS ARE ON-CHAIN</h2>
+      <ul class="stat-grid">
+        <li><strong class="mono count" id="s-votes">…</strong><span>votes cast</span></li>
+        <li><strong class="mono count" id="s-burn">…</strong><span>$WIF burned</span></li>
+        <li><strong class="mono count" id="s-trades">…</strong><span>trades through the current router</span></li>
+        <li><strong class="mono count" id="s-rounds">…</strong><span>rounds on the current contract</span></li>
+      </ul>
+      <p class="stats-note">Read directly from Robinhood Chain. Every number links to its source: <a href="https://robinhoodchain.blockscout.com/address/0x4BB945800d588E6B4DB287b3fCe9C13f7825A968" target="_blank" rel="noopener noreferrer">votes contract</a> · <a href="https://robinhoodchain.blockscout.com/address/0x8799a2eF390dE8b0Ef97919C7e040C44DdFadbe7" target="_blank" rel="noopener noreferrer">router</a>. Earlier test contracts are included in the burned total.</p>
+    </section>
+
+    <!-- 5 Why WIF -->
+    <section class="why" id="why">
+      <div>
+        <p class="eyebrow">Why $WIF</p>
+        <h2 class="section-title">$WIF decides the basket and pays for the gas.</h2>
+      </div>
+      <ul class="why-list">
+        <li><b>Every vote burns 1 $WIF.</b><span>Voting costs a real $WIF, permanently removed from supply.</span></li>
+        <li><b>Lock 10 $WIF, skip the gas.</b><span>Locked wallets get sponsored votes and buys, up to 3 per day. No lock? You just pay the small ETH gas yourself.</span></li>
+        <li><b>Holders choose, not a desk.</b><span>Half the mix follows the vote, half stays equal-weight, and no stock can exceed 50%.</span></li>
+      </ul>
+    </section>
+
+    <!-- 6 Rounds -->
+    <section class="rounds" id="rounds">
+      <p class="eyebrow">Rounds</p>
+      <div class="numerals" aria-hidden="true"><span>ROUND 4</span><i>—</i><span>ROUND 5</span></div>
+      <h2 class="section-title">Every round is public.</h2>
+      <p class="lede">Final mix, votes and $WIF burned per round, straight from the contract. Buying uses the most recent closed round while voting runs on the next one.</p>
+      <ul class="round-list" id="round-list"><li class="muted">Loading rounds from chain…</li></ul>
+      <details class="tests"><summary>Test rounds (earlier contract)</summary>
+        <p>Before the current contract, we ran short tests on earlier contracts. Their votes are in the burned total. They are retired.</p>
+        <ul class="plain">
+          <li><a href="https://robinhoodchain.blockscout.com/address/0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9" target="_blank" rel="noopener noreferrer">0xEDB1…B8E9</a> · 3 votes</li>
+          <li><a href="https://robinhoodchain.blockscout.com/address/0xD49249D2a5CffBCF35B6560857d1d1C703802e78" target="_blank" rel="noopener noreferrer">0xD492…2e78</a> · 0 votes</li>
+          <li><a href="https://robinhoodchain.blockscout.com/address/0x68d2622f3bbf6BE80CdfED679489de344410C7Db" target="_blank" rel="noopener noreferrer">0x68d2…C7Db</a> · 1 vote</li>
+        </ul>
+      </details>
+    </section>
+
+    <!-- 7 Safety -->
+    <section class="safety" id="safety">
+      <p class="eyebrow">Safety</p>
+      <h2 class="section-title">Built so it can only do what you signed.</h2>
+      <div class="s-grid">
+        <article><h3>Self-custody</h3><p>Stock Tokens are sent to your own wallet. The app never holds your funds.</p></article>
+        <article><h3>A signature for every action</h3><p>Votes, buys and sells each need your own signature for that exact action. The relayer can only submit what you signed.</p></article>
+        <article><h3>Price guard</h3><p>Every swap must be within 2% of the Chainlink price. If any leg fails, the whole buy is blocked.</p></article>
+        <article><h3>Fresh oracles only</h3><p>Stale or missing prices stop the buy. The system fails closed.</p></article>
+        <article><h3>Caps and a kill switch</h3><p>Sponsored gas is capped at 3 actions per wallet per day, pauses when the relayer is low on ETH, and has a kill switch.</p></article>
+        <article><h3>Open contracts</h3><p>The votes and router contracts are verified on Blockscout and the source is public. This is a hackathon build and has not been audited.</p></article>
+      </div>
+    </section>
+
+    <!-- 8 FAQ -->
+    <section class="faq" id="faq">
+      <p class="eyebrow">FAQ</p>
+      <h2 class="section-title">Quick answers</h2>
+      <details><summary>What do I need to start?</summary><p>A wallet with Robinhood Chain added, some USDG to buy with, and $WIF if you want to vote. Without a 10 $WIF lock you also need a little ETH for gas.</p></details>
+      <details><summary>Can I vote more than once?</summary><p>No. Each wallet gets one vote per round, and each vote burns 1 $WIF.</p></details>
+      <details><summary>Which round does my buy use?</summary><p>The final mix of the most recent closed round. Voting runs on the open round, which sets next week's mix.</p></details>
+      <details><summary>What does it cost?</summary><p>0% Flatstock fee today. You pay the swap price, plus gas unless your wallet has a 10 $WIF lock.</p></details>
+      <details><summary>Is it available everywhere?</summary><p>No. Stock Tokens are restricted for the US and US persons, Canada, the UK and Switzerland, and prohibited in several other countries. See the notice below. This is not investment advice.</p></details>
+      <details><summary>Is it audited?</summary><p>No. It is a hackathon project. The source is public and the main contracts are verified, but use small amounts.</p></details>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="foot-cta"><h2>Buy what the community picked.</h2><a class="btn primary" href="https://app.flatstock.ajkadri.dev">Open app</a></div>
+    <div class="foot-links">
+      <a href="/docs">Docs</a><a href="/docs/terms">Terms</a><a href="/docs/privacy">Privacy</a>
+      <a href="https://github.com/AjKadri/flatstock" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="https://api.flatstock.ajkadri.dev/api/health" target="_blank" rel="noopener noreferrer">Status</a>
+    </div>
+    <p class="notice"><b>Notice</b> Not available to US persons, or in Canada, the UK, Switzerland or other restricted jurisdictions. Not investment advice. <a href="https://docs.robinhood.com/rhj/restricted-jurisdictions" target="_blank" rel="noopener noreferrer">Restricted jurisdictions</a>
+      <details><summary>Full list</summary><span>Stock Tokens are restricted for the United States and U.S. persons, Canada, the United Kingdom and Switzerland, and prohibited for Cuba, Belarus, Iran, North Korea, Russia, Syria, Ukraine, South Sudan, Sudan, Myanmar and Venezuela. Source: docs.robinhood.com/rhj/restricted-jurisdictions, checked 5 Nov 2026. The list may change.</span></details></p>
+    <p class="indep">Flatstock is independent and not affiliated with Robinhood.</p>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js" defer></script>
+  <script src="/landing.js" defer></script>
+</body>
 </html>
