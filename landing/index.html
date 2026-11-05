@@ -13,6 +13,10 @@
       h1 { margin: 12px 0 18px; font-size: clamp(48px, 10vw, 92px); letter-spacing: -.07em; line-height: .9; }
       p { color: #b6d2bd; font-size: 18px; line-height: 1.5; }
       .notice { margin: 28px 0; padding: 14px 16px; border: 1px solid #385747; border-radius: 13px; color: #d7e8dc; font-size: 13px; }
+      .notice a.inline { display: inline; padding: 0; border-radius: 0; background: none; color: #a9edbe; font-weight: 600; text-decoration: underline; }
+      .notice details { margin-top: 8px; }
+      .notice summary { cursor: pointer; color: #a9edbe; }
+      .notice details p { margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: #d7e8dc; }
       a { display: inline-block; padding: 14px 18px; border-radius: 12px; color: #082016; background: #9beab2; font-weight: 800; text-decoration: none; }
     </style>
   </head>
@@ -21,7 +25,14 @@
       <div class="eyebrow">Community-picked stocks</div>
       <h1>Flatstock</h1>
       <p>Buy the US stocks the community picked, in one tap, with no gas.</p>
-      <div class="notice">Not available to US persons. Not investment advice.</div>
+      <div class="notice">
+        Not available to US persons, or in Canada, the UK, Switzerland or other restricted jurisdictions. Not investment advice.
+        <a class="inline" href="https://docs.robinhood.com/rhj/restricted-jurisdictions" target="_blank" rel="noopener noreferrer">Restricted jurisdictions</a>
+        <details>
+          <summary>Full list</summary>
+          <p>Stock Tokens are restricted for the United States and U.S. persons, Canada, the United Kingdom and Switzerland, and prohibited for Cuba, Belarus, Iran, North Korea, Russia, Syria, Ukraine, South Sudan, Sudan, Myanmar and Venezuela. Source: docs.robinhood.com/rhj/restricted-jurisdictions, checked 5 Nov 2026. The list may change.</p>
+        </details>
+      </div>
       <a href="https://app.flatstock.ajkadri.dev">Open the app</a>
     </main>
   </body>

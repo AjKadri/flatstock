@@ -21,6 +21,8 @@ import {
   erc20Abi,
   feedAbi,
   LEGAL_NOTICE,
+  RESTRICTED_JURISDICTIONS_TEXT,
+  RESTRICTED_JURISDICTIONS_URL,
   legacyBuyRouterAddress,
   lockAbi,
   MAX_SLIPPAGE_BPS,
@@ -972,4 +974,4 @@ export function formatDate(timestamp: bigint) {
   }).format(Number(timestamp) * 1000);
 }
 
-export { LEGAL_NOTICE };
+export { LEGAL_NOTICE, RESTRICTED_JURISDICTIONS_TEXT, RESTRICTED_JURISDICTIONS_URL };

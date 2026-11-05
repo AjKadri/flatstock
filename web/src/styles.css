@@ -47,6 +47,10 @@ h3 { font-size: 20px; letter-spacing: -.03em; }
 .notice, .alert { margin-bottom: 16px; border-radius: 13px; padding: 12px 14px; font-size: 13px; line-height: 1.45; }
 .notice { color: #d7e8dc; border: 1px solid #385747; background: #13261d; }
 .notice span { margin-right: 8px; color: #a8e6b9; font-weight: 800; }
+.notice a { color: #a9edbe; text-decoration: underline; }
+.notice details { margin-top: 8px; }
+.notice summary { cursor: pointer; color: #a9edbe; }
+.notice details p { margin: 8px 0 0; color: #d7e8dc; }
 .alert { border: 1px solid #305442; background: #13291e; }
 .alert.error { border-color: #75423d; background: #321b1a; color: #ffd8d2; }
 .alert.info { border-color: #445b70; background: #172736; color: #d2e7fa; }

@@ -6,6 +6,8 @@ import {
   chain,
   EXPLORER_URL,
   LEGAL_NOTICE,
+  RESTRICTED_JURISDICTIONS_TEXT,
+  RESTRICTED_JURISDICTIONS_URL,
   lockAbi,
   MIX_RULES_ENABLED,
   NETWORK_LABEL,
@@ -444,7 +446,7 @@ function App() {
         </div>
       </header>
 
-      <section className="notice"><span>Notice</span>{LEGAL_NOTICE}</section>
+      <section className="notice"><span>Notice</span>{LEGAL_NOTICE} <a href={RESTRICTED_JURISDICTIONS_URL} target="_blank" rel="noopener noreferrer">Restricted jurisdictions</a><details><summary>Full list</summary><p>{RESTRICTED_JURISDICTIONS_TEXT}</p></details></section>
 
       {chainId !== null && chainId !== chain.id && (
         <section className="alert error"><strong>Wrong network.</strong> Connect to {NETWORK_LABEL} (4663) to use the live contracts.

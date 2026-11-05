@@ -23,7 +23,10 @@ export const SIGNATURE_SAFE_WRITES_ENABLED = Boolean(
   import.meta.env.VITE_META_VOTES_ADDRESS && import.meta.env.VITE_META_ROUTER_ADDRESS,
 );
 export const LEGAL_NOTICE =
-  "Not available to US persons. Not investment advice.";
+  "Not available to US persons, or in Canada, the UK, Switzerland or other restricted jurisdictions. Not investment advice.";
+export const RESTRICTED_JURISDICTIONS_URL = "https://docs.robinhood.com/rhj/restricted-jurisdictions";
+export const RESTRICTED_JURISDICTIONS_TEXT =
+  "Stock Tokens are restricted for the United States and U.S. persons, Canada, the United Kingdom and Switzerland, and prohibited for Cuba, Belarus, Iran, North Korea, Russia, Syria, Ukraine, South Sudan, Sudan, Myanmar and Venezuela. Source: docs.robinhood.com/rhj/restricted-jurisdictions, checked 5 Nov 2026. The list may change.";
 
 export const chain = defineChain({
   id: CHAIN_ID,
