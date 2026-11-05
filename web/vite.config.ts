@@ -8,7 +8,7 @@ export default defineConfig({
     port: 5173,
     allowedHosts: [".trycloudflare.com"],
     proxy: {
-      "/api": "http://localhost:8787",
+      "/api": { target: process.env.DEV_API_TARGET || "http://localhost:8787", changeOrigin: true },
     },
   },
 });
