@@ -2344,3 +2344,43 @@ additional runway is about 0.000068 ETH after the current balance. A practical
 top-up recommendation is 0.0002 ETH to allow fee movement and retries. This is
 for one active wallet; each additional daily vote plus buy adds about 0.0000125
 ETH under the observed fee level. No runway top-up was sent in this pass.
+
+## 2026-11-05 Claude session (Lagos, from 11:00 WAT)
+
+No mainnet transaction was sent in this session.
+
+```text
+commits=ecc40c1 (PLAN-v3.md), 29d1c65 (low-balance guard), 4072deb (close-round bot fix)
+PLAN-v3.md secrets scan: clean (no keys, 64-hex strings, RPC URLs or emails)
+Robinhood restricted jurisdictions (docs.robinhood.com/rhj/restricted-jurisdictions, read 5 Nov):
+  restricted: US/US persons, Canada, UK, Switzerland
+  prohibited: Cuba, Belarus, Iran, North Korea, Russia, Syria, Ukraine, South Sudan, Sudan, Myanmar, Venezuela
+  Nigeria: not listed
+Blockscout FlatstockRouter 0x8799a2eF390dE8b0Ef97919C7e040C44DdFadbe7:
+  "Contract source code verified (exact match)", verified at Nov 3, 2026 21:37:55, source visible
+```
+
+Low-balance guard (relayer stops sponsoring below 0.0003 ETH):
+
+```text
+mocked tests: 8/8 pass (boundary 0.0003 sponsors, 1 wei less pauses, fails closed on RPC error, top-up resumes)
+fork test: written (web/relayer/sponsorship-guard.fork.test.ts), not yet run; run with
+  bash web/relayer/run-fork-test.sh
+live /health after VPS restart:
+  {"enabled":true,"killSwitch":true,"sponsorshipPaused":true,"sponsorshipPausedReason":"low-balance",
+   "relayerBalanceEth":"0.000082446419572223","minRelayerBalanceEth":"0.0003","dailyCap":3,"usage":0,
+   "relayer":"0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4","quickNode":true,"signatureRelay":true}
+Vercel project flatstock: Production Ready on 29d1c65, domain app.flatstock.ajkadri.dev
+Vercel project web (stray): npm ci exits 1, no production deployment ever; not the live app
+```
+
+Close-round bot review (round 4, closesAt 1794232800 = 2026-11-09T14:00:00Z = Mon 9 Nov 15:00 WAT):
+
+```text
+VPS env before fix: VOTE_CONTRACT_ADDRESS=0x68d2622f3bbf6BE80CdfED679489de344410C7Db (retired)
+                    CLOSE_ROUND_FALLBACK_ID=3, CLOSE_ROUND_ENABLED=0, timer disabled
+result before fix: bot would NOT have closed round 4 on FlatstockVotes 0x4BB9...A968
+fix 4072deb: prefers META_VOTES_ADDRESS, refuses a round whose closesAt differs from
+  CLOSE_ROUND_EXPECTED_CLOSES_AT, read-only status when disabled, 8/8 logic tests pass
+round 5: the bot only calls closeRound; openRound is onlyOwner, so it cannot open round 5
+```
