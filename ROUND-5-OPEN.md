@@ -9,12 +9,17 @@ Read with `ROUND4-CLOSE.md` (the close itself). Nothing here is run without your
 - `openRound` is owner-only. The owner is `0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4`, the relayer wallet, so the key is the one your shell already has as `M1_RELAYER_PRIVATE_KEY` (I never read or print it).
 - `closeRound(4)` is permissionless and reverts before 15:00:00 WAT.
 
-## Two things that need a decision from you
+## Decisions (approved by you on 5 Nov)
+- Round 5 vote share: **50%**.
+- Timing: close round 4 at 15:00, run the study at about 15:35, open round 5 at about 15:40.
+- Drop rule: drop from the **end** of the list only, never the middle (so on-chain indexes keep matching the app).
+
+## Background for those decisions
 1. **The US market opens at 15:30 WAT (09:30 ET), 30 minutes after the 15:00 close.** A study run at 15:00 sees pre-open conditions: Chainlink feeds can be stale or paused and pool prices can drift from a stale feed, so good stocks can fail for the wrong reason. Recommended: close round 4 at 15:00, run the study at about **15:35**, open round 5 right after (about 15:40). Buying keeps working in the gap (it uses round 4's final mix), only voting waits about 40 minutes. If you want a strictly back-to-back open at 15:00, we run the study on Friday evening in market hours and open at 15:00 on that list.
 2. **The app maps on-chain index to stock by a fixed order** (`assets` in `web/src/config.ts`: AAPL, NVDA, MSFT, AMZN, GOOGL, META, TSLA, SPY). If a stock must be dropped, the order on chain must still match the app, so:
    - dropping from the **end** of the list (SPY, then TSLA, ...) needs only `assetCount` smaller, no deploy;
    - dropping a stock in the **middle** changes every later index, so I must change the config (and landing symbols) and you must push and wait for Vercel **before** the open transaction. Otherwise votes would be mislabelled.
-   Tell me which you prefer. My suggestion: drop from the end only, and swap by deploy if a middle stock truly fails.
+   Approved: drop from the end only.
 
 ## Steps (assuming the recommended timing)
 1. **Friday 6 Nov evening (market hours), read-only:** `node web/relayer/stock-study.mjs > research/stock-study.json`. I show you the table.

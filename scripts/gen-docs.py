@@ -47,6 +47,7 @@ P["voting"] = ("Voting", """
 <tr><td>AAPL</td><td>16.67%</td><td>50.00%</td><td>66.67% → capped at 50%</td></tr><tr><td>NVDA</td><td>16.67%</td><td>0%</td><td>25%</td></tr><tr><td>MSFT</td><td>16.67%</td><td>0%</td><td>25%</td></tr></table>
 <p class="small">The cap-excess goes to the other stocks equally, which is why round 4 shows 50 / 25 / 25.</p>
 <h2>Vote share</h2><p>Each round stores its own vote share. Round 4 used <b>50%</b>. The vote share is the part of the mix that follows the votes; the rest is equal weight. The votes are counted as a <i>share</i>, not as a raw number: with a single vote or with ten votes all on the same stock, the mix is the same.</p>
+<p>Round 5 uses a 50% vote share. The vote share may rise to 75% once rounds regularly get 20+ voters; it's set per round and shown in the app.</p>
 <h2>Weekly schedule</h2><p>Rounds close every Monday at 15:00 WAT, and the next round opens at once. Round 5 closes Mon 16 Nov 15:00 WAT.</p>
 <h2>Closing</h2><p>After a round's closing time, anyone can call <code>closeRound</code> on the contract. That stores the final weights. A closed round cannot be voted on again. Rounds on the current contract start at Round 4; earlier rounds ran on retired test contracts and are listed separately under "Test rounds".</p>
 <h2>Past rounds</h2><p>The app (More tab) and the <a href="/#rounds">landing page</a> show each round's final mix, votes and $WIF burned, read straight from the chain, with Blockscout links.</p>
