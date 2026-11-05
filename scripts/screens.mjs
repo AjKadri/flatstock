@@ -40,7 +40,7 @@ const send = (method, params = {}) => new Promise((resolve) => { const id = next
 
 for (const pair of pairs) {
   const [name, url] = [pair.slice(0, pair.indexOf("=")), pair.slice(pair.indexOf("=") + 1)];
-  for (const [label, width, mobile] of [["desktop", 1360, false], ["phone", 390, true]]) {
+  for (const [label, width, mobile] of [["desktop", 1360, false], ["phone", Number(process.env.PHONE_WIDTH || 390), true]]) {
     await send("Emulation.setDeviceMetricsOverride", { width, height: mobile ? 844 : 860, deviceScaleFactor: mobile ? 2 : 1, mobile });
     await send("Page.enable");
     await send("Page.navigate", { url });
