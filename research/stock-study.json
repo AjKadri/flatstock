@@ -1,0 +1,3036 @@
+{
+ "at": "2026-11-05T14:49:59.880Z",
+ "session": {
+  "name": "REGULAR",
+  "nextChangeAt": 1793912400,
+  "mintWindowOpen": true,
+  "nextMintWindowChangeAt": 1794013200,
+  "calendarCovered": true
+ },
+ "sequencer": {
+  "status": "OPERATIONAL",
+  "source": "status.robinhoodchain.offchain.io",
+  "observedAt": 1793890126
+ },
+ "rows": [
+  {
+   "symbol": "AAPL",
+   "token": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
+   "feed": "0x6B22A786bAa607d76728168703a39Ea9C99f2cD0",
+   "chainlink": 352.83812162,
+   "ageSeconds": 1009,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 353.1626632411083,
+      "diffBps": 9
+     },
+     "10": {
+      "price": 353.163745146179,
+      "diffBps": 9
+     },
+     "50": {
+      "price": 353.16855361316027,
+      "diffBps": 9
+     },
+     "100": {
+      "price": 353.1745641968869,
+      "diffBps": 10
+     }
+    },
+    "diff1Bps": 9,
+    "price1": 353.1626632411083
+   },
+   "tiers": [
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 353.1626632411083,
+       "diffBps": 9
+      },
+      "10": {
+       "price": 353.163745146179,
+       "diffBps": 9
+      },
+      "50": {
+       "price": 353.16855361316027,
+       "diffBps": 9
+      },
+      "100": {
+       "price": 353.1745641968869,
+       "diffBps": 10
+      }
+     },
+     "diff1Bps": 9,
+     "price1": 353.1626632411083
+    },
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 353.2578378537431,
+       "diffBps": 12
+      },
+      "10": {
+       "price": 353.2644814347977,
+       "diffBps": 12
+      },
+      "50": {
+       "price": 353.29400846170694,
+       "diffBps": 13
+      },
+      "100": {
+       "price": 353.33091724534347,
+       "diffBps": 14
+      }
+     },
+     "diff1Bps": 12,
+     "price1": 353.2578378537431
+    },
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 354.7508956194368,
+       "diffBps": 54
+      },
+      "10": {
+       "price": 354.92570699444417,
+       "diffBps": 59
+      },
+      "50": {
+       "price": 355.7026464389216,
+       "diffBps": 81
+      },
+      "100": {
+       "price": 356.6759153664811,
+       "diffBps": 109
+      }
+     },
+     "diff1Bps": 54,
+     "price1": 354.7508956194368
+    }
+   ],
+   "bestDepth": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 353.1626632411083,
+      "diffBps": 9
+     },
+     "10": {
+      "price": 353.163745146179,
+      "diffBps": 9
+     },
+     "50": {
+      "price": 353.16855361316027,
+      "diffBps": 9
+     },
+     "100": {
+      "price": 353.1745641968869,
+      "diffBps": 10
+     }
+    },
+    "diff1Bps": 9,
+    "price1": 353.1626632411083
+   }
+  },
+  {
+   "symbol": "AMD",
+   "token": "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC",
+   "feed": "0x943A29E7ae51A4798823ca9eEd2ed533B2A22C72",
+   "chainlink": 431.7722,
+   "ageSeconds": 117,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 433.7907044838718,
+      "diffBps": 47
+     },
+     "10": {
+      "price": 433.8018998133158,
+      "diffBps": 47
+     },
+     "50": {
+      "price": 433.85165683306707,
+      "diffBps": 48
+     },
+     "100": {
+      "price": 433.91385310775627,
+      "diffBps": 50
+     }
+    },
+    "diff1Bps": 47,
+    "price1": 433.7907044838718
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 433.7907044838718,
+       "diffBps": 47
+      },
+      "10": {
+       "price": 433.8018998133158,
+       "diffBps": 47
+      },
+      "50": {
+       "price": 433.85165683306707,
+       "diffBps": 48
+      },
+      "100": {
+       "price": 433.91385310775627,
+       "diffBps": 50
+      }
+     },
+     "diff1Bps": 47,
+     "price1": 433.7907044838718
+    },
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 446.4457934534022,
+       "diffBps": 340
+      },
+      "10": {
+       "price": 463.09475880960287,
+       "diffBps": 725
+      },
+      "50": {
+       "price": 466.7780355861208,
+       "diffBps": 811
+      },
+      "100": {
+       "price": 469.3469205378733,
+       "diffBps": 870
+      }
+     },
+     "diff1Bps": 340,
+     "price1": 446.4457934534022
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 433.7907044838718,
+      "diffBps": 47
+     },
+     "10": {
+      "price": 433.8018998133158,
+      "diffBps": 47
+     },
+     "50": {
+      "price": 433.85165683306707,
+      "diffBps": 48
+     },
+     "100": {
+      "price": 433.91385310775627,
+      "diffBps": 50
+     }
+    },
+    "diff1Bps": 47,
+    "price1": 433.7907044838718
+   }
+  },
+  {
+   "symbol": "AMZN",
+   "token": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
+   "feed": "0xD5a1508ceD74c084eBf3cBe853e2C968fB2a651C",
+   "chainlink": 266.5625,
+   "ageSeconds": 291,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 266.73638689607196,
+      "diffBps": 7
+     },
+     "10": {
+      "price": 266.7368875382267,
+      "diffBps": 7
+     },
+     "50": {
+      "price": 266.73911261447023,
+      "diffBps": 7
+     },
+     "100": {
+      "price": 266.7418939597746,
+      "diffBps": 7
+     }
+    },
+    "diff1Bps": 7,
+    "price1": 266.73638689607196
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 266.73638689607196,
+       "diffBps": 7
+      },
+      "10": {
+       "price": 266.7368875382267,
+       "diffBps": 7
+      },
+      "50": {
+       "price": 266.73911261447023,
+       "diffBps": 7
+      },
+      "100": {
+       "price": 266.7418939597746,
+       "diffBps": 7
+      }
+     },
+     "diff1Bps": 7,
+     "price1": 266.73638689607196
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 266.73638689607196,
+      "diffBps": 7
+     },
+     "10": {
+      "price": 266.7368875382267,
+      "diffBps": 7
+     },
+     "50": {
+      "price": 266.73911261447023,
+      "diffBps": 7
+     },
+     "100": {
+      "price": 266.7418939597746,
+      "diffBps": 7
+     }
+    },
+    "diff1Bps": 7,
+    "price1": 266.73638689607196
+   }
+  },
+  {
+   "symbol": "ASML",
+   "token": "0x47F93d52cBeC7C6D2CfC080e154002370a60dAEA",
+   "feed": "0xB4106147E8cce40b7d46124090d373A71b70f87D",
+   "chainlink": 1421.75219155,
+   "ageSeconds": 170,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 1434.0824683812527,
+      "diffBps": 87
+     },
+     "10": {
+      "price": 1454.5301680272876,
+      "diffBps": 231
+     },
+     "50": {
+      "price": 1520.9282409143434,
+      "diffBps": 698
+     },
+     "100": {
+      "price": 1553.1613430672899,
+      "diffBps": 924
+     }
+    },
+    "diff1Bps": 87,
+    "price1": 1434.0824683812527
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 1434.0824683812527,
+       "diffBps": 87
+      },
+      "10": {
+       "price": 1454.5301680272876,
+       "diffBps": 231
+      },
+      "50": {
+       "price": 1520.9282409143434,
+       "diffBps": 698
+      },
+      "100": {
+       "price": 1553.1613430672899,
+       "diffBps": 924
+      }
+     },
+     "diff1Bps": 87,
+     "price1": 1434.0824683812527
+    },
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 1447.7043281309177,
+       "diffBps": 183
+      },
+      "10": {
+       "price": 1448.6872570697335,
+       "diffBps": 189
+      },
+      "50": {
+       "price": 1452.7083283587217,
+       "diffBps": 218
+      },
+      "100": {
+       "price": 1456.4757433966206,
+       "diffBps": 244
+      }
+     },
+     "diff1Bps": 183,
+     "price1": 1447.7043281309177
+    }
+   ],
+   "bestDepth": {
+    "fee": 10000,
+    "depth": {
+     "1": {
+      "price": 1447.7043281309177,
+      "diffBps": 183
+     },
+     "10": {
+      "price": 1448.6872570697335,
+      "diffBps": 189
+     },
+     "50": {
+      "price": 1452.7083283587217,
+      "diffBps": 218
+     },
+     "100": {
+      "price": 1456.4757433966206,
+      "diffBps": 244
+     }
+    },
+    "diff1Bps": 183,
+    "price1": 1447.7043281309177
+   }
+  },
+  {
+   "symbol": "BABA",
+   "token": "0xad25Ac6C84D497db898fa1E8387bf6Af3532a1c4",
+   "feed": "0x62Cc8F9b5f56a33c9C8A60c8B92779f523c4E984",
+   "chainlink": 107.655875,
+   "ageSeconds": 762,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 107.84349116166103,
+      "diffBps": 17
+     },
+     "10": {
+      "price": 107.84543766503329,
+      "diffBps": 18
+     },
+     "50": {
+      "price": 107.85408879113231,
+      "diffBps": 18
+     },
+     "100": {
+      "price": 107.86490269875607,
+      "diffBps": 19
+     }
+    },
+    "diff1Bps": 17,
+    "price1": 107.84349116166103
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 107.84349116166103,
+       "diffBps": 17
+      },
+      "10": {
+       "price": 107.84543766503329,
+       "diffBps": 18
+      },
+      "50": {
+       "price": 107.85408879113231,
+       "diffBps": 18
+      },
+      "100": {
+       "price": 107.86490269875607,
+       "diffBps": 19
+      }
+     },
+     "diff1Bps": 17,
+     "price1": 107.84349116166103
+    },
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 109.42132273077132,
+       "diffBps": 164
+      },
+      "10": {
+       "price": 109.48091982938134,
+       "diffBps": 170
+      },
+      "50": {
+       "price": 109.74579582320371,
+       "diffBps": 194
+      },
+      "100": {
+       "price": 110.30833560312665,
+       "diffBps": 246
+      }
+     },
+     "diff1Bps": 164,
+     "price1": 109.42132273077132
+    },
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 191.64436010839364,
+       "diffBps": 7802
+      },
+      "10": {
+       "price": 1916.4436010839363,
+       "diffBps": 168016
+      },
+      "50": {
+       "price": 9582.218005419682,
+       "diffBps": 880079
+      },
+      "100": {
+       "price": 19164.436010839363,
+       "diffBps": 1770157
+      }
+     },
+     "diff1Bps": 7802,
+     "price1": 191.64436010839364
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 107.84349116166103,
+      "diffBps": 17
+     },
+     "10": {
+      "price": 107.84543766503329,
+      "diffBps": 18
+     },
+     "50": {
+      "price": 107.85408879113231,
+      "diffBps": 18
+     },
+     "100": {
+      "price": 107.86490269875607,
+      "diffBps": 19
+     }
+    },
+    "diff1Bps": 17,
+    "price1": 107.84349116166103
+   }
+  },
+  {
+   "symbol": "CLSK",
+   "token": "0xcBB95BBF36099d34dA091dc6Fa6F49EfA257Cee3",
+   "feed": "0x810c12D3a554Bc47fd39597Fe3b3AAC4941F50eF",
+   "chainlink": 6.31499999,
+   "ageSeconds": 124,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": false,
+   "best": null,
+   "tiers": []
+  },
+  {
+   "symbol": "COIN",
+   "token": "0x6330D8C3178a418788dF01a47479c0ce7CCF450b",
+   "feed": "0xA3a468A452940B7D6b69991207B508c609a98Ef2",
+   "chainlink": 143.8726,
+   "ageSeconds": 273,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 144.03426097553108,
+      "diffBps": 11
+     },
+     "10": {
+      "price": 144.0554394438015,
+      "diffBps": 13
+     },
+     "50": {
+      "price": 144.1495659694479,
+      "diffBps": 19
+     },
+     "100": {
+      "price": 144.2672241265059,
+      "diffBps": 27
+     }
+    },
+    "diff1Bps": 11,
+    "price1": 144.03426097553108
+   },
+   "tiers": [
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 144.03426097553108,
+       "diffBps": 11
+      },
+      "10": {
+       "price": 144.0554394438015,
+       "diffBps": 13
+      },
+      "50": {
+       "price": 144.1495659694479,
+       "diffBps": 19
+      },
+      "100": {
+       "price": 144.2672241265059,
+       "diffBps": 27
+      }
+     },
+     "diff1Bps": 11,
+     "price1": 144.03426097553108
+    }
+   ],
+   "bestDepth": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 144.03426097553108,
+      "diffBps": 11
+     },
+     "10": {
+      "price": 144.0554394438015,
+      "diffBps": 13
+     },
+     "50": {
+      "price": 144.1495659694479,
+      "diffBps": 19
+     },
+     "100": {
+      "price": 144.2672241265059,
+      "diffBps": 27
+     }
+    },
+    "diff1Bps": 11,
+    "price1": 144.03426097553108
+   }
+  },
+  {
+   "symbol": "CRCL",
+   "token": "0xdF0992E440dD0be65BD8439b609d6D4366bf1CB5",
+   "feed": "0x6652eDf64bA3731C4F2D3ce821A0Fb1f1f6b482a",
+   "chainlink": 70.0695,
+   "ageSeconds": 86,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 70.24287732533713,
+      "diffBps": 25
+     },
+     "10": {
+      "price": 70.24299105747825,
+      "diffBps": 25
+     },
+     "50": {
+      "price": 70.243496533661,
+      "diffBps": 25
+     },
+     "100": {
+      "price": 70.24412837888946,
+      "diffBps": 25
+     }
+    },
+    "diff1Bps": 25,
+    "price1": 70.24287732533713
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 70.24287732533713,
+       "diffBps": 25
+      },
+      "10": {
+       "price": 70.24299105747825,
+       "diffBps": 25
+      },
+      "50": {
+       "price": 70.243496533661,
+       "diffBps": 25
+      },
+      "100": {
+       "price": 70.24412837888946,
+       "diffBps": 25
+      }
+     },
+     "diff1Bps": 25,
+     "price1": 70.24287732533713
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 70.24287732533713,
+      "diffBps": 25
+     },
+     "10": {
+      "price": 70.24299105747825,
+      "diffBps": 25
+     },
+     "50": {
+      "price": 70.243496533661,
+      "diffBps": 25
+     },
+     "100": {
+      "price": 70.24412837888946,
+      "diffBps": 25
+     }
+    },
+    "diff1Bps": 25,
+    "price1": 70.24287732533713
+   }
+  },
+  {
+   "symbol": "CRWV",
+   "token": "0x5f10A1C971B69e47e059e1dC91901B59b3fB49C3",
+   "feed": "0xe1b3aABCAFAd1c94708dc1367dcfF8Aa4407487C",
+   "chainlink": 44.8875,
+   "ageSeconds": 93,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": false,
+   "best": null,
+   "tiers": []
+  },
+  {
+   "symbol": "DELL",
+   "token": "0x941AE714EC6D8130c7B75d67160Ca08f1e7d11Dd",
+   "feed": "0x1C6c8cADBe02E19129c39dDB92281cE4c0bf206b",
+   "chainlink": 340.0264547,
+   "ageSeconds": 120,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 10000,
+    "depth": {
+     "1": {
+      "price": 340.6946258140771,
+      "diffBps": 20
+     },
+     "10": {
+      "price": 340.7175579761492,
+      "diffBps": 20
+     },
+     "50": {
+      "price": 340.8194786964701,
+      "diffBps": 23
+     },
+     "100": {
+      "price": 340.9468795968713,
+      "diffBps": 27
+     }
+    },
+    "diff1Bps": 20,
+    "price1": 340.6946258140771
+   },
+   "tiers": [
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 340.6946258140771,
+       "diffBps": 20
+      },
+      "10": {
+       "price": 340.7175579761492,
+       "diffBps": 20
+      },
+      "50": {
+       "price": 340.8194786964701,
+       "diffBps": 23
+      },
+      "100": {
+       "price": 340.9468795968713,
+       "diffBps": 27
+      }
+     },
+     "diff1Bps": 20,
+     "price1": 340.6946258140771
+    }
+   ],
+   "bestDepth": {
+    "fee": 10000,
+    "depth": {
+     "1": {
+      "price": 340.6946258140771,
+      "diffBps": 20
+     },
+     "10": {
+      "price": 340.7175579761492,
+      "diffBps": 20
+     },
+     "50": {
+      "price": 340.8194786964701,
+      "diffBps": 23
+     },
+     "100": {
+      "price": 340.9468795968713,
+      "diffBps": 27
+     }
+    },
+    "diff1Bps": 20,
+    "price1": 340.6946258140771
+   }
+  },
+  {
+   "symbol": "EWY",
+   "token": "0x7f0aBeF0C07280F82c6a08ead09dEd6BAE2C13Fc",
+   "feed": "0xEFdf54610B62A7753Ec30bDc380847c12D32e1D1",
+   "chainlink": 143.23725,
+   "ageSeconds": 286,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": false,
+   "best": null,
+   "tiers": []
+  },
+  {
+   "symbol": "GME",
+   "token": "0x1b0E319c6A659F002271B69dB8A7df2F911c153E",
+   "feed": "0x27C71df6A64fB476468EdF256CF72c038baB5B67",
+   "chainlink": 24.633,
+   "ageSeconds": 22,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 24.654675424063317,
+      "diffBps": 9
+     },
+     "10": {
+      "price": 24.654996994955173,
+      "diffBps": 9
+     },
+     "50": {
+      "price": 24.656426198918982,
+      "diffBps": 10
+     },
+     "100": {
+      "price": 24.65821270387374,
+      "diffBps": 10
+     }
+    },
+    "diff1Bps": 9,
+    "price1": 24.654675424063317
+   },
+   "tiers": [
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 24.654675424063317,
+       "diffBps": 9
+      },
+      "10": {
+       "price": 24.654996994955173,
+       "diffBps": 9
+      },
+      "50": {
+       "price": 24.656426198918982,
+       "diffBps": 10
+      },
+      "100": {
+       "price": 24.65821270387374,
+       "diffBps": 10
+      }
+     },
+     "diff1Bps": 9,
+     "price1": 24.654675424063317
+    },
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 24.785367091160726,
+       "diffBps": 62
+      },
+      "10": {
+       "price": 24.799618975486563,
+       "diffBps": 68
+      },
+      "50": {
+       "price": 24.8629606836014,
+       "diffBps": 93
+      },
+      "100": {
+       "price": 24.942164515364162,
+       "diffBps": 126
+      }
+     },
+     "diff1Bps": 62,
+     "price1": 24.785367091160726
+    },
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 25.12119702094609,
+       "diffBps": 198
+      },
+      "10": {
+       "price": 25.12124292654561,
+       "diffBps": 198
+      },
+      "50": {
+       "price": 25.12144695143235,
+       "diffBps": 198
+      },
+      "100": {
+       "price": 25.12170198254078,
+       "diffBps": 198
+      }
+     },
+     "diff1Bps": 198,
+     "price1": 25.12119702094609
+    }
+   ],
+   "bestDepth": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 24.654675424063317,
+      "diffBps": 9
+     },
+     "10": {
+      "price": 24.654996994955173,
+      "diffBps": 9
+     },
+     "50": {
+      "price": 24.656426198918982,
+      "diffBps": 10
+     },
+     "100": {
+      "price": 24.65821270387374,
+      "diffBps": 10
+     }
+    },
+    "diff1Bps": 9,
+    "price1": 24.654675424063317
+   }
+  },
+  {
+   "symbol": "GOOGL",
+   "token": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
+   "feed": "0xF6f373a037c30F0e5010d854385cA89185AE638b",
+   "chainlink": 288.6772207,
+   "ageSeconds": 323,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 288.37217514303927,
+      "diffBps": -11
+     },
+     "10": {
+      "price": 288.3731800290438,
+      "diffBps": -11
+     },
+     "50": {
+      "price": 288.3448798281171,
+      "diffBps": -12
+     },
+     "100": {
+      "price": 288.3504622109682,
+      "diffBps": -11
+     }
+    },
+    "diff1Bps": -11,
+    "price1": 288.37217514303927
+   },
+   "tiers": [
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 288.37217514303927,
+       "diffBps": -11
+      },
+      "10": {
+       "price": 288.3731800290438,
+       "diffBps": -11
+      },
+      "50": {
+       "price": 288.3448798281171,
+       "diffBps": -12
+      },
+      "100": {
+       "price": 288.3504622109682,
+       "diffBps": -11
+      }
+     },
+     "diff1Bps": -11,
+     "price1": 288.37217514303927
+    },
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 290.2812383836253,
+       "diffBps": 56
+      },
+      "10": {
+       "price": 290.54436285526174,
+       "diffBps": 65
+      },
+      "50": {
+       "price": 291.71380495142387,
+       "diffBps": 105
+      },
+      "100": {
+       "price": 293.4971620027243,
+       "diffBps": 167
+      }
+     },
+     "diff1Bps": 56,
+     "price1": 290.2812383836253
+    }
+   ],
+   "bestDepth": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 288.37217514303927,
+      "diffBps": -11
+     },
+     "10": {
+      "price": 288.3731800290438,
+      "diffBps": -11
+     },
+     "50": {
+      "price": 288.3448798281171,
+      "diffBps": -12
+     },
+     "100": {
+      "price": 288.3504622109682,
+      "diffBps": -11
+     }
+    },
+    "diff1Bps": -11,
+    "price1": 288.37217514303927
+   }
+  },
+  {
+   "symbol": "INTC",
+   "token": "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681",
+   "feed": "0x3f390C5C24628Ac7C489515402235FeAD71D1913",
+   "chainlink": 54.0875,
+   "ageSeconds": 127,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 54.35216285771215,
+      "diffBps": 49
+     },
+     "10": {
+      "price": 54.353865133806856,
+      "diffBps": 49
+     },
+     "50": {
+      "price": 54.361430805338905,
+      "diffBps": 51
+     },
+     "100": {
+      "price": 54.37088789475396,
+      "diffBps": 52
+     }
+    },
+    "diff1Bps": 49,
+    "price1": 54.35216285771215
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 54.35216285771215,
+       "diffBps": 49
+      },
+      "10": {
+       "price": 54.353865133806856,
+       "diffBps": 49
+      },
+      "50": {
+       "price": 54.361430805338905,
+       "diffBps": 51
+      },
+      "100": {
+       "price": 54.37088789475396,
+       "diffBps": 52
+      }
+     },
+     "diff1Bps": 49,
+     "price1": 54.35216285771215
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 54.35216285771215,
+      "diffBps": 49
+     },
+     "10": {
+      "price": 54.353865133806856,
+      "diffBps": 49
+     },
+     "50": {
+      "price": 54.361430805338905,
+      "diffBps": 51
+     },
+     "100": {
+      "price": 54.37088789475396,
+      "diffBps": 52
+     }
+    },
+    "diff1Bps": 49,
+    "price1": 54.35216285771215
+   }
+  },
+  {
+   "symbol": "IONQ",
+   "token": "0x558378E000D634A36593E338eBacdd6207640EfE",
+   "feed": "0x22EfeC4919baf55F360E0EDee4AbEB26DE4971eb",
+   "chainlink": 27.0191,
+   "ageSeconds": 126,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 10000,
+    "depth": {
+     "1": {
+      "price": 46.355056744372824,
+      "diffBps": 7156
+     },
+     "10": {
+      "price": 448.5457414087808,
+      "diffBps": 156011
+     },
+     "50": {
+      "price": 2242.7287070439043,
+      "diffBps": 820053
+     },
+     "100": {
+      "price": 4485.4574140878085,
+      "diffBps": 1650106
+     }
+    },
+    "diff1Bps": 7156,
+    "price1": 46.355056744372824
+   },
+   "tiers": [
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 46.355056744372824,
+       "diffBps": 7156
+      },
+      "10": {
+       "price": 448.5457414087808,
+       "diffBps": 156011
+      },
+      "50": {
+       "price": 2242.7287070439043,
+       "diffBps": 820053
+      },
+      "100": {
+       "price": 4485.4574140878085,
+       "diffBps": 1650106
+      }
+     },
+     "diff1Bps": 7156,
+     "price1": 46.355056744372824
+    }
+   ],
+   "bestDepth": {
+    "fee": 10000,
+    "depth": {
+     "1": {
+      "price": 46.355056744372824,
+      "diffBps": 7156
+     },
+     "10": {
+      "price": 448.5457414087808,
+      "diffBps": 156011
+     },
+     "50": {
+      "price": 2242.7287070439043,
+      "diffBps": 820053
+     },
+     "100": {
+      "price": 4485.4574140878085,
+      "diffBps": 1650106
+     }
+    },
+    "diff1Bps": 7156,
+    "price1": 46.355056744372824
+   }
+  },
+  {
+   "symbol": "META",
+   "token": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
+   "feed": "0x7C38C00C30BEe9378381E7B6135d7283356D71b1",
+   "chainlink": 616.39179581,
+   "ageSeconds": 131,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 617.7247787469385,
+      "diffBps": 22
+     },
+     "10": {
+      "price": 617.726950620006,
+      "diffBps": 22
+     },
+     "50": {
+      "price": 617.736603389197,
+      "diffBps": 22
+     },
+     "100": {
+      "price": 617.7486693506855,
+      "diffBps": 22
+     }
+    },
+    "diff1Bps": 22,
+    "price1": 617.7247787469385
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 617.7247787469385,
+       "diffBps": 22
+      },
+      "10": {
+       "price": 617.726950620006,
+       "diffBps": 22
+      },
+      "50": {
+       "price": 617.736603389197,
+       "diffBps": 22
+      },
+      "100": {
+       "price": 617.7486693506855,
+       "diffBps": 22
+      }
+     },
+     "diff1Bps": 22,
+     "price1": 617.7247787469385
+    },
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 628.2180542618223,
+       "diffBps": 192
+      },
+      "10": {
+       "price": 631.412965989622,
+       "diffBps": 244
+      },
+      "50": {
+       "price": 758.4370838064352,
+       "diffBps": 2304
+      },
+      "100": {
+       "price": 1101.6260844177598,
+       "diffBps": 7872
+      }
+     },
+     "diff1Bps": 192,
+     "price1": 628.2180542618223
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 617.7247787469385,
+      "diffBps": 22
+     },
+     "10": {
+      "price": 617.726950620006,
+      "diffBps": 22
+     },
+     "50": {
+      "price": 617.736603389197,
+      "diffBps": 22
+     },
+     "100": {
+      "price": 617.7486693506855,
+      "diffBps": 22
+     }
+    },
+    "diff1Bps": 22,
+    "price1": 617.7247787469385
+   }
+  },
+  {
+   "symbol": "MSFT",
+   "token": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
+   "feed": "0x45C3C877C15E6BA2EBB19eA114Ea508d14C1Af2E",
+   "chainlink": 549.5477935,
+   "ageSeconds": 426,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 549.834920071672,
+      "diffBps": 5
+     },
+     "10": {
+      "price": 549.8357067603115,
+      "diffBps": 5
+     },
+     "50": {
+      "price": 549.8392031542649,
+      "diffBps": 5
+     },
+     "100": {
+      "price": 549.8435736467065,
+      "diffBps": 5
+     }
+    },
+    "diff1Bps": 5,
+    "price1": 549.834920071672
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 549.834920071672,
+       "diffBps": 5
+      },
+      "10": {
+       "price": 549.8357067603115,
+       "diffBps": 5
+      },
+      "50": {
+       "price": 549.8392031542649,
+       "diffBps": 5
+      },
+      "100": {
+       "price": 549.8435736467065,
+       "diffBps": 5
+      }
+     },
+     "diff1Bps": 5,
+     "price1": 549.834920071672
+    },
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 1316.0302930907042,
+       "diffBps": 13948
+      },
+      "10": {
+       "price": 13160.30293090704,
+       "diffBps": 229475
+      },
+      "50": {
+       "price": 65801.5146545352,
+       "diffBps": 1187376
+      },
+      "100": {
+       "price": 131603.0293090704,
+       "diffBps": 2384751
+      }
+     },
+     "diff1Bps": 13948,
+     "price1": 1316.0302930907042
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 549.834920071672,
+      "diffBps": 5
+     },
+     "10": {
+      "price": 549.8357067603115,
+      "diffBps": 5
+     },
+     "50": {
+      "price": 549.8392031542649,
+      "diffBps": 5
+     },
+     "100": {
+      "price": 549.8435736467065,
+      "diffBps": 5
+     }
+    },
+    "diff1Bps": 5,
+    "price1": 549.834920071672
+   }
+  },
+  {
+   "symbol": "MSTR",
+   "token": "0xec262a75e413fAfD0dF80480274532C79D42da09",
+   "feed": "0x396118bdFB181e6240E74D243F266B061c0edc3D",
+   "chainlink": 135.985,
+   "ageSeconds": 176,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 136.73125122270852,
+      "diffBps": 55
+     },
+     "10": {
+      "price": 136.7487529438852,
+      "diffBps": 56
+     },
+     "50": {
+      "price": 136.82653837133697,
+      "diffBps": 62
+     },
+     "100": {
+      "price": 136.92377015565165,
+      "diffBps": 69
+     }
+    },
+    "diff1Bps": 55,
+    "price1": 136.73125122270852
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 136.73125122270852,
+       "diffBps": 55
+      },
+      "10": {
+       "price": 136.7487529438852,
+       "diffBps": 56
+      },
+      "50": {
+       "price": 136.82653837133697,
+       "diffBps": 62
+      },
+      "100": {
+       "price": 136.92377015565165,
+       "diffBps": 69
+      }
+     },
+     "diff1Bps": 55,
+     "price1": 136.73125122270852
+    },
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 138.57181209978617,
+       "diffBps": 190
+      },
+      "10": {
+       "price": 138.57219437200345,
+       "diffBps": 190
+      },
+      "50": {
+       "price": 138.5738933596358,
+       "diffBps": 190
+      },
+      "100": {
+       "price": 138.57601709417625,
+       "diffBps": 191
+      }
+     },
+     "diff1Bps": 190,
+     "price1": 138.57181209978617
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 136.73125122270852,
+      "diffBps": 55
+     },
+     "10": {
+      "price": 136.7487529438852,
+      "diffBps": 56
+     },
+     "50": {
+      "price": 136.82653837133697,
+      "diffBps": 62
+     },
+     "100": {
+      "price": 136.92377015565165,
+      "diffBps": 69
+     }
+    },
+    "diff1Bps": 55,
+    "price1": 136.73125122270852
+   }
+  },
+  {
+   "symbol": "MU",
+   "token": "0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD",
+   "feed": "0x425EEFdCf05ed6526C3cE61Af99429A228a6d596",
+   "chainlink": 725.36569877,
+   "ageSeconds": 118,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 726.5358529300231,
+      "diffBps": 16
+     },
+     "10": {
+      "price": 726.5370654433685,
+      "diffBps": 16
+     },
+     "50": {
+      "price": 726.5424543915711,
+      "diffBps": 16
+     },
+     "100": {
+      "price": 726.5491905768243,
+      "diffBps": 16
+     }
+    },
+    "diff1Bps": 16,
+    "price1": 726.5358529300231
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 726.5358529300231,
+       "diffBps": 16
+      },
+      "10": {
+       "price": 726.5370654433685,
+       "diffBps": 16
+      },
+      "50": {
+       "price": 726.5424543915711,
+       "diffBps": 16
+      },
+      "100": {
+       "price": 726.5491905768243,
+       "diffBps": 16
+      }
+     },
+     "diff1Bps": 16,
+     "price1": 726.5358529300231
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 726.5358529300231,
+      "diffBps": 16
+     },
+     "10": {
+      "price": 726.5370654433685,
+      "diffBps": 16
+     },
+     "50": {
+      "price": 726.5424543915711,
+      "diffBps": 16
+     },
+     "100": {
+      "price": 726.5491905768243,
+      "diffBps": 16
+     }
+    },
+    "diff1Bps": 16,
+    "price1": 726.5358529300231
+   }
+  },
+  {
+   "symbol": "NBIS",
+   "token": "0x9D9c6684F596F66a64C030B93A886D51Fd4D7931",
+   "feed": "0xE1D87B116Ba0fe898998f1D140339D1fA1E09705",
+   "chainlink": 125.712,
+   "ageSeconds": 106,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": false,
+   "best": null,
+   "tiers": []
+  },
+  {
+   "symbol": "NVDA",
+   "token": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
+   "feed": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15",
+   "chainlink": 190.86783835,
+   "ageSeconds": 62,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 190.97420332089143,
+      "diffBps": 6
+     },
+     "10": {
+      "price": 190.97484773653633,
+      "diffBps": 6
+     },
+     "50": {
+      "price": 190.9777118060693,
+      "diffBps": 6
+     },
+     "100": {
+      "price": 190.9812918929855,
+      "diffBps": 6
+     }
+    },
+    "diff1Bps": 6,
+    "price1": 190.97420332089143
+   },
+   "tiers": [
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 190.97420332089143,
+       "diffBps": 6
+      },
+      "10": {
+       "price": 190.97484773653633,
+       "diffBps": 6
+      },
+      "50": {
+       "price": 190.9777118060693,
+       "diffBps": 6
+      },
+      "100": {
+       "price": 190.9812918929855,
+       "diffBps": 6
+      }
+     },
+     "diff1Bps": 6,
+     "price1": 190.97420332089143
+    },
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 191.79091617125147,
+       "diffBps": 48
+      },
+      "10": {
+       "price": 191.8226397220276,
+       "diffBps": 50
+      },
+      "50": {
+       "price": 191.9636332810327,
+       "diffBps": 57
+      },
+      "100": {
+       "price": 192.1398752297891,
+       "diffBps": 67
+      }
+     },
+     "diff1Bps": 48,
+     "price1": 191.79091617125147
+    },
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 194.50421869725932,
+       "diffBps": 191
+      },
+      "10": {
+       "price": 194.51514985691534,
+       "diffBps": 191
+      },
+      "50": {
+       "price": 194.56373278872002,
+       "diffBps": 194
+      },
+      "100": {
+       "price": 194.62446145347587,
+       "diffBps": 197
+      }
+     },
+     "diff1Bps": 191,
+     "price1": 194.50421869725932
+    },
+    {
+     "fee": 100,
+     "depth": {
+      "1": {
+       "price": 207.04597598189514,
+       "diffBps": 848
+      },
+      "10": {
+       "price": 207.05503346920878,
+       "diffBps": 848
+      },
+      "50": {
+       "price": 207.09528896838046,
+       "diffBps": 850
+      },
+      "100": {
+       "price": 251.66055386094808,
+       "diffBps": 3185
+      }
+     },
+     "diff1Bps": 848,
+     "price1": 207.04597598189514
+    }
+   ],
+   "bestDepth": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 190.97420332089143,
+      "diffBps": 6
+     },
+     "10": {
+      "price": 190.97484773653633,
+      "diffBps": 6
+     },
+     "50": {
+      "price": 190.9777118060693,
+      "diffBps": 6
+     },
+     "100": {
+      "price": 190.9812918929855,
+      "diffBps": 6
+     }
+    },
+    "diff1Bps": 6,
+    "price1": 190.97420332089143
+   }
+  },
+  {
+   "symbol": "ORCL",
+   "token": "0xb0992820E760d836549ba69BC7598b4af75dEE03",
+   "feed": "0x0e6a64a2B58A6693a531E6c555f3A5d042eEA844",
+   "chainlink": 120.06173332,
+   "ageSeconds": 29,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": false,
+   "best": null,
+   "tiers": []
+  },
+  {
+   "symbol": "PLTR",
+   "token": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
+   "feed": "0x820ABedFF239034956B7A9d2F0a331f9F075eB4c",
+   "chainlink": 158.9,
+   "ageSeconds": 468,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 159.58201514996313,
+      "diffBps": 43
+     },
+     "10": {
+      "price": 159.59070088507102,
+      "diffBps": 43
+     },
+     "50": {
+      "price": 159.62930415221723,
+      "diffBps": 46
+     },
+     "100": {
+      "price": 159.67755823615002,
+      "diffBps": 49
+     }
+    },
+    "diff1Bps": 43,
+    "price1": 159.58201514996313
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 159.58201514996313,
+       "diffBps": 43
+      },
+      "10": {
+       "price": 159.59070088507102,
+       "diffBps": 43
+      },
+      "50": {
+       "price": 159.62930415221723,
+       "diffBps": 46
+      },
+      "100": {
+       "price": 159.67755823615002,
+       "diffBps": 49
+      }
+     },
+     "diff1Bps": 43,
+     "price1": 159.58201514996313
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 159.58201514996313,
+      "diffBps": 43
+     },
+     "10": {
+      "price": 159.59070088507102,
+      "diffBps": 43
+     },
+     "50": {
+      "price": 159.62930415221723,
+      "diffBps": 46
+     },
+     "100": {
+      "price": 159.67755823615002,
+      "diffBps": 49
+     }
+    },
+    "diff1Bps": 43,
+    "price1": 159.58201514996313
+   }
+  },
+  {
+   "symbol": "QQQ",
+   "token": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
+   "feed": "0x80901d846d5D7B030F26B480776EE3b29374C2ae",
+   "chainlink": 673.16641875,
+   "ageSeconds": 488,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 673.4248036287045,
+      "diffBps": 4
+     },
+     "10": {
+      "price": 673.4910006640275,
+      "diffBps": 5
+     },
+     "50": {
+      "price": 673.7852097099078,
+      "diffBps": 9
+     },
+     "100": {
+      "price": 674.1529710172582,
+      "diffBps": 15
+     }
+    },
+    "diff1Bps": 4,
+    "price1": 673.4248036287045
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 673.4248036287045,
+       "diffBps": 4
+      },
+      "10": {
+       "price": 673.4910006640275,
+       "diffBps": 5
+      },
+      "50": {
+       "price": 673.7852097099078,
+       "diffBps": 9
+      },
+      "100": {
+       "price": 674.1529710172582,
+       "diffBps": 15
+      }
+     },
+     "diff1Bps": 4,
+     "price1": 673.4248036287045
+    },
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 670.7808027258827,
+       "diffBps": -35
+      },
+      "10": {
+       "price": 670.7843133274056,
+       "diffBps": -35
+      },
+      "50": {
+       "price": 670.7999160008414,
+       "diffBps": -35
+      },
+      "100": {
+       "price": 670.8194193426363,
+       "diffBps": -35
+      }
+     },
+     "diff1Bps": -35,
+     "price1": 670.7808027258827
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 673.4248036287045,
+      "diffBps": 4
+     },
+     "10": {
+      "price": 673.4910006640275,
+      "diffBps": 5
+     },
+     "50": {
+      "price": 673.7852097099078,
+      "diffBps": 9
+     },
+     "100": {
+      "price": 674.1529710172582,
+      "diffBps": 15
+     }
+    },
+    "diff1Bps": 4,
+    "price1": 673.4248036287045
+   }
+  },
+  {
+   "symbol": "RGTI",
+   "token": "0x284358abc07F9359f19f4b5b4aC91901Be2597Ba",
+   "feed": "0x2A045cF1C49c61c166C036d2f06FA2D2d984f765",
+   "chainlink": 10.22274999,
+   "ageSeconds": 131,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": false,
+   "best": null,
+   "tiers": []
+  },
+  {
+   "symbol": "RKLB",
+   "token": "0x3b14C39E89D60D627b42a1A4CA45b5bb45Fc12e2",
+   "feed": "0x045477BF65Aef6f4F2386ad0164579e48381CC74",
+   "chainlink": 47.66875,
+   "ageSeconds": 137,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 10000,
+    "depth": {
+     "1": {
+      "price": 73.6669532940985,
+      "diffBps": 5454
+     },
+     "10": {
+      "price": 704.2741891033186,
+      "diffBps": 137743
+     },
+     "50": {
+      "price": 3521.370945516593,
+      "diffBps": 728717
+     },
+     "100": {
+      "price": 7042.741891033186,
+      "diffBps": 1467434
+     }
+    },
+    "diff1Bps": 5454,
+    "price1": 73.6669532940985
+   },
+   "tiers": [
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 73.6669532940985,
+       "diffBps": 5454
+      },
+      "10": {
+       "price": 704.2741891033186,
+       "diffBps": 137743
+      },
+      "50": {
+       "price": 3521.370945516593,
+       "diffBps": 728717
+      },
+      "100": {
+       "price": 7042.741891033186,
+       "diffBps": 1467434
+      }
+     },
+     "diff1Bps": 5454,
+     "price1": 73.6669532940985
+    }
+   ],
+   "bestDepth": {
+    "fee": 10000,
+    "depth": {
+     "1": {
+      "price": 73.6669532940985,
+      "diffBps": 5454
+     },
+     "10": {
+      "price": 704.2741891033186,
+      "diffBps": 137743
+     },
+     "50": {
+      "price": 3521.370945516593,
+      "diffBps": 728717
+     },
+     "100": {
+      "price": 7042.741891033186,
+      "diffBps": 1467434
+     }
+    },
+    "diff1Bps": 5454,
+    "price1": 73.6669532940985
+   }
+  },
+  {
+   "symbol": "SGOV",
+   "token": "0x92FD66527192E3e61d4DDd13322Aa222DE86F9B5",
+   "feed": "0xa0DF4ee0fFf975306345875E3548Fcc519577A11",
+   "chainlink": 101.4063502,
+   "ageSeconds": 20872,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 101.41725977032996,
+      "diffBps": 1
+     },
+     "10": {
+      "price": 101.4173749902237,
+      "diffBps": 1
+     },
+     "50": {
+      "price": 101.41788707864039,
+      "diffBps": 1
+     },
+     "100": {
+      "price": 101.41852718916124,
+      "diffBps": 1
+     }
+    },
+    "diff1Bps": 1,
+    "price1": 101.41725977032996
+   },
+   "tiers": [
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 101.41725977032996,
+       "diffBps": 1
+      },
+      "10": {
+       "price": 101.4173749902237,
+       "diffBps": 1
+      },
+      "50": {
+       "price": 101.41788707864039,
+       "diffBps": 1
+      },
+      "100": {
+       "price": 101.41852718916124,
+       "diffBps": 1
+      }
+     },
+     "diff1Bps": 1,
+     "price1": 101.41725977032996
+    },
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 101.75071273517064,
+       "diffBps": 34
+      },
+      "10": {
+       "price": 101.7507418200882,
+       "diffBps": 34
+      },
+      "50": {
+       "price": 101.75087108638854,
+       "diffBps": 34
+      },
+      "100": {
+       "price": 101.75103266926398,
+       "diffBps": 34
+      }
+     },
+     "diff1Bps": 34,
+     "price1": 101.75071273517064
+    }
+   ],
+   "bestDepth": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 101.41725977032996,
+      "diffBps": 1
+     },
+     "10": {
+      "price": 101.4173749902237,
+      "diffBps": 1
+     },
+     "50": {
+      "price": 101.41788707864039,
+      "diffBps": 1
+     },
+     "100": {
+      "price": 101.41852718916124,
+      "diffBps": 1
+     }
+    },
+    "diff1Bps": 1,
+    "price1": 101.41725977032996
+   }
+  },
+  {
+   "symbol": "SLV",
+   "token": "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f",
+   "feed": "0x209b73908e92Ae021826eD79609845451Ecba2ce",
+   "chainlink": 47.125,
+   "ageSeconds": 433,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 47.159081516251426,
+      "diffBps": 7
+     },
+     "10": {
+      "price": 47.41458361494848,
+      "diffBps": 61
+     },
+     "50": {
+      "price": 48.53958435759792,
+      "diffBps": 300
+     },
+     "100": {
+      "price": 49.93862425418229,
+      "diffBps": 597
+     }
+    },
+    "diff1Bps": 7,
+    "price1": 47.159081516251426
+   },
+   "tiers": [
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 47.159081516251426,
+       "diffBps": 7
+      },
+      "10": {
+       "price": 47.41458361494848,
+       "diffBps": 61
+      },
+      "50": {
+       "price": 48.53958435759792,
+       "diffBps": 300
+      },
+      "100": {
+       "price": 49.93862425418229,
+       "diffBps": 597
+      }
+     },
+     "diff1Bps": 7,
+     "price1": 47.159081516251426
+    },
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 47.22071966026811,
+       "diffBps": 20
+      },
+      "10": {
+       "price": 47.220903749582625,
+       "diffBps": 20
+      },
+      "50": {
+       "price": 47.2217219243138,
+       "diffBps": 21
+      },
+      "100": {
+       "price": 47.222744642727754,
+       "diffBps": 21
+      }
+     },
+     "diff1Bps": 20,
+     "price1": 47.22071966026811
+    },
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 47.866749756351794,
+       "diffBps": 157
+      },
+      "10": {
+       "price": 47.87135432925493,
+       "diffBps": 158
+      },
+      "50": {
+       "price": 47.89181909771326,
+       "diffBps": 163
+      },
+      "100": {
+       "price": 47.9174000582862,
+       "diffBps": 168
+      }
+     },
+     "diff1Bps": 157,
+     "price1": 47.866749756351794
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 47.22071966026811,
+      "diffBps": 20
+     },
+     "10": {
+      "price": 47.220903749582625,
+      "diffBps": 20
+     },
+     "50": {
+      "price": 47.2217219243138,
+      "diffBps": 21
+     },
+     "100": {
+      "price": 47.222744642727754,
+      "diffBps": 21
+     }
+    },
+    "diff1Bps": 20,
+    "price1": 47.22071966026811
+   }
+  },
+  {
+   "symbol": "SNDK",
+   "token": "0xB90A19fF0Af67f7779afF50A882A9CfF42446400",
+   "feed": "0xfb133Fa4B7b385802B693a293606682Df47109A3",
+   "chainlink": 904.58249999,
+   "ageSeconds": 119,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 10000,
+    "depth": {
+     "1": {
+      "price": 912.1502999889802,
+      "diffBps": 84
+     },
+     "10": {
+      "price": 915.6725741365879,
+      "diffBps": 123
+     },
+     "50": {
+      "price": 925.1488205953294,
+      "diffBps": 227
+     },
+     "100": {
+      "price": 935.7245702652416,
+      "diffBps": 344
+     }
+    },
+    "diff1Bps": 84,
+    "price1": 912.1502999889802
+   },
+   "tiers": [
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 912.1502999889802,
+       "diffBps": 84
+      },
+      "10": {
+       "price": 915.6725741365879,
+       "diffBps": 123
+      },
+      "50": {
+       "price": 925.1488205953294,
+       "diffBps": 227
+      },
+      "100": {
+       "price": 935.7245702652416,
+       "diffBps": 344
+      }
+     },
+     "diff1Bps": 84,
+     "price1": 912.1502999889802
+    }
+   ],
+   "bestDepth": {
+    "fee": 10000,
+    "depth": {
+     "1": {
+      "price": 912.1502999889802,
+      "diffBps": 84
+     },
+     "10": {
+      "price": 915.6725741365879,
+      "diffBps": 123
+     },
+     "50": {
+      "price": 925.1488205953294,
+      "diffBps": 227
+     },
+     "100": {
+      "price": 935.7245702652416,
+      "diffBps": 344
+     }
+    },
+    "diff1Bps": 84,
+    "price1": 912.1502999889802
+   }
+  },
+  {
+   "symbol": "SPCX",
+   "token": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
+   "feed": "0xB265810950ba6c5C0Ff821c9963014a56fD8Bffb",
+   "chainlink": 128.04,
+   "ageSeconds": 514,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 127.98294591863772,
+      "diffBps": -4
+     },
+     "10": {
+      "price": 127.98353570548342,
+      "diffBps": -4
+     },
+     "50": {
+      "price": 127.98615698035327,
+      "diffBps": -4
+     },
+     "100": {
+      "price": 127.98943357394059,
+      "diffBps": -4
+     }
+    },
+    "diff1Bps": -4,
+    "price1": 127.98294591863772
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 127.98294591863772,
+       "diffBps": -4
+      },
+      "10": {
+       "price": 127.98353570548342,
+       "diffBps": -4
+      },
+      "50": {
+       "price": 127.98615698035327,
+       "diffBps": -4
+      },
+      "100": {
+       "price": 127.98943357394059,
+       "diffBps": -4
+      }
+     },
+     "diff1Bps": -4,
+     "price1": 127.98294591863772
+    },
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 127.34346614817409,
+       "diffBps": -54
+      },
+      "10": {
+       "price": 127.34364243212625,
+       "diffBps": -54
+      },
+      "50": {
+       "price": 127.34442591635819,
+       "diffBps": -54
+      },
+      "100": {
+       "price": 127.34540527164812,
+       "diffBps": -54
+      }
+     },
+     "diff1Bps": -54,
+     "price1": 127.34346614817409
+    },
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 130.72378395017074,
+       "diffBps": 210
+      },
+      "10": {
+       "price": 131.82817158416327,
+       "diffBps": 296
+      },
+      "50": {
+       "price": 132.1452656656721,
+       "diffBps": 321
+      },
+      "100": {
+       "price": 132.42339654164206,
+       "diffBps": 342
+      }
+     },
+     "diff1Bps": 210,
+     "price1": 130.72378395017074
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 127.98294591863772,
+      "diffBps": -4
+     },
+     "10": {
+      "price": 127.98353570548342,
+      "diffBps": -4
+     },
+     "50": {
+      "price": 127.98615698035327,
+      "diffBps": -4
+     },
+     "100": {
+      "price": 127.98943357394059,
+      "diffBps": -4
+     }
+    },
+    "diff1Bps": -4,
+    "price1": 127.98294591863772
+   }
+  },
+  {
+   "symbol": "SPY",
+   "token": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
+   "feed": "0x319724394D3A0e3669269846abE664Cd621f9f6A",
+   "chainlink": 759.17101226,
+   "ageSeconds": 337,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 758.8124237892021,
+      "diffBps": -5
+     },
+     "10": {
+      "price": 758.8132818486243,
+      "diffBps": -5
+     },
+     "50": {
+      "price": 758.8170954460576,
+      "diffBps": -5
+     },
+     "100": {
+      "price": 758.8218624428491,
+      "diffBps": -5
+     }
+    },
+    "diff1Bps": -5,
+    "price1": 758.8124237892021
+   },
+   "tiers": [
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 758.8124237892021,
+       "diffBps": -5
+      },
+      "10": {
+       "price": 758.8132818486243,
+       "diffBps": -5
+      },
+      "50": {
+       "price": 758.8170954460576,
+       "diffBps": -5
+      },
+      "100": {
+       "price": 758.8218624428491,
+       "diffBps": -5
+      }
+     },
+     "diff1Bps": -5,
+     "price1": 758.8124237892021
+    },
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 762.1722007669891,
+       "diffBps": 40
+      },
+      "10": {
+       "price": 762.1793185216809,
+       "diffBps": 40
+      },
+      "50": {
+       "price": 762.2109529869788,
+       "diffBps": 40
+      },
+      "100": {
+       "price": 762.2504960686011,
+       "diffBps": 41
+      }
+     },
+     "diff1Bps": 40,
+     "price1": 762.1722007669891
+    },
+    {
+     "fee": 100,
+     "depth": {
+      "1": {
+       "price": 1474.758578024353,
+       "diffBps": 9426
+      },
+      "10": {
+       "price": 14747.585780243531,
+       "diffBps": 184259
+      },
+      "50": {
+       "price": 73737.92890121766,
+       "diffBps": 961295
+      },
+      "100": {
+       "price": 147475.85780243532,
+       "diffBps": 1932591
+      }
+     },
+     "diff1Bps": 9426,
+     "price1": 1474.758578024353
+    }
+   ],
+   "bestDepth": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 758.8124237892021,
+      "diffBps": -5
+     },
+     "10": {
+      "price": 758.8132818486243,
+      "diffBps": -5
+     },
+     "50": {
+      "price": 758.8170954460576,
+      "diffBps": -5
+     },
+     "100": {
+      "price": 758.8218624428491,
+      "diffBps": -5
+     }
+    },
+    "diff1Bps": -5,
+    "price1": 758.8124237892021
+   }
+  },
+  {
+   "symbol": "TSLA",
+   "token": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
+   "feed": "0x4A1166a659A55625345e9515b32adECea5547C38",
+   "chainlink": 351.5795,
+   "ageSeconds": 167,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 500,
+    "depth": {
+     "1": {
+      "price": 351.1041073502106,
+      "diffBps": -14
+     },
+     "10": {
+      "price": 351.25083095704474,
+      "diffBps": -9
+     },
+     "50": {
+      "price": 351.90293587630765,
+      "diffBps": 9
+     },
+     "100": {
+      "price": 352.66963682467537,
+      "diffBps": 31
+     }
+    },
+    "diff1Bps": -14,
+    "price1": 351.1041073502106
+   },
+   "tiers": [
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 351.1041073502106,
+       "diffBps": -14
+      },
+      "10": {
+       "price": 351.25083095704474,
+       "diffBps": -9
+      },
+      "50": {
+       "price": 351.90293587630765,
+       "diffBps": 9
+      },
+      "100": {
+       "price": 352.66963682467537,
+       "diffBps": 31
+      }
+     },
+     "diff1Bps": -14,
+     "price1": 351.1041073502106
+    },
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 352.4235558480459,
+       "diffBps": 24
+      },
+      "10": {
+       "price": 352.4258788304473,
+       "diffBps": 24
+      },
+      "50": {
+       "price": 352.4362031966757,
+       "diffBps": 24
+      },
+      "100": {
+       "price": 352.44910865446127,
+       "diffBps": 25
+      }
+     },
+     "diff1Bps": 24,
+     "price1": 352.4235558480459
+    },
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 359.10783018221804,
+       "diffBps": 214
+      },
+      "10": {
+       "price": 359.92035883038193,
+       "diffBps": 237
+      },
+      "50": {
+       "price": 363.53159726666587,
+       "diffBps": 340
+      },
+      "100": {
+       "price": 368.0456453120207,
+       "diffBps": 468
+      }
+     },
+     "diff1Bps": 214,
+     "price1": 359.10783018221804
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 352.4235558480459,
+      "diffBps": 24
+     },
+     "10": {
+      "price": 352.4258788304473,
+      "diffBps": 24
+     },
+     "50": {
+      "price": 352.4362031966757,
+      "diffBps": 24
+     },
+     "100": {
+      "price": 352.44910865446127,
+      "diffBps": 25
+     }
+    },
+    "diff1Bps": 24,
+    "price1": 352.4235558480459
+   }
+  },
+  {
+   "symbol": "TSM",
+   "token": "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA",
+   "feed": "0x874cF94aa8eC88Fd9560094dD065f2fB3E41Fc2F",
+   "chainlink": 374.87007852,
+   "ageSeconds": 442,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 10000,
+    "depth": {
+     "1": {
+      "price": 380.7127769532899,
+      "diffBps": 156
+     },
+     "10": {
+      "price": 380.72717086069616,
+      "diffBps": 156
+     },
+     "50": {
+      "price": 380.7887593463021,
+      "diffBps": 158
+     },
+     "100": {
+      "price": 380.8643446783975,
+      "diffBps": 160
+     }
+    },
+    "diff1Bps": 156,
+    "price1": 380.7127769532899
+   },
+   "tiers": [
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 380.7127769532899,
+       "diffBps": 156
+      },
+      "10": {
+       "price": 380.72717086069616,
+       "diffBps": 156
+      },
+      "50": {
+       "price": 380.7887593463021,
+       "diffBps": 158
+      },
+      "100": {
+       "price": 380.8643446783975,
+       "diffBps": 160
+      }
+     },
+     "diff1Bps": 156,
+     "price1": 380.7127769532899
+    }
+   ],
+   "bestDepth": {
+    "fee": 10000,
+    "depth": {
+     "1": {
+      "price": 380.7127769532899,
+      "diffBps": 156
+     },
+     "10": {
+      "price": 380.72717086069616,
+      "diffBps": 156
+     },
+     "50": {
+      "price": 380.7887593463021,
+      "diffBps": 158
+     },
+     "100": {
+      "price": 380.8643446783975,
+      "diffBps": 160
+     }
+    },
+    "diff1Bps": 156,
+    "price1": 380.7127769532899
+   }
+  },
+  {
+   "symbol": "USAR",
+   "token": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
+   "feed": "0xA994d3684e8400A6c8078226925779FdeE682DD9",
+   "chainlink": 7.54515,
+   "ageSeconds": 2,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 7.552969093645909,
+      "diffBps": 10
+     },
+     "10": {
+      "price": 7.5566638813311915,
+      "diffBps": 15
+     },
+     "50": {
+      "price": 7.573085159932447,
+      "diffBps": 37
+     },
+     "100": {
+      "price": 7.593611758184015,
+      "diffBps": 64
+     }
+    },
+    "diff1Bps": 10,
+    "price1": 7.552969093645909
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 7.552969093645909,
+       "diffBps": 10
+      },
+      "10": {
+       "price": 7.5566638813311915,
+       "diffBps": 15
+      },
+      "50": {
+       "price": 7.573085159932447,
+       "diffBps": 37
+      },
+      "100": {
+       "price": 7.593611758184015,
+       "diffBps": 64
+      }
+     },
+     "diff1Bps": 10,
+     "price1": 7.552969093645909
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 7.552969093645909,
+      "diffBps": 10
+     },
+     "10": {
+      "price": 7.5566638813311915,
+      "diffBps": 15
+     },
+     "50": {
+      "price": 7.573085159932447,
+      "diffBps": 37
+     },
+     "100": {
+      "price": 7.593611758184015,
+      "diffBps": 64
+     }
+    },
+    "diff1Bps": 10,
+    "price1": 7.552969093645909
+   }
+  },
+  {
+   "symbol": "USO",
+   "token": "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344",
+   "feed": "0x75a9c76Ef439e2C7c2E5a34Ab105EcFe3766431c",
+   "chainlink": 147.27845,
+   "ageSeconds": 537,
+   "status": "OK",
+   "heartbeat": 86400,
+   "pool": true,
+   "best": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 147.6471716869954,
+      "diffBps": 25
+     },
+     "10": {
+      "price": 147.6472227352303,
+      "diffBps": 25
+     },
+     "50": {
+      "price": 147.64744961627437,
+      "diffBps": 25
+     },
+     "100": {
+      "price": 147.64773321757946,
+      "diffBps": 25
+     }
+    },
+    "diff1Bps": 25,
+    "price1": 147.6471716869954
+   },
+   "tiers": [
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 147.6471716869954,
+       "diffBps": 25
+      },
+      "10": {
+       "price": 147.6472227352303,
+       "diffBps": 25
+      },
+      "50": {
+       "price": 147.64744961627437,
+       "diffBps": 25
+      },
+      "100": {
+       "price": 147.64773321757946,
+       "diffBps": 25
+      }
+     },
+     "diff1Bps": 25,
+     "price1": 147.6471716869954
+    },
+    {
+     "fee": 10000,
+     "depth": {
+      "1": {
+       "price": 147.95195341307428,
+       "diffBps": 46
+      },
+      "10": {
+       "price": 147.95272627281648,
+       "diffBps": 46
+      },
+      "50": {
+       "price": 147.95616120500415,
+       "diffBps": 46
+      },
+      "100": {
+       "price": 147.96045487023872,
+       "diffBps": 46
+      }
+     },
+     "diff1Bps": 46,
+     "price1": 147.95195341307428
+    }
+   ],
+   "bestDepth": {
+    "fee": 3000,
+    "depth": {
+     "1": {
+      "price": 147.6471716869954,
+      "diffBps": 25
+     },
+     "10": {
+      "price": 147.6472227352303,
+      "diffBps": 25
+     },
+     "50": {
+      "price": 147.64744961627437,
+      "diffBps": 25
+     },
+     "100": {
+      "price": 147.64773321757946,
+      "diffBps": 25
+     }
+    },
+    "diff1Bps": 25,
+    "price1": 147.6471716869954
+   }
+  }
+ ]
+}
