@@ -2415,3 +2415,31 @@ GET https://api.flatstock.ajkadri.dev/api/health after restart (pasted by the us
 Decision: default OFF so the judged app keeps sponsoring across restarts until 16 Nov.
   Guards kept: balance floor 0.0003 ETH (fails closed), cap 3 per wallet per day, user signatures.
   To pause: POST /api/relay/kill-switch {"enabled":true} with the admin token, and set the env back to 1.
+
+## 2026-11-05 Claude Code: 8-stock list, multi-leg buys, vote weighting (local anvil fork, no mainnet tx)
+
+All runs were against a LOCAL fork of chain 4663 (`bash web/relayer/run-fork-test.sh`-style anvil). Nothing was sent to the real chain.
+
+```text
+web/relayer/multi-leg.fork.test.ts  (signed buyMixBySig / permit + sellBySig, real pools, relayer impersonated)
+buy 2 legs: gas 392170, 0.0000084 ETH at live gas price (0.00000840263442)
+buy 4 legs: gas 574740, 0.0000123 ETH (0.00001231437924)
+buy 8 legs: gas 1040171, 0.0000223 ETH (0.000022286703846)
+sell 1 stock (permit + sell, 2 txs): gas 313846, 0.0000067 ETH; received 4.370631 USDG
+live gas price used: 21140000 wei (cast gas-price on 5 Nov); relayer balance 0.000980506742789447 ETH
+coverage before the 0.0003 pause: (0.00098051 - 0.0003) / 0.0000223 = about 30 eight-leg buys (about 55 four-leg, 81 two-leg)
+```
+
+```text
+web/relayer/vote-weighting.fork.test.ts  (real FlatstockVotes, rounds 5-12 opened in the fork with 8 assets; app formula equals contract)
+Round 4 used voteShareBps = 5000 (cast call voteShareBps(4) = 5000)
+Scenario                  share  AAPL   NVDA   MSFT   AMZN   GOOGL  META   TSLA   SPY
+0 votes                   50%    12.50  12.50  12.50  12.50  12.50  12.50  12.50  12.50
+1 vote (TSLA)             50%     7.15   7.15   7.14   7.14   7.14   7.14  50.00   7.14
+10 votes, all TSLA        50%     7.15   7.15   7.14   7.14   7.14   7.14  50.00   7.14
+10 spread (TSLA4 NVDA3 AAPL2 SPY1) 50%  16.25 21.25 6.25 6.25 6.25 6.25 26.25 11.25
+0 votes                   75%    12.50  12.50  12.50  12.50  12.50  12.50  12.50  12.50
+1 vote (TSLA)             75%     7.14   7.14   7.14   7.14   7.14   7.13  50.00   7.17
+10 votes, all TSLA        75%     7.14   7.14   7.14   7.14   7.14   7.13  50.00   7.17
+10 spread                 75%    18.12  25.62   3.12   3.12   3.12   3.12  33.12  10.66
+```
