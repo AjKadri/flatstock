@@ -1,0 +1,32 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Flatstock OG</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1200px; height: 630px; background: #E6F7D9; color: #07110C; font-family: "Inter Tight", sans-serif; position: relative; overflow: hidden; }
+  .brand { position: absolute; left: 64px; top: 52px; display: flex; align-items: center; gap: 14px; font-weight: 800; font-size: 30px; letter-spacing: -.03em; }
+  .eyebrow { position: absolute; left: 64px; top: 150px; font-family: "JetBrains Mono", monospace; font-size: 20px; letter-spacing: .14em; color: #126B3A; text-transform: uppercase; }
+  h1 { position: absolute; left: 60px; top: 178px; font-weight: 800; font-size: 100px; line-height: .95; letter-spacing: -.05em; }
+  h1 span { display: block; } h1 em { font-style: normal; color: #126B3A; }
+  .sub { position: absolute; left: 64px; top: 392px; font-size: 28px; color: #28402F; width: 1072px; line-height: 1.35; }
+  .line { position: absolute; left: 64px; right: 64px; top: 566px; height: 18px; border-radius: 99px; background: #07110C; }
+  .dot { position: absolute; border-radius: 50%; background: #07110C; color: #E6F7D9; display: grid; place-items: center; font-family: "JetBrains Mono", monospace; font-weight: 600; font-size: 16px; }
+  .dot.g { background: #2BD67B; color: #07110C; box-shadow: 0 0 0 3px #07110C; }
+  .t { position: absolute; top: 504px; font-family: "JetBrains Mono", monospace; font-weight: 600; font-size: 15px; width: 70px; text-align: center; }
+</style></head><body>
+<div class="brand"><svg width="48" height="48" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#2BD67B"/><path d="M12 38h40" stroke="#07110C" stroke-width="7" stroke-linecap="round"/><circle cx="44" cy="22" r="7" fill="#07110C"/></svg>Flatstock</div>
+<div class="eyebrow">Robinhood Chain</div>
+<h1><span>Buy what the</span><span>community <em>picked.</em></span></h1>
+<div class="sub">$WIF holders vote the mix every week. You buy it in one tap.</div>
+<div class="line"></div>
+<script>
+  const S = [["AAPL", 96, true], ["NVDA", 82], ["MSFT", 68], ["AMZN", 56], ["GOOGL", 62], ["META", 56], ["TSLA", 74], ["SPY", 66]];
+  const left = 64, right = 1200 - 64, w = (right - left) / S.length;
+  S.forEach(([name, d, g], i) => {
+    const cx = left + w * i + w / 2;
+    const el = document.createElement("div"); el.className = "dot" + (g ? " g" : "");
+    el.style.cssText = `width:${d}px;height:${d}px;left:${cx - d / 2}px;top:${566 - 8 - d}px`; el.textContent = name; document.body.appendChild(el);
+    const t = document.createElement("div"); t.className = "t"; t.style.left = (cx - 35) + "px"; t.textContent = ""; document.body.appendChild(t);
+  });
+</script>
+</body></html>

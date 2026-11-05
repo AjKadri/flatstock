@@ -1,4 +1,4 @@
-:root { --ink:#07110c; --panel:#d6efc6; --line:#b9d9a6; --green:#167f46; --text:#07110c; --muted:#4d6a58; --mint:#e6f7d9; }
+:root { --ink:#07110c; --panel:#d6efc6; --line:#b9d9a6; --green:#126b3a; --text:#07110c; --muted:#3f5a4a; --mint:#e6f7d9; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--mint); color: var(--text); font-family: "Inter Tight", system-ui, sans-serif; font-weight: 300; line-height: 1.65; -webkit-text-size-adjust: 100%; overflow-wrap: anywhere; }
 a { color: var(--green); } :focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
