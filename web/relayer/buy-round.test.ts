@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { selectBuyMix } from "../src/lib/rounds-logic.ts";
+import { renormaliseWeights, selectBuyMix } from "../src/lib/rounds-logic.ts";
 
 const round = (roundId: bigint, closed: boolean, totalVotes: bigint, weights: bigint[]) => ({
   roundId, opensAt: 0n, closesAt: 0n, assetCount: 3, totalVotes, closed, isOpen: !closed, weights,
@@ -47,4 +47,28 @@ test("never reads rounds below the current contract's first round", async () => 
   const r5 = round(5n, false, 0n, [3334n, 3333n, 3333n]);
   await selectBuyMix(r5, async (id) => { seen.push(id); return null; }, 4n);
   assert.deepEqual(seen, [4n]);
+});
+
+test("adjust: kept stocks keep their relative weights and sum to 100%", () => {
+  const community = [5000n, 2500n, 2500n, 0n];
+  const out = renormaliseWeights(community, [0, 1]);
+  assert.equal(out.reduce((a, b) => a + b, 0n), 10_000n);
+  assert.deepEqual(out, [6667n, 3333n, 0n, 0n]); // 2:1 ratio kept
+  assert.equal(out[2], 0n);
+});
+
+test("adjust: all stocks kept returns the community mix", () => {
+  const community = [1625n, 2125n, 625n, 625n, 625n, 625n, 2625n, 1125n];
+  assert.deepEqual(renormaliseWeights(community, [0, 1, 2, 3, 4, 5, 6, 7]), community);
+});
+
+test("adjust: remainder goes to the largest stock so the total is exactly 100%", () => {
+  const community = [3334n, 3333n, 3333n];
+  for (const keep of [[0, 1], [1, 2], [0, 2], [0, 1, 2]]) {
+    assert.equal(renormaliseWeights(community, keep).reduce((a, b) => a + b, 0n), 10_000n);
+  }
+});
+
+test("adjust: stocks with zero community weight are ignored", () => {
+  assert.deepEqual(renormaliseWeights([0n, 5000n, 5000n], [0, 1, 2]), [0n, 5000n, 5000n]);
 });

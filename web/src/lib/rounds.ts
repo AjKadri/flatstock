@@ -71,6 +71,9 @@ export async function readRoundById(roundId: bigint): Promise<RoundState | null>
         })) as bigint;
       }),
     );
+    const voteShare = await publicClient.readContract({
+      address: addresses.votes, abi: votesAbi, functionName: "voteShareBps", args: [roundId],
+    }).then((value) => BigInt(value as number)).catch(() => MIX_VOTE_SHARE_BPS);
     const weights = closed
       ? await Promise.all(assets.map(async (_, index) => {
         if (index >= assetCount) return 0n;
@@ -79,7 +82,7 @@ export async function readRoundById(roundId: bigint): Promise<RoundState | null>
         })) as bigint;
       }))
       : assets.map((_, index) => index < assetCount
-        ? calculateMixWeights(votes, assetCount, MIX_VOTE_SHARE_BPS)[index] || 0n
+        ? calculateMixWeights(votes, assetCount, voteShare)[index] || 0n
         : 0n);
     return { roundId, opensAt, closesAt, assetCount, totalVotes, closed, isOpen: !closed && now < closesAt, weights };
   } catch {
@@ -129,12 +132,15 @@ async function summarise(contract: Address, contractLabel: string, isMain: boole
     const closesAt = state?.closesAt ?? (openLog ? BigInt(openLog.args.closesAt as bigint) : null);
     const ended = closesAt !== null && BigInt(Math.floor(Date.now() / 1000)) >= closesAt;
     let weights: bigint[] | null = null;
+    const round5Share = isMain ? await publicClient.readContract({
+      address: contract, abi: votesAbi, functionName: "voteShareBps", args: [roundId],
+    }).then((value) => BigInt(value as number)).catch(() => MIX_VOTE_SHARE_BPS) : MIX_VOTE_SHARE_BPS;
     if (isMain && state && assetCount > 0) {
       weights = closedNow
         ? await Promise.all(assets.map(async (_, i) => i < assetCount
           ? (await publicClient.readContract({ address: contract, abi: votesAbi, functionName: "weightBps", args: [roundId, i] })) as bigint
           : 0n))
-        : assets.map((_, i) => i < assetCount ? calculateMixWeights(votesByAsset, assetCount, MIX_VOTE_SHARE_BPS)[i] || 0n : 0n);
+        : assets.map((_, i) => i < assetCount ? calculateMixWeights(votesByAsset, assetCount, round5Share)[i] || 0n : 0n);
     }
     rounds.push({
       key: `${contract}-${roundId}`,

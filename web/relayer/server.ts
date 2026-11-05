@@ -124,11 +124,19 @@ const permitTypes = {
   ],
 } as const;
 const permitWindowSeconds = 5n * 60n;
+// Stock Tokens enabled for sponsored sells. Same order as the app's asset list (round 5 has 8).
 const stockTokenAddresses = new Set([
-  "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9",
-  "0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec",
-  "0xe93237c50d904957cf27e7b1133b510c669c2e74",
+  "0xaf3d76f1834a1d425780943c99ea8a608f8a93f9", // AAPL
+  "0xd0601ce157db5bdc3162bbac2a2c8af5320d9eec", // NVDA
+  "0xe93237c50d904957cf27e7b1133b510c669c2e74", // MSFT
+  "0x12f190a9f9d7d37a250758b26824b97ce941bf54", // AMZN
+  "0x2e0847e8910a9732eb3fb1bb4b70a580adad4fe3", // GOOGL
+  "0xc0d6457c16cc70d6790dd43521c899c87ce02f35", // META
+  "0x322f0929c4625ed5bad873c95208d54e1c003b2d", // TSLA
+  "0x117cc2133c37b721f49de2a7a74833232b3b4c0c", // SPY (S&P 500 ETF)
 ]);
+// Smallest buy the relayer will sponsor (USDG has 6 decimals). The app enforces the same minimum.
+const MIN_SPONSORED_BUY = 5_000_000n;
 
 async function quickNodeCall(method: string, params: unknown[]) {
   if (!quickNodeRpcUrl) throw new Error("QuickNode Stock Token API is not configured.");
@@ -255,6 +263,7 @@ async function relayBuy(payload: Record<string, unknown>) {
   const signature = requireHex(payload.signature, "signature");
   const total = legs.reduce((sum, leg) => sum + leg.amountIn, 0n);
   if (total !== amountIn) fail("Buy amount does not match the signed legs.");
+  if (amountIn < MIN_SPONSORED_BUY) fail("Minimum buy is 5 USDG.");
   const legsHash = keccak256(encodeAbiParameters([{ type: "tuple[]", components: metaLegComponents }], [legs]));
   const { today } = await requireBudget(user);
   const valid = await verifyTypedData({

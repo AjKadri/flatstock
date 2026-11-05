@@ -6,6 +6,7 @@ import {
   chain,
   EXPLORER_URL,
   LEGAL_NOTICE,
+  MIN_BUY_USDG,
   RESTRICTED_JURISDICTIONS_TEXT,
   RESTRICTED_JURISDICTIONS_URL,
   lockAbi,
@@ -50,6 +51,7 @@ import {
   type SellLeg,
 } from "./lib/chain";
 import { addressLink, pickBuyMix, readRoundHistory, txLink, type BuyMix, type PastRound, type RoundHistory } from "./lib/rounds";
+import { renormaliseWeights } from "./lib/rounds-logic";
 
 type Health = {
   enabled: boolean;
@@ -118,6 +120,8 @@ function App() {
   const [roundHistory, setRoundHistory] = useState<RoundHistory | null>(null);
   const [tab, setTab] = useState<Tab>(() => tabFromHash());
   const [revealed, setRevealed] = useState(false);
+  const [adjusting, setAdjusting] = useState(false);
+  const [excluded, setExcluded] = useState<number[]>([]);
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   const [buyAmount, setBuyAmount] = useState("5");
   const [selectedAsset, setSelectedAsset] = useState(0);
@@ -349,9 +353,13 @@ function App() {
     if (!buyMix) return;
     if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before checking prices.` });
     try {
+      if (!(Number(buyAmount) >= MIN_BUY_USDG)) {
+        setPlan([]);
+        return setMessage({ tone: "info", text: `The minimum buy is $${MIN_BUY_USDG}.` });
+      }
       setBusy("quote");
       setMessage(null);
-      const nextPlan = await buildBuyPlan(buyAmount, buyMix.round);
+      const nextPlan = await buildBuyPlan(buyAmount, { ...buyMix.round, weights: adjustedWeights });
       setPlan(nextPlan);
       setMessage({ tone: "success", text: "Price guard passed for every leg. The plan is ready to sign." });
     } catch (error) {
@@ -486,9 +494,21 @@ function App() {
       : `Preview mix (Round ${mixRound.roundId}, live)`;
   const voteLabel = round ? `Vote for next week (Round ${round.roundId})` : "Vote for next week";
   const closesIn = round && voteRoundOpen ? Number(round.closesAt) - now : null;
-  const mixRows = mixRound
-    ? assets.slice(0, mixRound.assetCount).map((asset, index) => ({ asset, weight: mixRound.weights[index] || 0n }))
+  const communityRows = mixRound
+    ? assets.slice(0, mixRound.assetCount).map((asset, index) => ({ asset, index, weight: mixRound.weights[index] || 0n }))
     : [];
+  const keep = communityRows.filter((row) => row.weight > 0n && !excluded.includes(row.index)).map((row) => row.index);
+  const adjustedWeights = mixRound ? renormaliseWeights(mixRound.weights, keep) : [];
+  const mixRows = communityRows.map((row) => ({ ...row, weight: adjusting ? adjustedWeights[row.index] || 0n : row.weight }));
+  const mixHeadline = buyMix && round && buyMix.round.roundId !== round.roundId && voteRoundOpen
+    ? `This week: Round ${buyMix.round.roundId} ${buyMix.kind === "final" ? "final mix" : "preview"} (${buyMix.round.assetCount} stocks). Voting now: Round ${round.roundId}, ${round.assetCount} stocks, for next week.`
+    : null;
+  const toggleStock = (index: number) => {
+    setPlan([]);
+    setExcluded((current) => current.includes(index)
+      ? current.filter((value) => value !== index)
+      : keep.length <= 2 ? current : [...current, index]);
+  };
   const buyTotal = Number(buyAmount) || 0;
   const goTab = (next: Tab) => { window.location.hash = next; setTab(next); window.scrollTo({ top: 0 }); };
   const walletReady = Boolean(account) && chainId === chain.id;
@@ -550,6 +570,9 @@ function App() {
               </div>
             </section>
 
+            {mixHeadline && <p className="headline-note" role="note">{mixHeadline}</p>}
+            <Schedule round={round} />
+
             <section className="stats">
               <div className="tile"><span>{round ? `Round ${round.roundId} closes in` : "Next round"}</span><strong className="mono">{closesIn !== null ? formatCountdown(closesIn) : voteRoundOpen ? "..." : "Not open"}</strong><small>{round ? formatDate(round.closesAt) : ""}</small></div>
               <div className="tile"><span>$WIF burned by votes</span><strong className="mono">{formatWif((roundHistory?.totalVotes ?? votesBurned) * ONE_WIF)}</strong><small>1 $WIF per vote</small></div>
@@ -587,11 +610,12 @@ function App() {
                   <div className="orbit-center">
                     <small>You are voting for</small>
                     <strong>{assets[selectedAsset]?.symbol}</strong>
+                    <small>{assetLabel(assets[selectedAsset])}</small>
                     <span className="mono">{formatWeightBps(round.weights[selectedAsset] || 0n)} now</span>
                   </div>
                   {assets.slice(0, round.assetCount).map((asset, index, list) => (
                     <button key={asset.symbol} role="radio" aria-checked={selectedAsset === index} className={`orbit-chip ${selectedAsset === index ? "on" : ""}`}
-                      style={{ "--a": `${(360 / list.length) * index - 90}deg`, "--d": `${index * 0.8}s` } as CSSProperties} onClick={() => setSelectedAsset(index)} disabled={alreadyVoted}>
+                      style={{ "--a": `${(360 / list.length) * index - 90}deg`, "--d": `${index * 0.8}s`, "--chip": list.length > 5 ? "62px" : "92px" } as CSSProperties} onClick={() => setSelectedAsset(index)} disabled={alreadyVoted}>
                       <span>{asset.symbol}<em className="mono">{formatWeightBps(round.weights[index] || 0n)}</em></span>
                     </button>
                   ))}
@@ -614,17 +638,32 @@ function App() {
             <div className="row-between"><div><p className="eyebrow">{mixLabel}</p><h2>Buy the mix</h2></div><span className={`pill ${useRelay ? "good" : "warn"}`}>{gasBadge}</span></div>
             {!buyMix ? <p className="muted">There is no mix to buy yet. The first round closes Mon 9 Nov 15:00 WAT, after that buys use its final mix.</p> : (
               <>
+                {mixHeadline && <p className="headline-note">{mixHeadline}</p>}
                 {buyMix.kind === "preview" && <p className="helper">Round {buyMix.round.roundId.toString()} is still open, so this is the live preview of the mix. After it closes, buys use its final mix.</p>}
-                <label className="field">Amount in USDG
+                <label className="field">Amount in USDG (minimum ${MIN_BUY_USDG})
                   <input inputMode="decimal" value={buyAmount} onChange={(event) => { setBuyAmount(event.target.value); setPlan([]); }} aria-label="Amount in USDG" />
                 </label>
                 <div className="presets">{["5", "10", "25"].map((value) => <button key={value} className={buyAmount === value ? "on" : ""} onClick={() => { setBuyAmount(value); setPlan([]); }}>${value}</button>)}</div>
+                <div className="adjust-bar">
+                  <button className={`btn ghost small ${adjusting ? "on" : ""}`} onClick={() => { setAdjusting(!adjusting); setPlan([]); if (adjusting) setExcluded([]); }}>{adjusting ? "Use the full community mix" : "Adjust"}</button>
+                  {adjusting && <span className="helper">Untick stocks you do not want (keep at least 2). The rest keep the community's relative weights, rescaled to 100%.</span>}
+                </div>
                 <ul className="split">
-                  {mixRows.map((row, i) => (
-                    <li key={row.asset.symbol}><i style={{ background: RING_COLORS[i % RING_COLORS.length] }} /><b>{row.asset.symbol}</b><span className="mono">{formatWeightBps(row.weight)}</span><span className="mono">≈ ${(buyTotal * Number(row.weight) / 10_000).toFixed(2)}</span></li>
-                  ))}
+                  {mixRows.map((row) => {
+                    const on = !excluded.includes(row.index);
+                    return (
+                      <li key={row.asset.symbol} className={adjusting && !on ? "off" : ""}>
+                        {adjusting
+                          ? <input type="checkbox" className="check" checked={on} disabled={row.weight === 0n && !on} onChange={() => toggleStock(row.index)} aria-label={`Include ${row.asset.symbol}`} />
+                          : <i style={{ background: RING_COLORS[row.index % RING_COLORS.length] }} />}
+                        <b>{row.asset.symbol}<small>{assetLabel(row.asset)}</small></b><span className="mono">{formatWeightBps(row.weight)}</span><span className="mono">≈ ${(buyTotal * Number(row.weight) / 10_000).toFixed(2)}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
-                <button className="btn ghost full" disabled={!MIX_RULES_ENABLED || chainId !== chain.id || busy !== null} onClick={() => void previewBuy()}>{busy === "quote" ? "Checking prices..." : "Check prices"}</button>
+                {adjusting && keep.length <= 2 && <p className="helper">Two stocks is the minimum.</p>}
+                {adjusting && keep.some((index) => adjustedWeights[index] > 5000n) && <p className="helper">The community mix caps each stock at 50%. A smaller custom selection can exceed that, because it is rescaled to 100%.</p>}
+                <button className="btn ghost full" disabled={!MIX_RULES_ENABLED || chainId !== chain.id || busy !== null || !(buyTotal >= MIN_BUY_USDG)} onClick={() => void previewBuy()}>{busy === "quote" ? "Checking prices..." : buyTotal >= MIN_BUY_USDG ? "Check prices" : `Minimum buy is $${MIN_BUY_USDG}`}</button>
                 {plan.length > 0 && <div className="quotes"><div className="qh"><span>Stock</span><span>Quote / Chainlink</span><span>Gap</span></div>{plan.map((leg) => <div className="qr" key={leg.symbol}><b>{leg.symbol}</b><span className="mono">${leg.quotePrice.toFixed(2)} / ${leg.chainlinkPrice.toFixed(2)}</span><span className="good-text mono">{(leg.differenceBps / 100).toFixed(2)}%</span></div>)}</div>}
                 <button className="btn primary full" disabled={!MIX_RULES_ENABLED || !SIGNATURE_SAFE_WRITES_ENABLED || !walletReady || plan.length === 0 || busy !== null} onClick={requestBuy}>{busy === "buy" ? "Waiting for wallet signature..." : !MIX_RULES_ENABLED || !SIGNATURE_SAFE_WRITES_ENABLED ? "Buying is being configured" : !account ? "Connect to buy" : chainId !== chain.id ? "Switch network to buy" : plan.length === 0 ? "Check prices first" : "Review this mix"}</button>
                 {confirmingBuy && <div className="confirm"><strong>{useRelay ? "Sign this mix" : "Confirm wallet mix"}</strong><p>This spends {buyAmount} USDG and sends the Stock Tokens directly to your wallet. {useRelay ? "Your wallet signs the exact legs, minimum outputs, amount, nonce and deadline. A separate USDG permit lets the relayer pull only this amount and pay the gas." : "Your wallet signs the one-transaction mix and you pay the ETH gas."} The price guard passed for every leg.</p><div className="cta-row"><button className="btn primary" disabled={busy !== null} onClick={() => void runBuy()}>Sign and submit</button><button className="btn ghost" disabled={busy !== null} onClick={() => setConfirmingBuy(false)}>Cancel</button></div></div>}
@@ -726,6 +765,22 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 function tabFromHash(): Tab {
   const hash = window.location.hash.replace("#", "");
   return (TABS.find((item) => item.id === hash)?.id ?? "home") as Tab;
+}
+
+function assetLabel(asset: { name?: string } | undefined) {
+  return asset?.name ?? "";
+}
+
+const WEEKLY_SCHEDULE = "Rounds close every Monday at 15:00 WAT. The round that just closed sets the mix you can buy that week, and the next round opens for voting.";
+
+function Schedule({ round }: { round: RoundState | null }) {
+  return (
+    <section className="schedule" aria-label="Weekly schedule">
+      <p className="eyebrow">Weekly schedule</p>
+      <p>{WEEKLY_SCHEDULE}</p>
+      {round?.isOpen && <p className="helper">Round {round.roundId.toString()} closes {formatDate(round.closesAt)}.</p>}
+    </section>
+  );
 }
 
 const RING_COLORS = ["#2BD67B", "#1FA35E", "#8FE6B3", "#0F7A45", "#C8F2D9", "#5BB98A", "#3E8E66", "#A5D8BB"];

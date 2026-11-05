@@ -70,27 +70,68 @@ export const voteStatsAddresses = Array.from(
   ]),
 ).map((address) => address as Address);
 
+// Order matters: it is the on-chain asset index. Rounds with assetCount N use the first N entries,
+// so round 4 (3 stocks) keeps indexes 0-2 and round 5 uses all 8.
 export const assets = [
   {
     symbol: "AAPL",
+    name: "Apple",
     token: "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9" as Address,
     feed: "0x6B22A786bAa607d76728168703a39Ea9C99f2cD0" as Address,
     fee: 500,
   },
   {
     symbol: "NVDA",
+    name: "NVIDIA",
     token: "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC" as Address,
     feed: "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15" as Address,
     fee: 500,
   },
   {
     symbol: "MSFT",
+    name: "Microsoft",
     token: "0xe93237C50D904957Cf27E7B1133b510C669c2e74" as Address,
     feed: "0x45C3C877C15E6BA2EBB19eA114Ea508d14C1Af2E" as Address,
     fee: 3000,
   },
+  {
+    symbol: "AMZN",
+    name: "Amazon",
+    token: "0x12f190a9F9d7D37a250758b26824B97CE941bF54" as Address,
+    feed: "0xD5a1508ceD74c084eBf3cBe853e2C968fB2a651C" as Address,
+    fee: 3000,
+  },
+  {
+    symbol: "GOOGL",
+    name: "Alphabet",
+    token: "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3" as Address,
+    feed: "0xF6f373a037c30F0e5010d854385cA89185AE638b" as Address,
+    fee: 500,
+  },
+  {
+    symbol: "META",
+    name: "Meta",
+    token: "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35" as Address,
+    feed: "0x7C38C00C30BEe9378381E7B6135d7283356D71b1" as Address,
+    fee: 3000,
+  },
+  {
+    symbol: "TSLA",
+    name: "Tesla",
+    token: "0x322F0929c4625eD5bAd873c95208D54E1c003b2d" as Address,
+    feed: "0x4A1166a659A55625345e9515b32adECea5547C38" as Address,
+    fee: 3000,
+  },
+  {
+    symbol: "SPY",
+    name: "S&P 500 ETF",
+    token: "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C" as Address,
+    feed: "0x319724394D3A0e3669269846abE664Cd621f9f6A" as Address,
+    fee: 500,
+  },
 ] as const;
 
+export const MIN_BUY_USDG = 5;
 export const ONE_WIF = 1_000_000_000_000_000_000n;
 export const MAX_SLIPPAGE_BPS = 200n;
 export const ORACLE_MAX_AGE_SECONDS = 86_400n;
@@ -110,6 +151,7 @@ export const votesAbi = parseAbi([
   "function voteBySig(address voter, uint256 roundId, uint8 assetIndex, uint256 nonce, uint256 deadline, bytes signature)",
   "function votesFor(uint256 roundId, uint8 assetIndex) view returns (uint256)",
   "function hasVoted(uint256 roundId, address voter) view returns (bool)",
+  "function voteShareBps(uint256 roundId) view returns (uint16)",
   "function weightBps(uint256 roundId, uint8 assetIndex) view returns (uint256)",
 ]);
 

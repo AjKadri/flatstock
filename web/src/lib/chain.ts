@@ -212,6 +212,10 @@ export async function readRound(): Promise<RoundState> {
       })) as bigint;
     }),
   );
+  // Each round stores its own vote share (round 4: 50%). Fall back to the configured default if unreadable.
+  const voteShare = await publicClient.readContract({
+    address: addresses.votes, abi: votesAbi, functionName: "voteShareBps", args: [roundId],
+  }).then((value) => BigInt(value as number)).catch(() => MIX_VOTE_SHARE_BPS);
   const weights = closed
     ? await Promise.all(assets.map(async (_, index) => {
       if (index >= assetCount) return 0n;
@@ -223,7 +227,7 @@ export async function readRound(): Promise<RoundState> {
       }) as bigint;
     }))
     : assets.map((_, index) => index < assetCount
-      ? calculateMixWeights(votes, assetCount, MIX_VOTE_SHARE_BPS)[index] || 0n
+      ? calculateMixWeights(votes, assetCount, voteShare)[index] || 0n
       : 0n);
   return {
     roundId,
