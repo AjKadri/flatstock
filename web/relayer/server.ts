@@ -4,6 +4,7 @@ import {
   createWalletClient,
   encodeAbiParameters,
   fallback,
+  formatEther,
   http as viemHttp,
   isAddress,
   keccak256,
@@ -14,6 +15,12 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { defineChain } from "viem";
+import {
+  createSponsorshipGuard,
+  DEFAULT_MIN_RELAYER_BALANCE_WEI,
+  SPONSORSHIP_PAUSED_MESSAGE,
+  SponsorshipPausedError,
+} from "./sponsorship-guard.ts";
 
 const host = process.env.M3_RELAYER_HOST || "127.0.0.1";
 const port = Number(process.env.M3_RELAYER_PORT || 8787);
@@ -45,6 +52,14 @@ const readTransport = quickNodeRpcUrl
   : viemHttp(publicRpcUrl);
 const publicClient = createPublicClient({ chain, transport: readTransport });
 const walletClient = createWalletClient({ account, chain, transport: readTransport });
+// Stop sponsoring when the relayer's own ETH is below this (default 0.0003 ETH).
+const minRelayerBalanceWei = process.env.M3_MIN_RELAYER_BALANCE_WEI
+  ? BigInt(process.env.M3_MIN_RELAYER_BALANCE_WEI)
+  : DEFAULT_MIN_RELAYER_BALANCE_WEI;
+const sponsorshipGuard = createSponsorshipGuard({
+  getBalance: () => publicClient.getBalance({ address: account.address }),
+  minBalanceWei: minRelayerBalanceWei,
+});
 const votesAbi = parseAbi([
   "function voteBySig(address voter, uint256 roundId, uint8 assetIndex, uint256 nonce, uint256 deadline, bytes signature)",
 ]);
@@ -169,8 +184,9 @@ function requireConfigured(address: Address, label: string): asserts address is 
   if (!address || !isAddress(address)) fail(`${label} is not configured.`);
 }
 
-function requireBudget(user: Address, requestedTransactions = 1) {
+async function requireBudget(user: Address, requestedTransactions = 1) {
   if (killSwitch) fail("Signature relay is paused by the kill switch.");
+  await sponsorshipGuard.assertAvailable();
   const today = dayKey();
   const current = usage.get(user.toLowerCase());
   const entry = current?.day === today ? current : { day: today, count: 0 };
@@ -182,6 +198,7 @@ function recordSponsoredTransaction(user: Address, today: string) {
   const current = usage.get(user.toLowerCase());
   const count = current?.day === today ? current.count : 0;
   usage.set(user.toLowerCase(), { day: today, count: count + 1 });
+  sponsorshipGuard.invalidate();
 }
 
 async function relayVote(payload: Record<string, unknown>) {
@@ -192,7 +209,7 @@ async function relayVote(payload: Record<string, unknown>) {
   const nonce = BigInt(String(payload.nonce));
   const deadline = BigInt(String(payload.deadline));
   const signature = requireHex(payload.signature, "signature");
-  const { today } = requireBudget(voter);
+  const { today } = await requireBudget(voter);
   const valid = await verifyTypedData({
     address: voter,
     domain: { name: "Flatstock Votes", version: "1", chainId: 4663, verifyingContract: metaVotesAddress },
@@ -239,7 +256,7 @@ async function relayBuy(payload: Record<string, unknown>) {
   const total = legs.reduce((sum, leg) => sum + leg.amountIn, 0n);
   if (total !== amountIn) fail("Buy amount does not match the signed legs.");
   const legsHash = keccak256(encodeAbiParameters([{ type: "tuple[]", components: metaLegComponents }], [legs]));
-  const { today } = requireBudget(user);
+  const { today } = await requireBudget(user);
   const valid = await verifyTypedData({
     address: user,
     domain: { name: "Flatstock Trades", version: "1", chainId: 4663, verifyingContract: metaRouterAddress },
@@ -293,7 +310,7 @@ async function relaySell(payload: Record<string, unknown>) {
   if (!Number.isInteger(permitV) || (permitV !== 27 && permitV !== 28)) fail("Invalid permit signature.");
   const latest = await publicClient.getBlock({ blockTag: "latest" });
   if (deadline <= latest.timestamp || deadline > latest.timestamp + permitWindowSeconds) fail("Sell permit deadline must be within 5 minutes.");
-  const { today } = requireBudget(user, 2);
+  const { today } = await requireBudget(user, 2);
   const [sellNonceOnChain, permitNonceOnChain, tokenName] = await Promise.all([
     publicClient.readContract({ address: metaRouterAddress, abi: routerAbi, functionName: "sellNonces", args: [user] }) as Promise<bigint>,
     publicClient.readContract({ address: sellToken, abi: permitAbi, functionName: "nonces", args: [user] }) as Promise<bigint>,
@@ -386,9 +403,14 @@ const server = http.createServer(async (request, response) => {
     const requestUrl = new URL(request.url || "/", "http://127.0.0.1");
     if (request.method === "GET" && requestUrl.pathname === "/api/health") {
       const current = usage.get(request.headers["x-wallet"]?.toString().toLowerCase() || "");
+      const sponsorship = await sponsorshipGuard.status();
       return json(response, 200, {
         enabled: true,
         killSwitch,
+        sponsorshipPaused: sponsorship.paused,
+        sponsorshipPausedReason: sponsorship.reason,
+        relayerBalanceEth: sponsorship.balanceWei === null ? null : formatEther(sponsorship.balanceWei),
+        minRelayerBalanceEth: formatEther(sponsorship.minBalanceWei),
         dailyCap,
         usage: current?.day === dayKey() ? current.count : 0,
         relayer: account.address,
@@ -434,10 +456,13 @@ const server = http.createServer(async (request, response) => {
     }
     return json(response, 404, { error: "Not found." });
   } catch (error) {
+    if (error instanceof SponsorshipPausedError) {
+      return json(response, 503, { error: SPONSORSHIP_PAUSED_MESSAGE, code: "SPONSORSHIP_PAUSED", reason: error.status.reason });
+    }
     return json(response, 400, { error: error instanceof Error ? error.message : "Relay request failed." });
   }
 });
 
 server.listen(port, host, () => {
-  console.log(`Signature relayer listening on ${host}:${port}; kill switch ${killSwitch ? "on" : "off"}; daily cap ${dailyCap}`);
+  console.log(`Signature relayer listening on ${host}:${port}; kill switch ${killSwitch ? "on" : "off"}; daily cap ${dailyCap}; min relayer balance ${formatEther(minRelayerBalanceWei)} ETH`);
 });
