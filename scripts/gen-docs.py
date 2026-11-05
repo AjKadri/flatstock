@@ -19,6 +19,9 @@ P[""] = ("Overview", """
 <li><b>Hold or sell.</b> They are yours. Sell back to USDG any time.</li></ol>
 <h2>This week and next week</h2>
 <p>Buying uses the <b>final mix of the most recent closed round</b> ("This week's mix, Round N, final"). Voting always happens on the <b>open round</b> ("Vote for next week, Round N+1"). Rounds are closed and opened back to back, so buying and voting do not stop. Before the very first round has closed, the app shows a clearly labelled live preview instead.</p>
+<h2>Weekly schedule</h2>
+<p><b>Rounds close every Monday at 15:00 WAT</b> (Lagos time). At that moment the round's mix becomes final, buying switches to it for the week, and the next round opens for voting. Round 4 closes Mon 9 Nov 15:00 WAT (3 stocks). Round 5 has 8 stocks and closes Mon 16 Nov 15:00 WAT.</p>
+<p>Example: <i>"This week: Round 4 final mix (3 stocks). Voting now: Round 5, 8 stocks, for next week."</i></p>
 <h2>What it is not</h2>
 <p>Flatstock is a hackathon project: it has not been audited, it is independent and not affiliated with Robinhood, and it does not give investment advice. See <a href="/docs/risks">Eligibility and risks</a>.</p>
 <div class="cards"><a href="/docs/getting-started">Getting started</a><a href="/docs/voting">How voting works</a><a href="/docs/trading">Buying and selling</a><a href="/docs/security">Security model</a></div>
@@ -36,19 +39,22 @@ P["getting-started"] = ("Getting started", f"""
 <p class="small">Stock Tokens are not available to everyone. Read <a href="/docs/risks">Eligibility and risks</a> first.</p>
 """)
 P["voting"] = ("Voting", """
-<h2>Rounds</h2><p>A round has a list of stocks (three today: AAPL, NVDA, MSFT), an opening time and a closing time. The app always votes on the <b>open</b> round. After a round closes, its mix is frozen and used for buying.</p>
+<h2>Rounds</h2><p>A round has a list of stocks (round 4 has three: AAPL, NVDA, MSFT; round 5 has eight: those plus AMZN, GOOGL, META, TSLA and SPY, the S&amp;P 500 ETF), an opening time and a closing time. The app always votes on the <b>open</b> round. After a round closes, its mix is frozen and used for buying.</p>
 <h2>Casting a vote</h2><ul><li><b>One vote per wallet per round.</b> A second attempt is rejected, and the app tells you so before spending anything.</li><li>Each vote <b>burns exactly 1 $WIF</b>, permanently.</li><li>The first vote on a contract may ask for a one-time $WIF approval.</li><li>With the 10 $WIF lock, you sign the vote and the relayer pays the gas. Without it, your wallet sends the transaction and you pay the ETH gas.</li><li>Signed votes expire after 15 minutes.</li></ul>
 <h2>How the mix is computed</h2>
 <p>The mix is a blend: <b>50% equal weight + 50% vote share</b>, then <b>no stock may exceed 50%</b> (any excess is redistributed to the others). With zero votes, every stock gets an equal share.</p>
 <table><tr><th>Example (3 stocks, 1 vote for AAPL)</th><th>Equal part (50%)</th><th>Vote part (50%)</th><th>Result</th></tr>
 <tr><td>AAPL</td><td>16.67%</td><td>50.00%</td><td>66.67% → capped at 50%</td></tr><tr><td>NVDA</td><td>16.67%</td><td>0%</td><td>25%</td></tr><tr><td>MSFT</td><td>16.67%</td><td>0%</td><td>25%</td></tr></table>
 <p class="small">The cap-excess goes to the other stocks equally, which is why round 4 shows 50 / 25 / 25.</p>
+<h2>Vote share</h2><p>Each round stores its own vote share. Round 4 used <b>50%</b>. The vote share is the part of the mix that follows the votes; the rest is equal weight. The votes are counted as a <i>share</i>, not as a raw number: with a single vote or with ten votes all on the same stock, the mix is the same.</p>
+<h2>Weekly schedule</h2><p>Rounds close every Monday at 15:00 WAT, and the next round opens at once. Round 5 closes Mon 16 Nov 15:00 WAT.</p>
 <h2>Closing</h2><p>After a round's closing time, anyone can call <code>closeRound</code> on the contract. That stores the final weights. A closed round cannot be voted on again. Rounds on the current contract start at Round 4; earlier rounds ran on retired test contracts and are listed separately under "Test rounds".</p>
 <h2>Past rounds</h2><p>The app (More tab) and the <a href="/#rounds">landing page</a> show each round's final mix, votes and $WIF burned, read straight from the chain, with Blockscout links.</p>
 """)
 P["trading"] = ("Buying and selling", """
 <h2>Buying the mix</h2>
-<ol class="num"><li>Choose an amount in USDG.</li><li>The app splits it by the mix weights (the final mix of the last closed round) into one swap per stock.</li><li><b>Check prices.</b> For each stock the app quotes the swap and compares it with the Chainlink price.</li><li>Review and sign. Tokens are sent directly to your wallet.</li></ol>
+<ol class="num"><li>Choose an amount in USDG (<b>minimum $5</b>).</li><li>The app splits it by the mix weights (the final mix of the last closed round) into one swap per stock.</li><li><b>Check prices.</b> For each stock the app quotes the swap and compares it with the Chainlink price.</li><li>Review and sign. Tokens are sent directly to your wallet.</li></ol>
+<h3>Adjust (a smaller custom set)</h3><p>By default you buy the full community mix. Press <b>Adjust</b> to untick stocks (keep at least 2). The stocks you keep keep the community's relative weights, rescaled to 100%. The same price guard applies to every leg. The 50% cap belongs to the community mix, so a small custom set can exceed 50% in one stock. Gasless buys of 2, 4 and 8 stocks all use the same contract and relayer.</p>
 <h3>The price guard</h3><p>Every leg must be within <b>2% of Chainlink</b>. Each leg also needs a quote and a fresh, working Chainlink price (older than 24 hours counts as stale). If <b>any</b> leg fails, the whole buy is blocked. The minimum output of each leg is set 2% below its quote.</p>
 <h3>Free gas or your gas</h3><p>With the 10 $WIF lock and the relayer available, you sign two messages (a USDG permit for the exact amount, and the exact buy) and the relayer submits them and pays the gas. Otherwise your wallet sends the transaction, after a one-time USDG approval if needed, and you pay the gas. Signed buys expire after 15 minutes.</p>
 <h3>Buy complete</h3><p>The app waits for the chain's finality service before saying "Buy complete" and shows the finality stage. If it cannot confirm, it says the buy was submitted but finality was not confirmed, and links the transaction.</p>
@@ -58,7 +64,7 @@ P["trading"] = ("Buying and selling", """
 """)
 P["gas-and-lock"] = (f"Gas and the 10 $WIF lock", f"""
 <h2>The idea</h2><p>Lock <b>10 $WIF</b> and the relayer pays the gas for your votes and buys. The lock is your own $WIF, held in the lock contract ({a(LOCK)}); it has no owner and cannot move one user's balance to another account.</p>
-<h2>Limits</h2><ul><li>Up to <b>3 sponsored transactions per wallet per day</b> (the day follows Lagos time). A vote or buy uses 1, a sell uses 2 (permit plus sell).</li><li>Sponsorship <b>pauses automatically</b> if the relayer's ETH balance falls below 0.0003 ETH, and there is a kill switch. When paused, the app says so and you can still buy and pay your own gas.</li><li>The relayer can only submit exactly what you signed.</li></ul>
+<h2>Limits</h2><ul><li>Up to <b>3 sponsored transactions per wallet per day</b> (the day follows Lagos time). A vote or buy uses 1, a sell uses 2 (permit plus sell).</li><li>Sponsorship <b>pauses automatically</b> if the relayer's ETH balance falls below 0.0003 ETH, and there is a kill switch. When paused, the app says so and you can still buy and pay your own gas.</li><li>The relayer can only submit exactly what you signed.</li><li>The smallest buy the relayer will sponsor is 5 USDG.</li></ul>
 <h2>Locking</h2><p>In the app: More tab → "Lock 10 $WIF for free gas". Your wallet asks for a $WIF approval and then the lock transaction (you pay that gas).</p>
 <h2>Unlocking</h2><p>The lock contract has an <code>unlock(amount)</code> function: you can take back all of your locked $WIF, or part of it as long as what remains is still at least 10 $WIF. <b>The app does not have an unlock button yet.</b> Until it does, call <code>unlock</code> directly from the contract page on Blockscout (Write contract) with your own wallet.</p>
 <h2>Without a lock</h2><p>Nothing breaks. Every action is a normal wallet transaction and you pay the small ETH gas.</p>
@@ -72,7 +78,7 @@ P["security"] = ("Security model", """
 <h2>Contracts</h2><p>The votes and router contracts are verified on Blockscout and the source is in the <a href="https://github.com/AjKadri/flatstock" target="_blank" rel="noopener noreferrer">repository</a>. See <a href="/docs/contracts">Contracts and addresses</a>. The vote contract has one owner who can open rounds; closing a round is open to anyone after its closing time.</p>
 <h2>What we do not claim</h2><p>No audit, no insurance, no guarantee of availability. Use small amounts. Report a problem through the repository.</p>
 """)
-stocks = [("AAPL","0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9","0x6B22A786bAa607d76728168703a39Ea9C99f2cD0","0.05%"),("NVDA","0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC","0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15","0.05%"),("MSFT","0xe93237C50D904957Cf27E7B1133b510C669c2e74","0x45C3C877C15E6BA2EBB19eA114Ea508d14C1Af2E","0.3%")]
+stocks = [("AAPL","0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9","0x6B22A786bAa607d76728168703a39Ea9C99f2cD0","0.05%"),("NVDA","0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC","0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15","0.05%"),("MSFT","0xe93237C50D904957Cf27E7B1133b510C669c2e74","0x45C3C877C15E6BA2EBB19eA114Ea508d14C1Af2E","0.3%"),("AMZN","0x12f190a9F9d7D37a250758b26824B97CE941bF54","0xD5a1508ceD74c084eBf3cBe853e2C968fB2a651C","0.3%"),("GOOGL","0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3","0xF6f373a037c30F0e5010d854385cA89185AE638b","0.05%"),("META","0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35","0x7C38C00C30BEe9378381E7B6135d7283356D71b1","0.3%"),("TSLA","0x322F0929c4625eD5bAd873c95208D54E1c003b2d","0x4A1166a659A55625345e9515b32adECea5547C38","0.3%"),("SPY","0x117cc2133c37B721F49dE2A7a74833232B3B4C0C","0x319724394D3A0e3669269846abE664Cd621f9f6A","0.05%")]
 rows = "".join(f"<tr><td>{s}</td><td>{a(t, t[:6]+'…'+t[-4:])}</td><td>{a(f, f[:6]+'…'+f[-4:])}</td><td>{fee}</td></tr>" for s,t,f,fee in stocks)
 P["contracts"] = ("Contracts and addresses", f"""
 <p>Robinhood Chain, chain ID 4663. Every address links to Blockscout.</p>
@@ -82,15 +88,15 @@ P["contracts"] = ("Contracts and addresses", f"""
 <tr><td>FlatstockLock</td><td>{a(LOCK)}</td><td>10 $WIF minimum lock. Source in the repository.</td></tr>
 <tr><td>Relayer wallet</td><td>{a("0x6956C5bc2dBDb83d1216A02DA6b115bc4F8075F4")}</td><td>Pays sponsored gas. Holds only gas ETH.</td></tr></table>
 <h2>Tokens and venues</h2><table><tr><th>Name</th><th>Address</th></tr><tr><td>$WIF</td><td>{a(WIF)}</td></tr><tr><td>USDG</td><td>{a(USDG)}</td></tr><tr><td>Uniswap router</td><td>{a("0xCaf681a66D020601342297493863E78C959E5cb2")}</td></tr><tr><td>Uniswap quoter</td><td>{a("0x33e885eD0Ec9bF04EcfB19341582aADCb4c8A9E7")}</td></tr></table>
-<h2>Stocks in the mix</h2><table><tr><th>Stock</th><th>Stock Token</th><th>Chainlink feed</th><th>Pool fee</th></tr>{rows}</table>
+<h2>Stocks in the mix</h2><p>Round 4 uses the first three (AAPL, NVDA, MSFT). Round 5 uses all eight. SPY is the S&amp;P 500 ETF. The list order is the on-chain asset index.</p><table><tr><th>Stock</th><th>Stock Token</th><th>Chainlink feed</th><th>Pool fee</th></tr>{rows}</table>
 <h2>Retired test contracts</h2><p>These ran before the current contract. They are retired, the app ignores them for rounds, and their votes are included in the $WIF burned total.</p>
 <ul><li>{a("0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9")} · 3 votes</li><li>{a("0xD49249D2a5CffBCF35B6560857d1d1C703802e78")} · 0 votes</li><li>{a("0x68d2622f3bbf6BE80CdfED679489de344410C7Db")} · 1 vote</li></ul>
 <p class="small">Source code: <a href="https://github.com/AjKadri/flatstock" target="_blank" rel="noopener noreferrer">github.com/AjKadri/flatstock</a> (Apache-2.0). Live relayer status: <a href="https://api.flatstock.ajkadri.dev/api/health" target="_blank" rel="noopener noreferrer">/api/health</a>.</p>
 """)
 P["fees"] = ("Fees", """
 <h2>Flatstock fee: 0%</h2><p>Flatstock takes no trading fee today. The fee switch is off.</p>
-<h2>What you do pay</h2><ul><li><b>The swap price</b>, including the Uniswap pool fee of each stock's pool (0.05% for AAPL and NVDA, 0.3% for MSFT) and market spread, which the price guard keeps within 2% of Chainlink.</li><li><b>ETH gas</b> for your own transactions: the one-time approvals, the lock transaction, and any action when you have no lock. With the lock, votes and buys are sponsored (up to 3 per day).</li><li><b>1 $WIF</b> burned per vote.</li></ul>
-<p class="small">Typical relayer costs we measured on mainnet: about 0.000003 ETH per vote and about 0.00001 ETH per gasless buy.</p>
+<h2>What you do pay</h2><ul><li><b>The swap price</b>, including the Uniswap pool fee of each stock's pool (0.05% for AAPL, NVDA, GOOGL and SPY; 0.3% for MSFT, AMZN, META and TSLA) and market spread, which the price guard keeps within 2% of Chainlink.</li><li><b>ETH gas</b> for your own transactions: the one-time approvals, the lock transaction, and any action when you have no lock. With the lock, votes and buys are sponsored (up to 3 per day).</li><li><b>1 $WIF</b> burned per vote.</li></ul>
+<p class="small">Relayer costs measured on a fork of the real pools at the live gas price: about 0.0000084 ETH for a 2-stock gasless buy, 0.0000123 for 4 stocks and 0.0000223 for 8 stocks, and about 0.0000067 for a gasless sell. A vote costs about 0.000003 ETH. Minimum buy: 5 USDG.</p>
 """)
 P["risks"] = ("Eligibility and risks", f"""
 <h2>Availability</h2><p>{NOTICE}</p>
@@ -105,12 +111,15 @@ P["faq"] = ("FAQ", """
 <h2>Which round does my buy use?</h2><p>The final mix of the most recent closed round.</p>
 <h2>Why does the app say "preview mix"?</h2><p>The first round has not closed yet, so there is no final mix. The preview shows the live vote result and is replaced by the final mix after the round closes.</p>
 <h2>Why was my buy blocked?</h2><p>The price guard blocked it: a quote was missing, a price was stale, or a leg was more than 2% from Chainlink. This happens most outside US market hours. Try again later.</p>
+<h2>Can I buy only some of the stocks?</h2><p>Yes. On the Buy tab press Adjust and untick stocks (keep at least 2). The rest keep the community's relative weights.</p>
+<h2>Is there a minimum buy?</h2><p>Yes, 5 USDG.</p>
+<h2>When do rounds close?</h2><p>Every Monday at 15:00 WAT. Round 4: Mon 9 Nov. Round 5: Mon 16 Nov.</p>
 <h2>Do I need ETH?</h2><p>Only if your wallet has no 10 $WIF lock, or for the one-time approvals and the lock itself.</p>
 <h2>Is it safe?</h2><p>It is designed so every action needs your own signature and nothing is held for you, but it is unaudited. Read the <a href="/docs/security">security model</a> and use small amounts.</p>
 <h2>Can I take my $WIF back from the lock?</h2><p>Yes, with <code>unlock</code> on the lock contract. See <a href="/docs/gas-and-lock">Gas and the lock</a>.</p>
 """)
 P["changelog"] = ("Changelog", f"""
-<h2>5 Nov 2026</h2><ul><li>New app UI: mobile-first tabs, vote orbit, mix ring, past rounds.</li><li>Buys now use the final mix of the most recent closed round; voting runs on the open round.</li><li>New landing page and these docs.</li><li>The $WIF burned total now includes all retired test contracts (5 in all).</li><li>Clear message when a wallet has already voted in a round.</li><li>Relayer pauses sponsorship when its ETH balance is low.</li></ul>
+<h2>5 Nov 2026</h2><ul><li>Round 5 will have 8 stocks (AAPL, NVDA, MSFT, AMZN, GOOGL, META, TSLA, SPY). Weekly schedule: rounds close every Monday 15:00 WAT.</li><li>Minimum buy 5 USDG; "Adjust" lets you buy a smaller custom set of 2 or more stocks.</li><li>New app UI: mobile-first tabs, vote orbit, mix ring, past rounds.</li><li>Buys now use the final mix of the most recent closed round; voting runs on the open round.</li><li>New landing page and these docs.</li><li>The $WIF burned total now includes all retired test contracts (5 in all).</li><li>Clear message when a wallet has already voted in a round.</li><li>Relayer pauses sponsorship when its ETH balance is low.</li></ul>
 <h2>4 Nov 2026</h2><ul><li>Live mainnet test passed: signed permit sell, gasless 3 USDG full-mix buy, normal-wallet buy. Round 4 opened on the current contract ({tx("0x7776a75a5da7e8f2067a2ff23bfbcadac810bd0168b41f58713e81aa082dfe80")}).</li></ul>
 <p class="small">Mainnet results are recorded in <code>CHECKS.md</code> in the repository.</p>
 """)

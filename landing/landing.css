@@ -130,3 +130,9 @@ section { position: relative; }
 @keyframes draw { to { stroke-dashoffset: 0; } } @keyframes fade { to { opacity: 1; } }
 @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .hero-chart .line { stroke-dashoffset: 0; } .hero-chart .area { opacity: 1; } .js [data-reveal] { opacity: 1; transform: none; } }
+
+.round-note { margin-top: 14px; border: 1px solid #1f7a4c; background: rgba(43,214,123,.08); border-radius: 14px; padding: 12px 14px; font-size: 14px; max-width: 70ch; } .round-note:empty { display: none; }
+.schedule-band { max-width: 1180px; margin: 0 auto; padding: 90px 22px; }
+.sched { display: grid; gap: 14px; margin: 30px 0 18px; }
+.sched li { border: 1px solid var(--line); border-radius: 20px; padding: 20px; background: #0a1d14; display: grid; gap: 6px; } .sched b { font-size: 20px; font-weight: 500; color: var(--green); } .sched span { color: #c8dccf; line-height: 1.5; }
+@media (min-width: 860px) { .sched { grid-template-columns: repeat(3, 1fr); } }
