@@ -53,11 +53,20 @@ export const metaRouterAddress = import.meta.env.VITE_META_ROUTER_ADDRESS
   : null;
 export const legacyVotesAddress = "0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9" as Address;
 export const previousReplacementVotesAddress = "0xD49249D2a5CffBCF35B6560857d1d1C703802e78" as Address;
+export const retiredVotes68d2Address = "0x68d2622f3bbf6BE80CdfED679489de344410C7Db" as Address;
+// Retired test contracts, oldest first. Their votes count in the $WIF-burned total and are listed
+// under "Test rounds (earlier contract)". The 0x68d2 contract holds 1 real burned vote that the
+// old total missed.
+export const retiredVoteContracts = [
+  { address: legacyVotesAddress, label: "Earlier contract 1 (0xEDB1…B8E9)" },
+  { address: previousReplacementVotesAddress, label: "Earlier contract 2 (0xD492…2e78)" },
+  { address: retiredVotes68d2Address, label: "Earlier contract 3 (0x68d2…C7Db)" },
+] as const;
+export const FIRST_MAIN_ROUND = 4n;
 export const voteStatsAddresses = Array.from(
   new Set([
     addresses.votes.toLowerCase(),
-    legacyVotesAddress.toLowerCase(),
-    previousReplacementVotesAddress.toLowerCase(),
+    ...retiredVoteContracts.map((item) => item.address.toLowerCase()),
   ]),
 ).map((address) => address as Address);
 

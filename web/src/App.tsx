@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { encodeFunctionData, type Address, type Hex } from "viem";
 import {
   addresses,
@@ -49,6 +49,7 @@ import {
   type RoundState,
   type SellLeg,
 } from "./lib/chain";
+import { addressLink, pickBuyMix, readRoundHistory, txLink, type BuyMix, type PastRound, type RoundHistory } from "./lib/rounds";
 
 type Health = {
   enabled: boolean;
@@ -113,6 +114,11 @@ function App() {
   const [votesBurned, setVotesBurned] = useState<bigint>(0n);
   const [health, setHealth] = useState<Health | null>(null);
   const [alreadyVoted, setAlreadyVoted] = useState(false);
+  const [buyMix, setBuyMix] = useState<BuyMix | null>(null);
+  const [roundHistory, setRoundHistory] = useState<RoundHistory | null>(null);
+  const [tab, setTab] = useState<Tab>(() => tabFromHash());
+  const [revealed, setRevealed] = useState(false);
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   const [buyAmount, setBuyAmount] = useState("5");
   const [selectedAsset, setSelectedAsset] = useState(0);
   const [plan, setPlan] = useState<BuyLeg[]>([]);
@@ -136,6 +142,7 @@ function App() {
         readVoteBurned(),
       ]);
       setRound(nextRound);
+      setBuyMix(await pickBuyMix(nextRound));
       setVotesBurned(burned);
       setCorporateActions(await readCorporateActions(
         assets.slice(0, nextRound.assetCount).map((asset) => asset.symbol),
@@ -200,6 +207,23 @@ function App() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    let live = true;
+    void readRoundHistory().then((value) => { if (live) setRoundHistory(value); }).catch(() => undefined);
+    return () => { live = false; };
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const onHash = () => setTab(tabFromHash());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
 
   useEffect(() => {
     const provider = window.ethereum;
@@ -284,7 +308,9 @@ function App() {
       setMessage({ tone: "success", text: relayNow
         ? "Vote signature relayed. Exactly 1 WIF was burned."
         : "Vote submitted from your wallet. Exactly 1 WIF was burned." });
+      setRevealed(true);
       await refresh();
+      void readRoundHistory().then(setRoundHistory);
     } catch (error) {
       setMessage({ tone: "error", text: friendlyError(error, "Vote cancelled or failed.") });
     } finally {
@@ -320,12 +346,12 @@ function App() {
   };
 
   const previewBuy = async () => {
-    if (!round) return;
+    if (!buyMix) return;
     if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before checking prices.` });
     try {
       setBusy("quote");
       setMessage(null);
-      const nextPlan = await buildBuyPlan(buyAmount, round);
+      const nextPlan = await buildBuyPlan(buyAmount, buyMix.round);
       setPlan(nextPlan);
       setMessage({ tone: "success", text: "Price guard passed for every leg. The plan is ready to sign." });
     } catch (error) {
@@ -337,9 +363,8 @@ function App() {
   };
 
   const runBuy = async () => {
-    if (!wallet || !account || !round) return;
+    if (!wallet || !account || !buyMix) return;
     if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before buying.` });
-    if (!round.isOpen) return setMessage({ tone: "info", text: "No vote round is open on mainnet." });
     if (plan.length === 0) return setMessage({ tone: "info", text: "Check prices before buying." });
     try {
       setBusy("buy");
@@ -429,7 +454,7 @@ function App() {
   };
 
   const requestBuy = () => {
-    if (!wallet || !account || chainId !== chain.id || !round?.isOpen) return;
+    if (!wallet || !account || chainId !== chain.id || !buyMix) return;
     if (plan.length === 0) {
       setMessage({ tone: "info", text: "Check prices before buying." });
       return;
@@ -446,156 +471,326 @@ function App() {
     setConfirmingSell(true);
   };
 
-  const roundStatus = round ? (round.isOpen ? "Open" : "Closed") : "Loading";
-  const gasMode = useRelay ? "Signature relayed" : "Wallet gas";
+
+  const gasBadge = useRelay ? "Free gas" : "You pay gas";
   const totalValue = useMemo(
     () => holdings.reduce((sum, holding) => sum + (holding.value || 0), 0),
     [holdings],
   );
+  const voteRoundOpen = Boolean(round?.isOpen);
+  const mixRound = buyMix?.round ?? null;
+  const mixLabel = !mixRound
+    ? "This week's mix"
+    : buyMix?.kind === "final"
+      ? `This week's mix (Round ${mixRound.roundId}, final)`
+      : `Preview mix (Round ${mixRound.roundId}, live)`;
+  const voteLabel = round ? `Vote for next week (Round ${round.roundId})` : "Vote for next week";
+  const closesIn = round && voteRoundOpen ? Number(round.closesAt) - now : null;
+  const mixRows = mixRound
+    ? assets.slice(0, mixRound.assetCount).map((asset, index) => ({ asset, weight: mixRound.weights[index] || 0n }))
+    : [];
+  const buyTotal = Number(buyAmount) || 0;
+  const goTab = (next: Tab) => { window.location.hash = next; setTab(next); window.scrollTo({ top: 0 }); };
+  const walletReady = Boolean(account) && chainId === chain.id;
+  const voteNeedsWallet = !account ? "Connect to vote" : chainId !== chain.id ? "Switch network to vote" : null;
 
   return (
-    <main className="shell">
+    <div className="app">
       <header className="topbar">
-        <div className="brand"><span className="brand-mark" aria-hidden="true">F</span><h1>Flatstock</h1></div>
+        <a className="brand" href="#home" onClick={() => goTab("home")} aria-label="Flatstock home">
+          <img src="/logo.svg" alt="" width="32" height="32" />
+          <span>Flatstock</span>
+        </a>
+        <nav className="tabs desktop-tabs" aria-label="Sections">
+          {TABS.map((item) => <button key={item.id} className={tab === item.id ? "on" : ""} onClick={() => goTab(item.id)}>{item.label}</button>)}
+        </nav>
         <div className="topbar-actions">
-          <span className={`network-pill ${chainId === null ? "" : chainId === chain.id ? "good" : "warn"}`}>
-            {chainId === null ? "Read-only" : chainId === chain.id ? NETWORK_LABEL : "Wrong network"}
+          <span className={`pill ${chainId === null ? "" : chainId === chain.id ? "good" : "warn"}`}>
+            {chainId === null ? NETWORK_LABEL : chainId === chain.id ? NETWORK_LABEL : "Wrong network"}
           </span>
           {account ? (
-            <>
-              <button className="wallet-chip" onClick={() => void refresh()} title={account}>
-                {account.slice(0, 6)}...{account.slice(-4)}
-              </button>
-              <button className="secondary small" onClick={disconnect}>Disconnect</button>
-            </>
+            <button className="chip-btn" onClick={disconnect} title="Disconnect">{account.slice(0, 6)}…{account.slice(-4)}</button>
           ) : (
-            <button className="primary small" onClick={() => void connect()}>Connect wallet</button>
+            <button className="btn primary small" onClick={() => void connect()}>Connect</button>
           )}
         </div>
       </header>
 
-      <section className="notice"><span>Notice</span>{LEGAL_NOTICE} <a href={RESTRICTED_JURISDICTIONS_URL} target="_blank" rel="noopener noreferrer">Restricted jurisdictions</a><details><summary>Full list</summary><p>{RESTRICTED_JURISDICTIONS_TEXT}</p></details></section>
+      <main className="page">
+        {chainId !== null && chainId !== chain.id && (
+          <section className="alert error" role="alert"><strong>Wrong network.</strong> Switch to {NETWORK_LABEL} (4663) to use Flatstock.
+            <span className="alert-actions">
+              <button className="link" onClick={() => void switchNetwork()}>Switch network</button>
+              <button className="link" onClick={() => void addChain()}>Add {NETWORK_LABEL}</button>
+            </span>
+          </section>
+        )}
+        {message && <section className={`alert ${message.tone}`} role={message.tone === "error" ? "alert" : "status"}>{message.text}</section>}
 
-      {chainId !== null && chainId !== chain.id && (
-        <section className="alert error"><strong>Wrong network.</strong> Connect to {NETWORK_LABEL} (4663) to use the live contracts.
-          <button className="text-button" onClick={() => void switchNetwork()}>Switch network</button>
-        </section>
-      )}
-      {message && <section className={`alert ${message.tone}`} role={message.tone === "error" ? "alert" : "status"}>{message.text}</section>}
-
-      <section className="hero card">
-        <div>
-          <p className="eyebrow">Community-picked stocks</p>
-          <h2>Buy the US stocks the community picked, in one tap, with no gas.</h2>
-          <p className="muted">$WIF holders choose the basket. You keep the Stock Tokens in your own wallet.</p>
-          <ol className="steps">
-            <li><b>1</b><span>Vote with $WIF<small>1 WIF per vote, burned</small></span></li>
-            <li><b>2</b><span>Buy the mix<small>One signature, 0% fee</small></span></li>
-            <li><b>3</b><span>Hold it yourself<small>Tokens go to your wallet</small></span></li>
-          </ol>
-        </div>
-        <div className="hero-stats">
-          <div className="hero-stat"><span>Round {round?.roundId.toString() || "..."}</span><strong>{roundStatus}</strong><small>{round ? `${round.totalVotes.toString()} vote${round.totalVotes === 1n ? "" : "s"} so far` : "Loading"}</small></div>
-          <div className="hero-stat"><span>WIF burned by votes</span><strong>{formatWif(votesBurned * ONE_WIF)}</strong><small>1 WIF per vote</small></div>
-        </div>
-      </section>
-
-      <div className="grid two">
-        <section className="card">
-          <div className="section-heading"><div><p className="eyebrow">Step 1 · This week</p><h3>Vote for the mix</h3></div><span className={`status ${round ? (round.isOpen ? "open" : "closed") : "pending"}`}>{roundStatus}</span></div>
-          {round ? (
-            <>
-              <p className="muted">{round.isOpen ? `Closes ${formatDate(round.closesAt)}.` : `Closed ${formatDate(round.closesAt)}.`} {round.totalVotes.toString()} vote{round.totalVotes === 1n ? "" : "s"} counted.</p>
-              <p className="helper">How the mix is set: half equal weight, half community votes. No stock can exceed 50%.{!MIX_RULES_ENABLED ? " Buys stay paused until the new vote contract is configured." : ""}</p>
-              <div className="asset-list">
-                {assets.map((asset, index) => (
-                  <button key={asset.symbol} className={`asset-row ${selectedAsset === index ? "selected" : ""}`} onClick={() => setSelectedAsset(index)} disabled={!round.isOpen || index >= round.assetCount}>
-                    <span className="asset-bar" style={{ width: `${Math.min(100, Number(round.weights[index] || 0n) / 100)}%` }} aria-hidden="true" /><span className="asset-symbol">{asset.symbol}</span><span className="weight">{formatWeightBps(round.weights[index] || 0n)}</span>
-                  </button>
-                ))}
+        {tab === "home" && (
+          <>
+            <section className="panel hero">
+              <p className="eyebrow">{mixLabel}</p>
+              <div className="hero-body">
+                <Ring rows={mixRows.map((row) => ({ label: row.asset.symbol, weight: Number(row.weight) / 100 }))} center={mixRows.length ? `${mixRows.length} stocks` : "..."} />
+                <div className="hero-copy">
+                  <h1>Buy the US stocks the community picked.</h1>
+                  <p className="lede">One tap. No gas with a 10 $WIF lock. Tokens go straight to your wallet.</p>
+                  <ul className="legend">
+                    {mixRows.length === 0 ? <li className="muted">{round ? "No mix yet: the first round has not closed and has no votes." : "Loading the mix from chain..."}</li> : mixRows.map((row, i) => (
+                      <li key={row.asset.symbol}><i style={{ background: RING_COLORS[i % RING_COLORS.length] }} /><b>{row.asset.symbol}</b><span>{formatWeightBps(row.weight)}</span></li>
+                    ))}
+                  </ul>
+                  <div className="cta-row">
+                    <button className="btn primary" disabled={!mixRound} onClick={() => goTab("buy")}>Buy the mix</button>
+                    <button className="btn ghost" onClick={() => goTab("vote")}>Vote for next week</button>
+                  </div>
+                  {buyMix?.kind === "preview" && <p className="helper">Round {mixRound?.roundId.toString()} has not closed yet, so this is the live vote preview. After it closes, buys use its final mix.</p>}
+                </div>
               </div>
-              <button className="secondary full" disabled={!account || chainId !== chain.id || !round.isOpen || alreadyVoted || busy !== null} onClick={requestVote}>
-                {busy === "vote" ? "Waiting for wallet signature..." : alreadyVoted ? "You already voted this round" : account ? "Review vote: burn 1 WIF" : "Connect to vote"}
-              </button>
-              {confirmingVote && <div className="confirmation"><strong>{useRelay ? "Sign this vote" : "Confirm wallet vote"}</strong><p>This action spends exactly 1 WIF and burns it in the vote contract. {useRelay ? "Your wallet will sign the exact round, stock, nonce and deadline. The relayer can submit only that signed vote and pays the ETH gas." : "Your wallet signs the vote transaction and pays the ETH gas."} A first vote on the new contract may also ask for a one-time WIF approval.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runVote()}>Sign and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingVote(false)}>Cancel</button></div></div>}
-              {account && alreadyVoted && <p className="helper">{ALREADY_VOTED_TEXT}</p>}
-              {submittedTx?.action === "vote" && <div className="tx-proof"><strong>Vote submitted and 1 WIF burned.</strong><a href={`${EXPLORER_URL}/tx/${submittedTx.hash}`} target="_blank" rel="noreferrer">View transaction</a></div>}
-              {!round.isOpen && <p className="helper">Voting is closed for now. The next round opens soon.</p>}
-            </>
-          ) : <p className="muted">Loading the live round through the read-only proxy.</p>}
-        </section>
+            </section>
 
-        <section className="card">
-          <div className="section-heading"><div><p className="eyebrow">Your wallet</p><h3>Gas</h3></div><span className={`status ${gasMode === "Signature relayed" ? "open" : "closed"}`}>{useRelay ? "We pay your gas" : "You pay gas"}</span></div>
-          {account ? (
-            <div className="stat-stack">
-              <div><span>ETH balance</span><strong>{formatEth(walletState?.eth || 0n)}</strong></div>
-              <div><span>WIF balance</span><strong>{formatWif(walletState?.wif || 0n)}</strong></div>
-              <div><span>Locked</span><strong>{walletState && walletState.locked > 0n ? formatWif(walletState.locked) : "Not locked"}</strong></div>
-            </div>
-          ) : <p className="muted">Connect a wallet to see if it qualifies for free gas. Lock 10 WIF and we pay the gas for your votes and buys.</p>}
-          <button className="secondary full" disabled={!account || chainId !== chain.id || busy !== null || (walletState?.locked || 0n) > 0n} onClick={() => void runLock()}>
-            {busy === "lock" ? "Waiting for confirmation..." : walletState?.locked ? "Free gas active" : "Lock 10 WIF for free gas"}
-          </button>
-          {account && !hasSponsorLock && <p className="helper">No WIF is locked, so this wallet pays its own ETH gas.</p>}
-          {account && hasSponsorLock && !SIGNATURE_SAFE_WRITES_ENABLED && <p className="helper">Free gas is being configured. Until then this wallet pays its own gas.</p>}
-          {health && <p className="helper">{sponsorshipPaused ? SPONSORSHIP_PAUSED_MESSAGE : `Free gas: ${health.enabled ? `${health.usage || 0} of ${health.dailyCap} sponsored actions used today` : "offline"}.`}</p>}
-        </section>
-      </div>
+            <section className="stats">
+              <div className="tile"><span>{round ? `Round ${round.roundId} closes in` : "Next round"}</span><strong className="mono">{closesIn !== null ? formatCountdown(closesIn) : voteRoundOpen ? "..." : "Not open"}</strong><small>{round ? formatDate(round.closesAt) : ""}</small></div>
+              <div className="tile"><span>$WIF burned by votes</span><strong className="mono">{formatWif((roundHistory?.totalVotes ?? votesBurned) * ONE_WIF)}</strong><small>1 $WIF per vote</small></div>
+              <div className="tile"><span>Your gas</span><strong>{account ? gasBadge : "Connect"}</strong><small>{sponsorshipPaused ? SPONSORSHIP_PAUSED_MESSAGE : "Lock 10 $WIF for free gas"}</small></div>
+            </section>
 
-      <section className="card buy-card">
-        <div className="section-heading"><div><p className="eyebrow">Step 2 · One tap</p><h3>Buy the voted mix</h3></div><span className="quiet">0% trading fee</span></div>
-        <div className="buy-controls"><label>Amount in USDG<input inputMode="decimal" value={buyAmount} onChange={(event) => setBuyAmount(event.target.value)} aria-label="Amount in USDG" /></label><button className="secondary" disabled={!MIX_RULES_ENABLED || chainId !== chain.id || !round?.isOpen || busy !== null} onClick={() => void previewBuy()}>{busy === "quote" ? "Checking prices..." : "Check prices"}</button></div>
-        {plan.length > 0 && <div className="quote-table"><div className="quote-header"><span>Asset</span><span>Quote vs Chainlink</span><span>Guard</span></div>{plan.map((leg) => <div className="quote-row" key={leg.symbol}><span>{leg.symbol}</span><span>${leg.quotePrice.toFixed(2)} / ${leg.chainlinkPrice.toFixed(2)}</span><span className="good-text">{(leg.differenceBps / 100).toFixed(2)}%</span></div>)}</div>}
-        <button className="primary full" disabled={!MIX_RULES_ENABLED || !SIGNATURE_SAFE_WRITES_ENABLED || !account || chainId !== chain.id || !round?.isOpen || plan.length === 0 || busy !== null} onClick={requestBuy}>{busy === "buy" ? "Waiting for wallet signature..." : !MIX_RULES_ENABLED || !SIGNATURE_SAFE_WRITES_ENABLED ? "Buying is being configured" : plan.length === 0 ? "Check prices first" : account ? "Review this mix" : "Connect to buy"}</button>
-        {confirmingBuy && <div className="confirmation"><strong>{useRelay ? "Sign this mix" : "Confirm wallet mix"}</strong><p>This action spends {buyAmount} USDG from your wallet and sends the Stock Tokens directly to your wallet. {useRelay ? "Your wallet signs the exact legs, minimum outputs, amount, nonce and deadline. A separate USDG permit signature lets the relayer pull only this amount and pay the ETH gas." : "Your wallet signs the exact one-transaction mix and pays the ETH gas."} The price guard has passed for every leg.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runBuy()}>Sign and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingBuy(false)}>Cancel</button></div></div>}
-        {submittedTx?.action === "buy" && <div className="tx-proof"><strong>{submittedTx.finality ? `Buy complete at ${submittedTx.finality} finality.` : "Buy submitted. Waiting for finality confirmation."}</strong><a href={`${EXPLORER_URL}/tx/${submittedTx.hash}`} target="_blank" rel="noreferrer">View transaction</a></div>}
-        <p className="helper">Safety check: every price must be within 2% of Chainlink, or the whole purchase is blocked.</p>
-      </section>
+            <ol className="steps">
+              <li><b>01</b><span>Vote<small>Burns 1 $WIF on next week's mix</small></span></li>
+              <li><b>02</b><span>Buy<small>The final mix of the last closed round</small></span></li>
+              <li><b>03</b><span>Hold<small>Your wallet, your keys</small></span></li>
+            </ol>
+          </>
+        )}
 
-      <details className="card fold">
-        <summary><span><span className="eyebrow">Stock Token data</span><strong>Corporate actions</strong></span><span className="quiet">Shares update automatically</span></summary>
-        {corporateActions.length === 0 ? <p className="muted">No recent corporate actions are available for this mix.</p> : <div className="action-list">{corporateActions.slice(0, 6).map((action, index) => {
-          const symbol = action.symbol || "Stock";
-          const label = action.type === "CASH_DIVIDEND"
-            ? `${symbol} paid a dividend, your shares grew.`
-            : action.type === "FORWARD_SPLIT"
-              ? `${symbol} split, your share count grew.`
-              : action.type === "REVERSE_SPLIT"
-                ? `${symbol} reverse split, your share count changed.`
-                : `${symbol} had a corporate action, your shares were updated.`;
-          return <div className="action-row" key={`${symbol}-${action.effectiveAt || index}`}><strong>{label}</strong><small>{action.status || "Recorded"}{action.effectiveAtIso ? ` · ${formatDate(BigInt(action.effectiveAt || 0))}` : ""}</small></div>;
-        })}</div>}
-      </details>
+        {tab === "vote" && (
+          <section className="panel vote">
+            <p className="eyebrow">{voteLabel}</p>
+            {!round ? <p className="muted">Loading the live round...</p> : !voteRoundOpen ? (
+              <p className="muted">No round is open for voting right now. The next round opens soon, and buying keeps working in the meantime.</p>
+            ) : revealed && submittedTx?.action === "vote" ? (
+              <div className="reveal">
+                <h2>1 $WIF burned.</h2>
+                <p className="lede">Your vote for {assets[selectedAsset]?.symbol} is in. This is how next week's mix looks now:</p>
+                <ul className="legend big">
+                  {assets.slice(0, round.assetCount).map((asset, i) => <li key={asset.symbol}><i style={{ background: RING_COLORS[i % RING_COLORS.length] }} /><b>{asset.symbol}</b><span>{formatWeightBps(round.weights[i] || 0n)}</span></li>)}
+                </ul>
+                <a className="link" href={txLink(submittedTx.hash)} target="_blank" rel="noreferrer">View transaction</a>
+                <button className="btn ghost" onClick={() => setRevealed(false)}>Back</button>
+              </div>
+            ) : (
+              <>
+                <p className="muted center">Pick the stock you want more of in next week's mix. One vote per wallet per round, 1 $WIF burned.</p>
+                <div className="orbit" role="radiogroup" aria-label="Pick a stock">
+                  <div className="orbit-ring" aria-hidden="true" />
+                  <div className="orbit-center">
+                    <small>You are voting for</small>
+                    <strong>{assets[selectedAsset]?.symbol}</strong>
+                    <span className="mono">{formatWeightBps(round.weights[selectedAsset] || 0n)} now</span>
+                  </div>
+                  {assets.slice(0, round.assetCount).map((asset, index, list) => (
+                    <button key={asset.symbol} role="radio" aria-checked={selectedAsset === index} className={`orbit-chip ${selectedAsset === index ? "on" : ""}`}
+                      style={{ "--a": `${(360 / list.length) * index - 90}deg`, "--d": `${index * 0.8}s` } as CSSProperties} onClick={() => setSelectedAsset(index)} disabled={alreadyVoted}>
+                      <span>{asset.symbol}<em className="mono">{formatWeightBps(round.weights[index] || 0n)}</em></span>
+                    </button>
+                  ))}
+                </div>
+                <div className="cta-row center">
+                  <button className="btn primary" disabled={Boolean(voteNeedsWallet) || alreadyVoted || busy !== null} onClick={requestVote}>
+                    {busy === "vote" ? "Waiting for wallet signature..." : alreadyVoted ? "You already voted this round" : voteNeedsWallet || "Review vote: burn 1 $WIF"}
+                  </button>
+                </div>
+                {alreadyVoted && <p className="helper center">{ALREADY_VOTED_TEXT}</p>}
+                {confirmingVote && <div className="confirm"><strong>{useRelay ? "Sign this vote" : "Confirm wallet vote"}</strong><p>This spends exactly 1 $WIF and burns it. {useRelay ? "Your wallet signs the exact round, stock, nonce and deadline. The relayer submits only that and pays the gas." : "Your wallet sends the vote and you pay the ETH gas."} A first vote may also ask for a one-time $WIF approval.</p><div className="cta-row"><button className="btn primary" disabled={busy !== null} onClick={() => void runVote()}>Sign and submit</button><button className="btn ghost" disabled={busy !== null} onClick={() => setConfirmingVote(false)}>Cancel</button></div></div>}
+                {submittedTx?.action === "vote" && !revealed && <div className="proof"><strong>Vote submitted and 1 $WIF burned.</strong><a href={txLink(submittedTx.hash)} target="_blank" rel="noreferrer">View transaction</a></div>}
+              </>
+            )}
+          </section>
+        )}
 
-      <section className="card buy-card">
-        <div className="section-heading"><div><p className="eyebrow">Step 3 · Exit any time</p><h3>Sell a Stock Token</h3></div><span className="quiet">USDG straight to your wallet</span></div>
-        <div className="buy-controls">
-          <label>Asset<select value={sellSymbol} onChange={(event) => { setSellSymbol(event.target.value); setSellPlan(null); }} aria-label="Stock Token to sell">
-            {assets.map((asset) => <option key={asset.symbol} value={asset.symbol}>{asset.symbol}</option>)}
-          </select></label>
-          <label>Amount in shares<input inputMode="decimal" value={sellAmount} onChange={(event) => { setSellAmount(event.target.value); setSellPlan(null); }} aria-label="Amount in shares to sell" /></label>
-          <button className="secondary" disabled={!account || chainId !== chain.id || busy !== null} onClick={() => void previewSell()}>{busy === "sell-quote" ? "Checking price..." : "Check sell price"}</button>
-        </div>
-        {sellPlan && <div className="quote-table"><div className="quote-header"><span>Asset</span><span>Quote vs Chainlink</span><span>Guard</span></div><div className="quote-row"><span>{sellPlan.symbol}</span><span>${sellPlan.quotePrice.toFixed(2)} / ${sellPlan.chainlinkPrice.toFixed(2)}</span><span className="good-text">{(sellPlan.differenceBps / 100).toFixed(2)}%</span></div></div>}
-        <button className="primary full" disabled={!account || chainId !== chain.id || !sellPlan || busy !== null} onClick={requestSell}>{busy === "sell" ? "Submitting permit and sell..." : sellPlan ? `Review ${sellPlan.symbol} sell` : "Check sell price first"}</button>
-        {confirmingSell && sellPlan && <div className="confirmation"><strong>{useRelay ? `Sign ${sellPlan.symbol} sell` : `Confirm ${sellPlan.symbol} sell`}</strong><p>This action sells {sellAmount} shares back to USDG and sends the output directly to your wallet. {useRelay ? "You will sign two exact messages: a Stock Token permit for this token and amount, then the sell action. The relayer submits the permit first and sellBySig second in separate transactions, and pays both gas costs. Both signatures expire in 5 minutes. A failed sell cannot use a different token or amount, and it cannot be submitted after the signed action expires." : "Your wallet signs the exact transaction and pays the ETH gas."} The price guard passed.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runSell()}>Sign and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingSell(false)}>Cancel</button></div></div>}
-        {submittedTx?.action === "sell" && <div className="tx-proof"><strong>Sell submitted.</strong><a href={`${EXPLORER_URL}/tx/${submittedTx.hash}`} target="_blank" rel="noreferrer">View transaction</a></div>}
-        <p className="helper">Safety check: the price must be fresh and within 2% of Chainlink.</p>
-      </section>
+        {tab === "buy" && (
+          <section className="panel">
+            <div className="row-between"><div><p className="eyebrow">{mixLabel}</p><h2>Buy the mix</h2></div><span className={`pill ${useRelay ? "good" : "warn"}`}>{gasBadge}</span></div>
+            {!buyMix ? <p className="muted">There is no mix to buy yet. The first round closes Mon 9 Nov 15:00 WAT, after that buys use its final mix.</p> : (
+              <>
+                {buyMix.kind === "preview" && <p className="helper">Round {buyMix.round.roundId.toString()} is still open, so this is the live preview of the mix. After it closes, buys use its final mix.</p>}
+                <label className="field">Amount in USDG
+                  <input inputMode="decimal" value={buyAmount} onChange={(event) => { setBuyAmount(event.target.value); setPlan([]); }} aria-label="Amount in USDG" />
+                </label>
+                <div className="presets">{["5", "10", "25"].map((value) => <button key={value} className={buyAmount === value ? "on" : ""} onClick={() => { setBuyAmount(value); setPlan([]); }}>${value}</button>)}</div>
+                <ul className="split">
+                  {mixRows.map((row, i) => (
+                    <li key={row.asset.symbol}><i style={{ background: RING_COLORS[i % RING_COLORS.length] }} /><b>{row.asset.symbol}</b><span className="mono">{formatWeightBps(row.weight)}</span><span className="mono">≈ ${(buyTotal * Number(row.weight) / 10_000).toFixed(2)}</span></li>
+                  ))}
+                </ul>
+                <button className="btn ghost full" disabled={!MIX_RULES_ENABLED || chainId !== chain.id || busy !== null} onClick={() => void previewBuy()}>{busy === "quote" ? "Checking prices..." : "Check prices"}</button>
+                {plan.length > 0 && <div className="quotes"><div className="qh"><span>Stock</span><span>Quote / Chainlink</span><span>Gap</span></div>{plan.map((leg) => <div className="qr" key={leg.symbol}><b>{leg.symbol}</b><span className="mono">${leg.quotePrice.toFixed(2)} / ${leg.chainlinkPrice.toFixed(2)}</span><span className="good-text mono">{(leg.differenceBps / 100).toFixed(2)}%</span></div>)}</div>}
+                <button className="btn primary full" disabled={!MIX_RULES_ENABLED || !SIGNATURE_SAFE_WRITES_ENABLED || !walletReady || plan.length === 0 || busy !== null} onClick={requestBuy}>{busy === "buy" ? "Waiting for wallet signature..." : !MIX_RULES_ENABLED || !SIGNATURE_SAFE_WRITES_ENABLED ? "Buying is being configured" : !account ? "Connect to buy" : chainId !== chain.id ? "Switch network to buy" : plan.length === 0 ? "Check prices first" : "Review this mix"}</button>
+                {confirmingBuy && <div className="confirm"><strong>{useRelay ? "Sign this mix" : "Confirm wallet mix"}</strong><p>This spends {buyAmount} USDG and sends the Stock Tokens directly to your wallet. {useRelay ? "Your wallet signs the exact legs, minimum outputs, amount, nonce and deadline. A separate USDG permit lets the relayer pull only this amount and pay the gas." : "Your wallet signs the one-transaction mix and you pay the ETH gas."} The price guard passed for every leg.</p><div className="cta-row"><button className="btn primary" disabled={busy !== null} onClick={() => void runBuy()}>Sign and submit</button><button className="btn ghost" disabled={busy !== null} onClick={() => setConfirmingBuy(false)}>Cancel</button></div></div>}
+                {submittedTx?.action === "buy" && <div className="proof"><strong>{submittedTx.finality ? `Buy complete at ${submittedTx.finality} finality.` : "Buy submitted. Waiting for finality confirmation."}</strong><a href={txLink(submittedTx.hash)} target="_blank" rel="noreferrer">View transaction</a></div>}
+                <p className="helper">Safety check: every price must be within 2% of Chainlink, or the whole purchase is blocked. 0% trading fee.</p>
+              </>
+            )}
+          </section>
+        )}
 
-      <section className="card">
-        <div className="section-heading"><div><p className="eyebrow">Your holdings</p><h3>Portfolio</h3></div><strong className="portfolio-total">${totalValue.toFixed(2)}</strong></div>
-        {!account ? <p className="muted">Connect a wallet to see Stock Tokens held by that wallet.</p> : <div className="portfolio-list">{holdings.map((holding) => <button className="portfolio-row portfolio-button" key={holding.symbol} onClick={() => { setSellSymbol(holding.symbol); setSellPlan(null); }}><div><strong>{holding.symbol}</strong><small>{holding.shares ? `${holding.shares} shares` : Number(holding.balance) / 1e18 > 0 ? `${(Number(holding.balance) / 1e18).toFixed(6)} raw` : "No tokens"}</small></div><div>{holding.price === null ? "Price unavailable" : `$${holding.price.toFixed(2)}`}<small>{holding.value === null ? "" : `$${holding.value.toFixed(2)}`}</small></div></button>)}</div>}
-      </section>
+        {tab === "portfolio" && (
+          <>
+            <section className="panel">
+              <div className="row-between"><div><p className="eyebrow">Your holdings</p><h2>Portfolio</h2></div><strong className="mono total">${totalValue.toFixed(2)}</strong></div>
+              {!account ? <p className="muted">Connect a wallet to see Stock Tokens held by that wallet.</p> : <ul className="holdings">{holdings.map((holding) => <li key={holding.symbol}><button onClick={() => { setSellSymbol(holding.symbol); setSellPlan(null); }}><span><b>{holding.symbol}</b><small>{holding.shares ? `${holding.shares} shares` : Number(holding.balance) / 1e18 > 0 ? `${(Number(holding.balance) / 1e18).toFixed(6)} raw` : "No tokens"}</small></span><span className="mono">{holding.price === null ? "Price unavailable" : `$${holding.price.toFixed(2)}`}<small>{holding.value === null ? "" : `$${holding.value.toFixed(2)}`}</small></span></button></li>)}</ul>}
+            </section>
+            <section className="panel">
+              <p className="eyebrow">Sell</p><h2>Sell a Stock Token</h2>
+              <div className="form-row">
+                <label className="field">Stock<select value={sellSymbol} onChange={(event) => { setSellSymbol(event.target.value); setSellPlan(null); }} aria-label="Stock Token to sell">{assets.map((asset) => <option key={asset.symbol} value={asset.symbol}>{asset.symbol}</option>)}</select></label>
+                <label className="field">Shares<input inputMode="decimal" value={sellAmount} onChange={(event) => { setSellAmount(event.target.value); setSellPlan(null); }} aria-label="Amount in shares to sell" /></label>
+              </div>
+              <button className="btn ghost full" disabled={!walletReady || busy !== null} onClick={() => void previewSell()}>{busy === "sell-quote" ? "Checking price..." : "Check sell price"}</button>
+              {sellPlan && <div className="quotes"><div className="qh"><span>Stock</span><span>Quote / Chainlink</span><span>Gap</span></div><div className="qr"><b>{sellPlan.symbol}</b><span className="mono">${sellPlan.quotePrice.toFixed(2)} / ${sellPlan.chainlinkPrice.toFixed(2)}</span><span className="good-text mono">{(sellPlan.differenceBps / 100).toFixed(2)}%</span></div></div>}
+              <button className="btn primary full" disabled={!walletReady || !sellPlan || busy !== null} onClick={requestSell}>{busy === "sell" ? "Submitting permit and sell..." : sellPlan ? `Review ${sellPlan.symbol} sell` : "Check sell price first"}</button>
+              {confirmingSell && sellPlan && <div className="confirm"><strong>{useRelay ? `Sign ${sellPlan.symbol} sell` : `Confirm ${sellPlan.symbol} sell`}</strong><p>This sells {sellAmount} shares back to USDG and sends the output to your wallet. {useRelay ? "You sign two exact messages: a Stock Token permit for this token and amount, then the sell. The relayer submits both and pays the gas. Both signatures expire in 5 minutes." : "Your wallet signs the exact transaction and you pay the ETH gas."} The price guard passed.</p><div className="cta-row"><button className="btn primary" disabled={busy !== null} onClick={() => void runSell()}>Sign and submit</button><button className="btn ghost" disabled={busy !== null} onClick={() => setConfirmingSell(false)}>Cancel</button></div></div>}
+              {submittedTx?.action === "sell" && <div className="proof"><strong>Sell submitted.</strong><a href={txLink(submittedTx.hash)} target="_blank" rel="noreferrer">View transaction</a></div>}
+              <p className="helper">Safety check: the price must be fresh and within 2% of Chainlink.</p>
+            </section>
+            {corporateActions.length > 0 && <section className="panel"><p className="eyebrow">Stock Token data</p><h2>Corporate actions</h2><ul className="plain">{corporateActions.slice(0, 6).map((action, index) => {
+              const symbol = action.symbol || "Stock";
+              const label = action.type === "CASH_DIVIDEND" ? `${symbol} paid a dividend, your shares grew.` : action.type === "FORWARD_SPLIT" ? `${symbol} split, your share count grew.` : action.type === "REVERSE_SPLIT" ? `${symbol} reverse split, your share count changed.` : `${symbol} had a corporate action, your shares were updated.`;
+              return <li key={`${symbol}-${action.effectiveAt || index}`}><b>{label}</b><small>{action.status || "Recorded"}{action.effectiveAtIso ? ` · ${formatDate(BigInt(action.effectiveAt || 0))}` : ""}</small></li>;
+            })}</ul></section>}
+            <section className="panel">
+              <p className="eyebrow">On-chain record</p><h2>History</h2>
+              {!account ? <p className="muted">Connect a wallet to load its votes, buys and sells.</p> : history.length === 0 ? <p className="muted">No votes, buys or sells found for this wallet yet.</p> : <ul className="plain">{history.slice(0, 20).map((item) => <li key={`${item.hash}-${item.kind}`}><b>{item.title}</b><small>{item.date} · {item.amount} · <a href={item.link} target="_blank" rel="noreferrer">Blockscout</a></small></li>)}</ul>}
+            </section>
+          </>
+        )}
 
-      <section className="card">
-        <div className="section-heading"><div><p className="eyebrow">On-chain record</p><h3>History</h3></div><span className="quiet">Votes, buys and sells</span></div>
-        {!account ? <p className="muted">Connect any wallet to load its history from contract events.</p> : history.length === 0 ? <p className="muted">No votes, buys or sells found for this wallet.</p> : <div className="action-list">{history.slice(0, 20).map((item) => <div className="action-row" key={`${item.hash}-${item.kind}`}><strong>{item.title}</strong><small>{item.date} · {item.amount} · <a href={item.link} target="_blank" rel="noreferrer">Blockscout</a></small></div>)}</div>}
-      </section>
+        {tab === "more" && (
+          <>
+            <section className="panel">
+              <div className="row-between"><div><p className="eyebrow">Free gas</p><h2>10 $WIF lock</h2></div><span className={`pill ${hasSponsorLock ? "good" : "warn"}`}>{hasSponsorLock ? "Active" : "Not locked"}</span></div>
+              {account ? <ul className="kv"><li><span>ETH balance</span><b className="mono">{formatEth(walletState?.eth || 0n)}</b></li><li><span>$WIF balance</span><b className="mono">{formatWif(walletState?.wif || 0n)}</b></li><li><span>Locked</span><b className="mono">{walletState && walletState.locked > 0n ? formatWif(walletState.locked) : "Not locked"}</b></li></ul> : <p className="muted">Connect a wallet to see its balances and lock status.</p>}
+              <p className="muted">Lock 10 $WIF and we pay the gas for your votes and buys, up to {health?.dailyCap ?? 3} sponsored actions per day.</p>
+              <button className="btn ghost full" disabled={!walletReady || busy !== null || (walletState?.locked || 0n) > 0n} onClick={() => void runLock()}>{busy === "lock" ? "Waiting for confirmation..." : walletState?.locked ? "Free gas active" : "Lock 10 $WIF for free gas"}</button>
+              {account && !hasSponsorLock && <p className="helper">No $WIF is locked, so this wallet pays its own ETH gas.</p>}
+              {account && hasSponsorLock && !SIGNATURE_SAFE_WRITES_ENABLED && <p className="helper">Free gas is being configured. Until then this wallet pays its own gas.</p>}
+              {health && <p className="helper">{sponsorshipPaused ? SPONSORSHIP_PAUSED_MESSAGE : `Free gas: ${health.enabled ? `${health.usage || 0} of ${health.dailyCap} sponsored actions used today` : "offline"}.`}</p>}
+            </section>
 
-      <footer><span>Self-custody only. The app never holds your funds.</span><span>Live data from {NETWORK_LABEL} (4663).</span><span>Flatstock is independent and not affiliated with Robinhood.</span></footer>
-    </main>
+            <section className="panel">
+              <p className="eyebrow">Rounds</p><h2>Past rounds</h2>
+              {!roundHistory ? <p className="muted">Loading rounds from chain...</p> : roundHistory.main.length === 0 ? <p className="muted">No rounds found yet.</p> : (
+                <ul className="rounds">{roundHistory.main.map((item) => <RoundCard key={item.key} item={item} />)}</ul>
+              )}
+              {roundHistory && roundHistory.tests.length > 0 && (
+                <details className="fold">
+                  <summary>Test rounds (earlier contract) <small>{roundHistory.tests.length} · {roundHistory.tests.reduce((sum, item) => sum + item.votes, 0n).toString()} $WIF burned</small></summary>
+                  <p className="helper">These ran on earlier test contracts that are retired. They are listed so the $WIF burned total matches: {formatWif((roundHistory.totalVotes) * ONE_WIF)} in all.</p>
+                  <ul className="rounds">{roundHistory.tests.map((item) => <RoundCard key={item.key} item={item} test />)}</ul>
+                </details>
+              )}
+            </section>
+
+            <section className="panel">
+              <p className="eyebrow">Contracts</p><h2>Verified on Blockscout</h2>
+              <ul className="plain">
+                <li><b>Votes (current)</b><small><a href={addressLink(addresses.votes)} target="_blank" rel="noreferrer">{addresses.votes}</a></small></li>
+                <li><b>Router</b><small><a href={addressLink(addresses.buyRouter)} target="_blank" rel="noreferrer">{addresses.buyRouter}</a></small></li>
+                <li><b>Lock</b><small><a href={addressLink(addresses.lock)} target="_blank" rel="noreferrer">{addresses.lock}</a></small></li>
+              </ul>
+              <button className="btn ghost full" onClick={() => void addChain()}>Add {NETWORK_LABEL} to my wallet</button>
+            </section>
+          </>
+        )}
+
+        <section className="notice"><b>Notice</b> {LEGAL_NOTICE} <a href={RESTRICTED_JURISDICTIONS_URL} target="_blank" rel="noopener noreferrer">Restricted jurisdictions</a><details><summary>Full list</summary><p>{RESTRICTED_JURISDICTIONS_TEXT}</p></details></section>
+        <footer><span>Self-custody only. The app never holds your funds.</span><span>Live data from {NETWORK_LABEL} (4663).</span><span>Flatstock is independent and not affiliated with Robinhood.</span></footer>
+      </main>
+
+      <nav className="tabs bottom-tabs" aria-label="Sections">
+        {TABS.map((item) => <button key={item.id} className={tab === item.id ? "on" : ""} onClick={() => goTab(item.id)}><span aria-hidden="true">{item.icon}</span>{item.label}</button>)}
+      </nav>
+    </div>
+  );
+}
+
+type Tab = "home" | "vote" | "buy" | "portfolio" | "more";
+const TABS: { id: Tab; label: string; icon: string }[] = [
+  { id: "home", label: "Home", icon: "◔" },
+  { id: "vote", label: "Vote", icon: "◎" },
+  { id: "buy", label: "Buy", icon: "＋" },
+  { id: "portfolio", label: "Portfolio", icon: "▤" },
+  { id: "more", label: "More", icon: "⋯" },
+];
+function tabFromHash(): Tab {
+  const hash = window.location.hash.replace("#", "");
+  return (TABS.find((item) => item.id === hash)?.id ?? "home") as Tab;
+}
+
+const RING_COLORS = ["#2BD67B", "#1FA35E", "#8FE6B3", "#0F7A45", "#C8F2D9", "#5BB98A", "#3E8E66", "#A5D8BB"];
+
+function formatCountdown(seconds: number) {
+  if (seconds <= 0) return "Closing";
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  return days > 0 ? `${days}d ${hours}h ${minutes}m` : `${hours}h ${String(minutes).padStart(2, "0")}m ${String(secs).padStart(2, "0")}s`;
+}
+
+async function addChain() {
+  const provider = window.ethereum;
+  if (!provider?.request) return;
+  try {
+    await provider.request({
+      method: "wallet_addEthereumChain",
+      params: [{
+        chainId: `0x${chain.id.toString(16)}`,
+        chainName: NETWORK_LABEL,
+        nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+        rpcUrls: ["https://rpc.mainnet.chain.robinhood.com"],
+        blockExplorerUrls: [EXPLORER_URL],
+      }],
+    });
+  } catch {
+    // The user declined in the wallet; nothing to do.
+  }
+}
+
+function Ring({ rows, center }: { rows: { label: string; weight: number }[]; center: string }) {
+  const radius = 54;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+  return (
+    <svg className="ring" viewBox="0 0 140 140" role="img" aria-label={rows.map((row) => `${row.label} ${row.weight.toFixed(0)}%`).join(", ") || "Mix loading"}>
+      <circle cx="70" cy="70" r={radius} className="ring-track" />
+      {rows.map((row, index) => {
+        const length = (row.weight / 100) * circumference;
+        const circle = <circle key={row.label} cx="70" cy="70" r={radius} className="ring-seg" stroke={RING_COLORS[index % RING_COLORS.length]} strokeDasharray={`${Math.max(length - 2, 0)} ${circumference}`} strokeDashoffset={-offset} />;
+        offset += length;
+        return circle;
+      })}
+      <text x="70" y="75" textAnchor="middle" className="ring-text">{center}</text>
+    </svg>
+  );
+}
+
+function RoundCard({ item, test = false }: { item: PastRound; test?: boolean }) {
+  const label = item.status === "closed" ? "Final" : item.status === "open" ? "Open" : item.status === "ended" ? "Ended" : "Unknown";
+  return (
+    <li className="round">
+      <div className="row-between"><strong className="round-no">Round {item.roundId.toString()}</strong><span className={`pill ${item.status === "closed" ? "good" : ""}`}>{test ? "Test · " : ""}{label}</span></div>
+      {item.weights ? (
+        <ul className="legend">{assets.slice(0, item.assetCount).map((asset, i) => <li key={asset.symbol}><i style={{ background: RING_COLORS[i % RING_COLORS.length] }} /><b>{asset.symbol}</b><span>{formatWeightBps(item.weights?.[i] || 0n)}</span></li>)}</ul>
+      ) : null}
+      <p className="helper">{item.votes.toString()} vote{item.votes === 1n ? "" : "s"} · {item.votes.toString()} $WIF burned{item.closesAt ? ` · closes ${formatDate(item.closesAt)}` : ""}{test ? ` · ${item.contractLabel}` : ""}</p>
+      <p className="helper">
+        {item.openTx && <><a href={txLink(item.openTx)} target="_blank" rel="noreferrer">Open tx</a> · </>}
+        {item.closeTx && <><a href={txLink(item.closeTx)} target="_blank" rel="noreferrer">Close tx</a> · </>}
+        <a href={addressLink(item.contract)} target="_blank" rel="noreferrer">Contract</a>
+      </p>
+    </li>
   );
 }
 

@@ -599,12 +599,13 @@ export async function readAllowance(token: Address, owner: Address, spender: Add
 
 export async function buildBuyPlan(amountText: string, round: RoundState): Promise<BuyLeg[]> {
   if (!MIX_RULES_ENABLED) throw new Error("The new vote contract is not configured for mix buys yet.");
-  if (!round.isOpen) throw new Error("No vote round is open on mainnet.");
-  if (round.totalVotes === 0n) throw new Error("The open round has no votes yet.");
+  // Buys use the final mix of the most recent closed round. Before any round has closed the app
+  // passes the open round as a labelled preview, which still needs at least one vote.
+  if (!round.closed && round.totalVotes === 0n) throw new Error("No votes yet, so there is no mix to buy. Vote first.");
   const total = parseUnits(amountText, 6);
   if (total <= 0n) throw new Error("Enter a positive USDG amount.");
   const active = assets.filter((_, index) => index < round.assetCount && round.weights[index] > 0n);
-  if (active.length === 0) throw new Error("The open round has no weighted assets.");
+  if (active.length === 0) throw new Error("This round has no weighted assets.");
   const oracleHealth = await readOracleHealth(active.map((asset) => asset.symbol));
   assertHealthyOracles(oracleHealth, active.map((asset) => asset.symbol));
   let allocated = 0n;
