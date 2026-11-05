@@ -2384,3 +2384,17 @@ fix 4072deb: prefers META_VOTES_ADDRESS, refuses a round whose closesAt differs 
   CLOSE_ROUND_EXPECTED_CLOSES_AT, read-only status when disabled, 8/8 logic tests pass
 round 5: the bot only calls closeRound; openRound is onlyOwner, so it cannot open round 5
 ```
+
+## 2026-11-05 Claude Code (local): low-balance guard fork test
+
+No mainnet transaction was sent. Local anvil fork of chain 4663 (balances changed only inside the fork).
+
+```text
+bash web/relayer/run-fork-test.sh
+forked relayer balance: 0.000082446419572223 ETH
+0.0002 ETH -> paused=true reason=low-balance
+0.0003 ETH -> paused=false
+0.005 ETH -> paused=false
+✔ guard follows the forked relayer balance
+tests 1, pass 1, fail 0
+```
