@@ -78,10 +78,21 @@ function relayAvailable(health: Health | null) {
 type SubmittedTx = { action: "vote" | "buy" | "sell"; hash: Hex; finality?: string };
 
 // Turn raw viem/RPC errors into one short, readable line. Full detail stays in the console.
+async function readHasVoted(roundId: bigint, voter: Address) {
+  try {
+    return (await publicClient.readContract({ address: addresses.votes, abi: votesAbi, functionName: "hasVoted", args: [roundId, voter] })) as boolean;
+  } catch {
+    return false;
+  }
+}
+
+const ALREADY_VOTED_TEXT = "You have already voted in this round. Each wallet gets one vote per round, so no WIF was spent. Use a different wallet to vote again, or wait for the next round.";
+
 function friendlyError(error: unknown, fallback: string) {
   if (!(error instanceof Error)) return fallback;
   const short = (error as { shortMessage?: string }).shortMessage;
   const text = short || error.message;
+  if (/already ?voted/i.test(text)) return ALREADY_VOTED_TEXT;
   if (/user rejected|user denied|rejected the request/i.test(text)) return "You cancelled in your wallet. Nothing was sent.";
   if (text.length > 220 || /\n/.test(text) || /request body|http request failed/i.test(text)) {
     console.error(error);
@@ -101,6 +112,7 @@ function App() {
   const [walletState, setWalletState] = useState<Awaited<ReturnType<typeof readWalletState>> | null>(null);
   const [votesBurned, setVotesBurned] = useState<bigint>(0n);
   const [health, setHealth] = useState<Health | null>(null);
+  const [alreadyVoted, setAlreadyVoted] = useState(false);
   const [buyAmount, setBuyAmount] = useState("5");
   const [selectedAsset, setSelectedAsset] = useState(0);
   const [plan, setPlan] = useState<BuyLeg[]>([]);
@@ -135,6 +147,7 @@ function App() {
         ]);
         setHoldings(nextHoldings);
         setWalletState(nextWallet);
+        setAlreadyVoted(await readHasVoted(nextRound.roundId, connectedAccount));
         setHistory(await readHistory(connectedAccount));
         setHealth(await fetchRelayHealth(connectedAccount));
       }
@@ -243,6 +256,11 @@ function App() {
     if (!wallet || !account || !round) return;
     if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before voting.` });
     if (!round.isOpen) return setMessage({ tone: "info", text: "No vote round is open on mainnet." });
+    if (await readHasVoted(round.roundId, account)) {
+      setAlreadyVoted(true);
+      setConfirmingVote(false);
+      return setMessage({ tone: "info", text: ALREADY_VOTED_TEXT });
+    }
     try {
       setBusy("vote");
       setConfirmingVote(false);
@@ -496,10 +514,11 @@ function App() {
                   </button>
                 ))}
               </div>
-              <button className="secondary full" disabled={!account || chainId !== chain.id || !round.isOpen || busy !== null} onClick={requestVote}>
-                {busy === "vote" ? "Waiting for wallet signature..." : account ? "Review vote: burn 1 WIF" : "Connect to vote"}
+              <button className="secondary full" disabled={!account || chainId !== chain.id || !round.isOpen || alreadyVoted || busy !== null} onClick={requestVote}>
+                {busy === "vote" ? "Waiting for wallet signature..." : alreadyVoted ? "You already voted this round" : account ? "Review vote: burn 1 WIF" : "Connect to vote"}
               </button>
               {confirmingVote && <div className="confirmation"><strong>{useRelay ? "Sign this vote" : "Confirm wallet vote"}</strong><p>This action spends exactly 1 WIF and burns it in the vote contract. {useRelay ? "Your wallet will sign the exact round, stock, nonce and deadline. The relayer can submit only that signed vote and pays the ETH gas." : "Your wallet signs the vote transaction and pays the ETH gas."} A first vote on the new contract may also ask for a one-time WIF approval.</p><div className="confirmation-actions"><button className="primary" disabled={busy !== null} onClick={() => void runVote()}>Sign and submit</button><button className="secondary" disabled={busy !== null} onClick={() => setConfirmingVote(false)}>Cancel</button></div></div>}
+              {account && alreadyVoted && <p className="helper">{ALREADY_VOTED_TEXT}</p>}
               {submittedTx?.action === "vote" && <div className="tx-proof"><strong>Vote submitted and 1 WIF burned.</strong><a href={`${EXPLORER_URL}/tx/${submittedTx.hash}`} target="_blank" rel="noreferrer">View transaction</a></div>}
               {!round.isOpen && <p className="helper">Voting is closed for now. The next round opens soon.</p>}
             </>

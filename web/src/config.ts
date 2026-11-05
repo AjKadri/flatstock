@@ -100,6 +100,7 @@ export const votesAbi = parseAbi([
   "function voteNonces(address voter) view returns (uint256)",
   "function voteBySig(address voter, uint256 roundId, uint8 assetIndex, uint256 nonce, uint256 deadline, bytes signature)",
   "function votesFor(uint256 roundId, uint8 assetIndex) view returns (uint256)",
+  "function hasVoted(uint256 roundId, address voter) view returns (bool)",
   "function weightBps(uint256 roundId, uint8 assetIndex) view returns (uint256)",
 ]);
 
