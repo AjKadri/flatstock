@@ -11,3 +11,5 @@ cache/
 web/dist/
 web/tsconfig.tsbuildinfo
 
+
+.claude/
