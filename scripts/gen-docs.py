@@ -8,7 +8,7 @@ VOTES="0x4BB945800d588E6B4DB287b3fCe9C13f7825A968"; ROUTER="0x8799a2eF390dE8b0Ef
 WIF="0x5173b8eA6923c2d40267890D45C46a3480954773"; USDG="0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
 NOTICE = 'Not available to US persons, or in Canada, the UK, Switzerland or other restricted jurisdictions. Not investment advice. <a href="https://docs.robinhood.com/rhj/restricted-jurisdictions" target="_blank" rel="noopener noreferrer">Restricted jurisdictions</a>'
 NAV = [("", "Overview"), ("getting-started","Getting started"), ("voting","Voting"), ("trading","Buying and selling"), ("gas-and-lock","Gas and the 10 $WIF lock"),
-       ("security","Security model"), ("contracts","Contracts and addresses"), ("fees","Fees"), ("risks","Eligibility and risks"), ("faq","FAQ"), ("changelog","Changelog"), ("terms","Terms"), ("privacy","Privacy"), ("credits","Credits")]
+       ("security","Security model"), ("tech-stack","Tech stack"), ("contracts","Contracts and addresses"), ("fees","Fees"), ("risks","Eligibility and risks"), ("faq","FAQ"), ("changelog","Changelog"), ("terms","Terms"), ("privacy","Privacy"), ("credits","Credits")]
 P = {}
 P[""] = ("Overview", """
 <p class="lede">Flatstock lets you buy the US stocks the community picked, in one tap, with no gas. $WIF holders vote each round on a three-stock mix; you buy that mix into your own wallet on Robinhood Chain.</p>
@@ -40,6 +40,7 @@ P["getting-started"] = ("Getting started", f"""
 """)
 P["voting"] = ("Voting", """
 <h2>Rounds</h2><p>A round has a list of stocks (round 4 has three: AAPL, NVDA, MSFT; round 5 has eight: those plus AMZN, GOOGL, META, TSLA and SPY, the S&amp;P 500 ETF), an opening time and a closing time. The app always votes on the <b>open</b> round. After a round closes, its mix is frozen and used for buying.</p>
+<h2>One vote per wallet, counted on-chain</h2><p>The contract allows one vote per wallet per round, and every vote is an on-chain event anyone can check on Blockscout. Flatstock does not check who you are, so one person <i>can</i> use several wallets. That is allowed, but it is not free: each extra wallet's vote costs another 1 $WIF, and every one of those is burned like any other vote. Splitting across wallets does not make voting cheaper, it only burns more $WIF.</p>
 <h2>Casting a vote</h2><ul><li><b>One vote per wallet per round.</b> A second attempt is rejected, and the app tells you so before spending anything.</li><li>Each vote <b>burns exactly 1 $WIF</b>, permanently.</li><li>The first vote on a contract may ask for a one-time $WIF approval.</li><li>With the 10 $WIF lock, you sign the vote and the relayer pays the gas. Without it, your wallet sends the transaction and you pay the ETH gas.</li><li>Signed votes expire after 15 minutes.</li></ul>
 <h2>How the mix is computed</h2>
 <p>The mix is a blend: <b>50% equal weight + 50% vote share</b>, then <b>no stock may exceed 50%</b> (any excess is redistributed to the others). With zero votes, every stock gets an equal share.</p>
@@ -94,6 +95,23 @@ P["contracts"] = ("Contracts and addresses", f"""
 <ul><li>{a("0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9")} · 3 votes</li><li>{a("0xD49249D2a5CffBCF35B6560857d1d1C703802e78")} · 0 votes</li><li>{a("0x68d2622f3bbf6BE80CdfED679489de344410C7Db")} · 1 vote</li></ul>
 <p class="small">Source code: <a href="https://github.com/AjKadri/flatstock" target="_blank" rel="noopener noreferrer">github.com/AjKadri/flatstock</a> (Apache-2.0). Live relayer status: <a href="https://api.flatstock.ajkadri.dev/api/health" target="_blank" rel="noopener noreferrer">/api/health</a>.</p>
 """)
+
+P["tech-stack"] = ("Tech stack", f"""
+<p class="lede">What Flatstock is built on, and exactly what each piece does here. Links go to the code.</p>
+<h2 id="robinhood-chain">Robinhood Chain</h2>
+<p>The Layer-2 network (chain ID 4663) where everything happens. The vote, router and lock contracts are deployed there, and every vote, burn, buy and sell is a transaction on it. The app reads rounds, burns and your history straight from the chain, and uses Blockscout as the explorer. Code: CODE_CHAIN</p>
+<h2 id="stock-tokens">Stock Tokens</h2>
+<p>The assets you actually buy: Robinhood's tokenized US stocks and ETFs on Robinhood Chain. Flatstock never issues or holds them. The router swaps USDG for them and sends them to your wallet; you can sell them back to USDG. Dividends and splits change your share count through the token's own multiplier, which the app shows as shares. Eight are used (AAPL, NVDA, MSFT, AMZN, GOOGL, META, TSLA, SPY). Code: CODE_STOCK</p>
+<h2 id="wif">$WIF</h2>
+<p>The community token. Voting burns 1 $WIF per vote in the vote contract. Locking 10 $WIF in the lock contract makes a wallet eligible for sponsored gas (up to 3 sponsored transactions a day). Nothing is paid in $WIF as gas. Code: CODE_WIF</p>
+<h2 id="chainlink">Chainlink</h2>
+<p>Every Stock Token has a Chainlink price feed on Robinhood Chain. Flatstock uses it in two ways: the price guard (each swap leg must be within 2% of the feed, and the feed must be fresh, at most 24 hours old, or the whole buy is blocked) and the live price and small chart beside each stock in the app (the last 20 feed rounds). The feeds report the token price already adjusted by its multiplier. Code: CODE_LINK</p>
+<h2 id="quicknode">QuickNode Stock Token API</h2>
+<p>Our relayer calls QuickNode's Stock Token API for Stock Token balances in USD, corporate actions (dividends and splits), oracle health (feed status and the market session) and transaction finality. The app waits for finality before it says "Buy complete". QuickNode is also the primary RPC behind our RPC proxy, with the public Robinhood Chain RPC as a fallback. Code: CODE_QN</p>
+<h2 id="uniswap">Uniswap</h2>
+<p>The venue. Stocks are bought and sold against USDG in Uniswap pools, priced with Uniswap's quoter and executed through its swap router. Each stock uses the pool fee tier with the tightest quotes (0.05% or 0.3%). Flatstock's own router wraps the swaps so a whole mix, from 2 to 8 stocks, happens in one transaction that you sign once. Code: CODE_UNI</p>
+""".replace("CODE_CHAIN", '<a href="https://github.com/AjKadri/flatstock/blob/main/web/src/config.ts" target="_blank" rel="noopener noreferrer"><code>web/src/config.ts</code></a> · <a href="https://github.com/AjKadri/flatstock/blob/main/src/FlatstockVotes.sol" target="_blank" rel="noopener noreferrer"><code>src/FlatstockVotes.sol</code></a>').replace("CODE_STOCK", '<a href="https://github.com/AjKadri/flatstock/blob/main/web/src/config.ts" target="_blank" rel="noopener noreferrer"><code>web/src/config.ts</code></a> · <a href="https://github.com/AjKadri/flatstock/blob/main/src/FlatstockRouter.sol" target="_blank" rel="noopener noreferrer"><code>src/FlatstockRouter.sol</code></a>').replace("CODE_WIF", '<a href="https://github.com/AjKadri/flatstock/blob/main/src/FlatstockVotes.sol" target="_blank" rel="noopener noreferrer"><code>src/FlatstockVotes.sol</code></a> · <a href="https://github.com/AjKadri/flatstock/blob/main/src/FlatstockLock.sol" target="_blank" rel="noopener noreferrer"><code>src/FlatstockLock.sol</code></a>').replace("CODE_LINK", '<a href="https://github.com/AjKadri/flatstock/blob/main/web/src/lib/chain.ts" target="_blank" rel="noopener noreferrer"><code>web/src/lib/chain.ts</code></a> · <a href="https://github.com/AjKadri/flatstock/blob/main/web/src/lib/prices.ts" target="_blank" rel="noopener noreferrer"><code>web/src/lib/prices.ts</code></a>').replace("CODE_QN", '<a href="https://github.com/AjKadri/flatstock/blob/main/web/relayer/server.ts" target="_blank" rel="noopener noreferrer"><code>web/relayer/server.ts</code></a>').replace("CODE_UNI", '<a href="https://github.com/AjKadri/flatstock/blob/main/src/FlatstockRouter.sol" target="_blank" rel="noopener noreferrer"><code>src/FlatstockRouter.sol</code></a> · <a href="https://github.com/AjKadri/flatstock/blob/main/web/relayer/stock-study.mjs" target="_blank" rel="noopener noreferrer"><code>web/relayer/stock-study.mjs</code></a>'))
+
 P["fees"] = ("Fees", """
 <h2>Flatstock fee: 0%</h2><p>Flatstock takes no trading fee today. The fee switch is off.</p>
 <h2>What you do pay</h2><ul><li><b>The swap price</b>, including the Uniswap pool fee of each stock's pool (0.05% for AAPL, NVDA, GOOGL and SPY; 0.3% for MSFT, AMZN, META and TSLA) and market spread, which the price guard keeps within 2% of Chainlink.</li><li><b>ETH gas</b> for your own transactions: the one-time approvals, the lock transaction, and any action when you have no lock. With the lock, votes and buys are sponsored (up to 3 per day).</li><li><b>1 $WIF</b> burned per vote.</li></ul>
@@ -152,10 +170,10 @@ P["credits"] = ("Credits", """
 def page(slug, title, body):
     nav = "".join(f'<a href="/docs{"/"+s if s else ""}"{" class=on aria-current=page" if s==slug else ""}>{html.escape(t)}</a>' for s,t in NAV)
     return f"""<!doctype html>
-<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="theme-color" content="#07110C" />
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="theme-color" content="#E6F7D9" />
 <title>{html.escape(title)} · Flatstock docs</title><meta name="description" content="Flatstock docs: {html.escape(title)}." />
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" /><link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter+Tight:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="/docs/docs.css" /></head>
 <body><header class="top"><a class="brand" href="/"><img src="/logo.svg" alt="" width="30" height="30" /><span>Flatstock</span></a><nav class="top-links"><a href="/docs">Docs</a><a href="https://github.com/AjKadri/flatstock" target="_blank" rel="noopener noreferrer">GitHub</a><a class="open" href="https://app.flatstock.ajkadri.dev">Open app</a></nav></header>
 <div class="layout"><details class="side" open><summary>Docs menu</summary><nav aria-label="Docs">{nav}</nav></details>
