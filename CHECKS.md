@@ -2443,3 +2443,8 @@ Scenario                  share  AAPL   NVDA   MSFT   AMZN   GOOGL  META   TSLA 
 10 votes, all TSLA        75%     7.14   7.14   7.14   7.14   7.14   7.13  50.00   7.17
 10 spread                 75%    18.12  25.62   3.12   3.12   3.12   3.12  33.12  10.66
 ```
+
+## 6 Nov: relayer hardening and Lock verification (no mainnet transaction)
+- FlatstockLock `0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121`: `forge verify-contract --verifier sourcify` submitted (job 0aa90005-b384-4716-a546-28cc3680232a). Sourcify v2 API now reports creationMatch=match, runtimeMatch=match (matchId 58624295). Blockscout verifier failed: Cloudflare challenge on the API; Blockscout status not confirmed.
+- Relayer F1 fix: relayer re-checks signed amountOutMinimum against Chainlink (2%). `node --test web/relayer/*.test.ts`: 53 tests, 48 pass, 5 skipped (fork tests need anvil). `bash web/relayer/run-fork-test.sh`: 3/3 pass, including price-guard.fork.test.ts on real AAPL/NVDA/MSFT feeds (AAPL +0.30%, NVDA +0.06%, MSFT -0.07% pool vs Chainlink; 1.5% below passes, 3% below rejected, 25h-old feed rejected).
+- Relayer F3 fix: /api/rpc method allow-list, eth_getLogs bounds, batch 20, body 512 KB, 600 req/min/IP. rpc-proxy.test.ts (real server, stub upstream): eth_sendRawTransaction never reaches upstream; 413 and 429 verified. Local app (throwaway relayer key, public RPC) loaded mix and prices through the new proxy with no policy rejections.
