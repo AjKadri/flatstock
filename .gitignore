@@ -13,3 +13,11 @@ web/tsconfig.tsbuildinfo
 
 
 .claude/
+
+# Local notes and reference material, never committed
+design/refs/
+SUBMISSION-DRAFTS.md
+SUBMISSION-NOTES.md
+CLAUDE.md
+PHONE-TEST-CHECKLIST.md
+landing/.vite/
