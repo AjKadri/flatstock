@@ -21,6 +21,9 @@ import {
   SPONSORSHIP_PAUSED_MESSAGE,
   SponsorshipPausedError,
 } from "./sponsorship-guard.ts";
+import { createPriceGuard, PriceGuardError, type OracleHealth } from "./price-guard.ts";
+import { checkRpcPayload, RpcPolicyError } from "./rpc-policy.ts";
+import { createRateLimiter } from "./rate-limit.ts";
 
 const host = process.env.M3_RELAYER_HOST || "127.0.0.1";
 const port = Number(process.env.M3_RELAYER_PORT || 8787);
@@ -56,6 +59,24 @@ const walletClient = createWalletClient({ account, chain, transport: readTranspo
 const minRelayerBalanceWei = process.env.M3_MIN_RELAYER_BALANCE_WEI
   ? BigInt(process.env.M3_MIN_RELAYER_BALANCE_WEI)
   : DEFAULT_MIN_RELAYER_BALANCE_WEI;
+// Re-checks every signed buy / sell minimum against Chainlink before the relayer pays gas (fails closed).
+const priceGuard = createPriceGuard({
+  client: publicClient,
+  getOracleHealth: async (symbols) => {
+    if (!quickNodeRpcUrl) throw new PriceGuardError("The oracle health service is not configured, so this action was not relayed.");
+    try {
+      return await quickNodeCall("qn_getOracleHealth", [{ symbols, blockTag: "latest" }]) as OracleHealth;
+    } catch {
+      throw new PriceGuardError("The oracle health check is unavailable, so this action was not relayed. Try again later.");
+    }
+  },
+});
+// Limits for POST /api/rpc (per client IP; Caddy sets X-Forwarded-For).
+const RPC_RATE_PER_MINUTE = Number(process.env.M3_RPC_RATE_PER_MINUTE || 600);
+const RPC_BODY_LIMIT = 512 * 1024; // the price request is ~220 KB of hex; nothing legitimate is larger
+const RELAY_BODY_LIMIT = 64 * 1024;
+const MIN_LOG_BLOCK = BigInt(process.env.M3_RPC_MIN_LOG_BLOCK || "101593767"); // same as the app's VITE_STATS_FROM_BLOCK
+const rpcLimiter = createRateLimiter({ limit: RPC_RATE_PER_MINUTE, windowMs: 60_000 });
 const sponsorshipGuard = createSponsorshipGuard({
   getBalance: () => publicClient.getBalance({ address: account.address }),
   minBalanceWei: minRelayerBalanceWei,
@@ -163,10 +184,30 @@ function json(response: http.ServerResponse, status: number, body: unknown) {
   response.end(JSON.stringify(body));
 }
 
-async function body(request: http.IncomingMessage) {
-  let data = "";
-  for await (const chunk of request) data += chunk;
-  return JSON.parse(data || "{}");
+async function body(request: http.IncomingMessage, maxBytes = RELAY_BODY_LIMIT) {
+  const declared = Number(request.headers["content-length"] || 0);
+  if (declared > maxBytes) throw new RpcPolicyError("Request body is too large.", 413);
+  const chunks: Buffer[] = [];
+  let size = 0;
+  for await (const chunk of request) {
+    const piece = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    size += piece.length;
+    if (size > maxBytes) throw new RpcPolicyError("Request body is too large.", 413);
+    chunks.push(piece);
+  }
+  const data = Buffer.concat(chunks).toString("utf8");
+  try {
+    return JSON.parse(data || "{}");
+  } catch {
+    throw new RpcPolicyError("Request body is not valid JSON.");
+  }
+}
+
+// Client IP for rate limiting: the server listens on loopback behind Caddy, which appends the real client
+// address to X-Forwarded-For, so the last entry is the one our proxy saw.
+function clientIp(request: http.IncomingMessage) {
+  const forwarded = request.headers["x-forwarded-for"]?.toString().split(",").map((item) => item.trim()).filter(Boolean);
+  return forwarded?.[forwarded.length - 1] || request.socket.remoteAddress || "unknown";
 }
 
 function fail(message: string): never {
@@ -275,6 +316,7 @@ async function relayBuy(payload: Record<string, unknown>) {
     signature,
   });
   if (!valid) fail("Buy signature is invalid.");
+  await priceGuard.assertBuyLegs(legs); // each signed minimum within 2% of Chainlink, or refuse
   const rawPermit = (payload.permit || {}) as Record<string, unknown>;
   const permit = {
     value: BigInt(String(rawPermit.value || "0")),
@@ -346,6 +388,7 @@ async function relaySell(payload: Record<string, unknown>) {
     signature: permitSignature,
   });
   if (!permitValid) fail("Stock Token permit signature is invalid.");
+  await priceGuard.assertSell(sellToken, amountIn, amountOutMinimum); // before any gas is spent on the permit
 
   const permitTxHash = await walletClient.writeContract({
     address: sellToken,
@@ -369,8 +412,22 @@ async function relaySell(payload: Record<string, unknown>) {
   return { txHash, permitTxHash, day: today, usage: usage.get(user.toLowerCase())?.count || 0, dailyCap };
 }
 
+let latestBlockCache: { value: bigint; at: number } | null = null;
+async function latestBlockNumber() {
+  if (latestBlockCache && Date.now() - latestBlockCache.at < 2_000) return latestBlockCache.value;
+  const value = await publicClient.getBlockNumber();
+  latestBlockCache = { value, at: Date.now() };
+  return value;
+}
+
 async function proxyRpc(request: http.IncomingMessage, response: http.ServerResponse) {
-  const payload = await body(request);
+  const wait = rpcLimiter.take(clientIp(request));
+  if (wait > 0) {
+    response.setHeader("retry-after", String(wait));
+    return json(response, 429, { error: "Too many requests. Try again in a moment." });
+  }
+  const payload = await body(request, RPC_BODY_LIMIT);
+  await checkRpcPayload(payload, latestBlockNumber, MIN_LOG_BLOCK);
   const upstreams = [quickNodeRpcUrl, publicRpcUrl].filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index);
   let lastError = "RPC proxy failed.";
   for (const upstream of upstreams) {
@@ -465,6 +522,7 @@ const server = http.createServer(async (request, response) => {
     }
     return json(response, 404, { error: "Not found." });
   } catch (error) {
+    if (error instanceof RpcPolicyError) return json(response, error.status, { error: error.message });
     if (error instanceof SponsorshipPausedError) {
       return json(response, 503, { error: SPONSORSHIP_PAUSED_MESSAGE, code: "SPONSORSHIP_PAUSED", reason: error.status.reason });
     }

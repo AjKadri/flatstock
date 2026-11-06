@@ -13,6 +13,7 @@ import {
   type Address,
   type Hex,
 } from "viem";
+import { impliedOut, minimumAllowed } from "../../relayer/price-guard";
 import {
   addresses,
   assets,
@@ -601,6 +602,26 @@ export async function readAllowance(token: Address, owner: Address, spender: Add
   }) as bigint;
 }
 
+// The minimum the user signs: 2% below the quote, but never more than 2% below the Chainlink-implied output.
+// The relayer refuses any signed minimum lower than that Chainlink floor (relayer/price-guard.ts), and the
+// app uses the same integer maths so a normal plan is never refused.
+function signedMinimum(
+  side: "buy" | "sell",
+  amountIn: bigint,
+  quoteOut: bigint,
+  price: bigint,
+  feedDecimals: number,
+  tokenDecimals: number,
+  symbol: string,
+  differenceBps: number,
+) {
+  const floor = minimumAllowed(impliedOut(side, amountIn, price, feedDecimals, tokenDecimals));
+  const fromQuote = (quoteOut * (10_000n - MAX_SLIPPAGE_BPS)) / 10_000n;
+  const minOut = fromQuote > floor ? fromQuote : floor;
+  if (minOut <= 0n || minOut > quoteOut) throw new Error(`${symbol}: quote is ${differenceBps / 100}% from Chainlink.`);
+  return minOut;
+}
+
 export async function buildBuyPlan(amountText: string, round: RoundState): Promise<BuyLeg[]> {
   if (!MIX_RULES_ENABLED) throw new Error("The new vote contract is not configured for mix buys yet.");
   // Buys use the final mix of the most recent closed round. Before any round has closed the app
@@ -645,8 +666,7 @@ export async function buildBuyPlan(amountText: string, round: RoundState): Promi
     if (differenceBps > Number(MAX_SLIPPAGE_BPS)) {
       throw new Error(`${asset.symbol}: quote is ${differenceBps / 100}% from Chainlink.`);
     }
-    const minOut = (quoteOut * (10_000n - MAX_SLIPPAGE_BPS)) / 10_000n;
-    if (minOut <= 0n) throw new Error(`${asset.symbol}: invalid minimum output.`);
+    const minOut = signedMinimum("buy", amountIn, quoteOut, latest[1], feedDecimals, tokenDecimals, asset.symbol, differenceBps);
     legs.push({
       symbol: asset.symbol,
       token: asset.token,
@@ -697,8 +717,7 @@ export async function buildSellPlan(
   if (differenceBps > Number(MAX_SLIPPAGE_BPS)) {
     throw new Error(`${symbol}: quote is ${differenceBps / 100}% from Chainlink.`);
   }
-  const minOut = (quoteOut * (10_000n - MAX_SLIPPAGE_BPS)) / 10_000n;
-  if (minOut <= 0n) throw new Error(`${symbol}: invalid minimum output.`);
+  const minOut = signedMinimum("sell", amountIn, quoteOut, latest[1], feedDecimals, tokenDecimals, symbol, differenceBps);
   return {
     symbol,
     token: asset.token,

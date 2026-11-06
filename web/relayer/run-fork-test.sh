@@ -23,4 +23,4 @@ for i in $(seq 1 60); do
   if [ "$i" = 60 ]; then echo "anvil did not start" >&2; exit 1; fi
 done
 
-FORK_RPC_URL="http://127.0.0.1:$PORT" node --test relayer/sponsorship-guard.fork.test.ts relayer/buy-round.fork.test.ts
+FORK_RPC_URL="http://127.0.0.1:$PORT" node --test --test-concurrency=1 relayer/sponsorship-guard.fork.test.ts relayer/buy-round.fork.test.ts relayer/price-guard.fork.test.ts
