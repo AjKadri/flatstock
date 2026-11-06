@@ -376,7 +376,7 @@ function App() {
       if (landed) {
         await finishVote(roundId, account, undefined);
       } else if (userRejected(error)) {
-        setMessage({ tone: "error", text: "You cancelled in your wallet. Nothing was sent. If you already approved 1 $WIF, that approval stays in place and your next vote will not ask again." });
+        setMessage({ tone: "error", text: "You cancelled in your wallet. Nothing was sent. If you already approved 1 $WIF, that approval stays in place until a vote uses it, so trying again will not ask for it twice." });
       } else {
         setMessage({ tone: "error", text: `${friendlyError(error, "The vote did not go through.")} I checked the chain and no vote from this wallet is recorded for this round, so no $WIF was burned.` });
       }
@@ -820,7 +820,7 @@ function App() {
                 {confirmingVote && picked && <div className="confirm"><strong>{useRelay ? "Sign this vote" : "Confirm wallet vote"}</strong><p>This spends exactly 1 $WIF and burns it. {useRelay ? "The relayer submits only what you sign and pays the gas for the vote." : "Your wallet sends the vote and you pay the ETH gas."}</p>
                   <ApprovalNote amount="1" contract="Votes" verified={contractVerified.votes} link={addressLink(addresses.votes)} />
                   {useRelay
-                    ? <SignSummary lines={[<>Vote in <b>Round {round.roundId.toString()}</b> for <b>{picked.symbol}</b></>, "Costs 1 $WIF, burned", "Valid for 15 minutes and can be used once", "Gas for the vote is paid by Flatstock. A one-time approval of 1 $WIF may come first, and you pay that small gas"]} />
+                    ? <SignSummary lines={[<>Vote in <b>Round {round.roundId.toString()}</b> for <b>{picked.symbol}</b></>, "Costs 1 $WIF, burned", "Valid for 15 minutes and can be used once", "Gas for the vote is paid by Flatstock. Before it, your wallet asks you to approve exactly 1 $WIF, and you pay the gas for that approval. Each vote needs its own approval"]} />
                     : <SignSummary lines={[<>Approve exactly 1 $WIF to the Flatstock Votes contract (only if not already approved)</>, <>Vote in <b>Round {round.roundId.toString()}</b> for <b>{picked.symbol}</b>, which burns 1 $WIF</>, "You pay the ETH gas for both"]} />}<div className="cta-row"><button className="btn primary" disabled={busy !== null} onClick={() => void runVote()}>Sign and submit</button><button className="btn ghost" disabled={busy !== null} onClick={() => setConfirmingVote(false)}>Cancel</button></div></div>}
                 {submittedTx?.action === "vote" && !revealed && <div className="proof"><strong>Vote submitted and 1 $WIF burned.</strong><a href={txLink(submittedTx.hash)} target="_blank" rel="noreferrer">View transaction</a></div>}
               </>

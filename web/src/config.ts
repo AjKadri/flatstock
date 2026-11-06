@@ -195,5 +195,5 @@ export const mixBoughtEvent = parseAbiItem(
 );
 
 // Which Flatstock contracts have verified source on Blockscout/Sourcify. The approval notice only says
-// "verified" for contracts where this is true. Set `lock` to true once its source is verified.
-export const contractVerified = { votes: true, router: true, lock: false } as const;
+// "verified" for contracts where this is true. All three verified on Sourcify (exact match).
+export const contractVerified = { votes: true, router: true, lock: true } as const;
