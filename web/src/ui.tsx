@@ -52,7 +52,7 @@ export function ChangeCell({ price }: { price?: StockPrice }) {
 }
 
 // Holdings-style table. market=false (past rounds) shows only stock and weight, with no live prices.
-export function MixTable({ rows, market = true, selected, onPick, disabled, lead, extraHead, keepOrder, isOff, label = "Stocks in the mix" }: {
+export function MixTable({ rows, market = true, selected, onPick, disabled, lead, extraHead, keepOrder, isOff, mine, label = "Stocks in the mix" }: {
   rows: MixRow[];
   market?: boolean;
   selected?: number | null;
@@ -62,12 +62,13 @@ export function MixTable({ rows, market = true, selected, onPick, disabled, lead
   extraHead?: string;
   keepOrder?: boolean; // keep the given row order instead of sorting by weight
   isOff?: (row: MixRow) => boolean; // dim a row (for example an unticked stock in Adjust mode)
+  mine?: number | null; // the row this wallet already voted for: tagged "Your vote"
   label?: string;
 }) {
   const colors = mixColorMap(rows);
   const sorted = keepOrder ? rows : [...rows].sort((a, b) => b.weight - a.weight || a.index - b.index);
   return (
-    <table className={`mix ${onPick ? "selectable" : ""}`} aria-label={label}>
+    <table className={`mix ${onPick ? "selectable" : ""} ${onPick && disabled ? "locked" : ""}`} aria-label={label}>
       <thead>
         <tr>
           <th className="key" aria-hidden="true" />
@@ -95,7 +96,7 @@ export function MixTable({ rows, market = true, selected, onPick, disabled, lead
               onKeyDown={onPick && !disabled ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onPick(row.index); } } : undefined}
             >
               <td className="key">{lead ? lead(row) : <i style={{ background: colors.get(row.index) }} />}</td>
-              <td className="stock"><b className="mono">{row.symbol}</b><small>{row.sub ?? row.name ?? ""}</small></td>
+              <td className="stock"><b className="mono">{row.symbol}</b>{mine === row.index && <em className="mine">Your vote</em>}<small>{row.sub ?? row.name ?? ""}</small></td>
               {market && <td className="c-spark">{p && p.price !== null ? <Spark values={p.history} up={up} /> : null}</td>}
               {market && <td className="r mono">{p && p.price !== null ? `$${formatPrice(p.price)}` : "n/a"}</td>}
               {market && <td className="r"><ChangeCell price={p} /></td>}
@@ -143,5 +144,26 @@ export function EmptyLine({ children }: { children: ReactNode }) {
 export function Logo({ size = 30 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#2BD67B" /><path d="M12 38h40" stroke="#07110C" strokeWidth="7" strokeLinecap="round" /><circle cx="44" cy="22" r="7" fill="#07110C" /></svg>
+  );
+}
+
+// Shown before any $WIF approval: why a wallet may warn, and exactly what is approved.
+export function ApprovalNote({ amount, contract, verified, link }: { amount: string; contract: string; verified: boolean; link: string }) {
+  return (
+    <p className="note">
+      Your wallet may flag this because Flatstock's contracts are new. You're approving exactly {amount} $WIF to the Flatstock {contract} contract ({verified ? "source verified" : "source verification pending"}){" "}
+      <a href={link} target="_blank" rel="noopener noreferrer">View contract</a>.
+    </p>
+  );
+}
+
+// Shown before an EIP-712 signature: wallets show raw data and may say "Unverified".
+export function SignSummary({ lines }: { lines: ReactNode[] }) {
+  return (
+    <div className="sign">
+      <strong>What you are signing</strong>
+      <ul>{lines.map((line, i) => <li key={i}>{line}</li>)}</ul>
+      <p className="muted">Your wallet shows this as raw data and may say "Unverified". That is normal for a new app. Check that these lines match.</p>
+    </div>
   );
 }

@@ -4,6 +4,7 @@ import {
   addresses,
   assets,
   chain,
+  contractVerified,
   EXPLORER_URL,
   LEGAL_NOTICE,
   MIN_BUY_USDG,
@@ -41,6 +42,7 @@ import {
   signMetaSell,
   signMetaVote,
   sendDirect,
+  readMyVote,
   waitForTransactionFinality,
   type BuyLeg,
   type ConnectedWallet,
@@ -53,7 +55,8 @@ import {
 import { addressLink, pickBuyMix, readRoundHistory, txLink, type BuyMix, type PastRound, type RoundHistory } from "./lib/rounds";
 import { renormaliseWeights } from "./lib/rounds-logic";
 import { readPrices, type PriceMap } from "./lib/prices";
-import { AllocationBar, EmptyLine, Loader, Logo, MixTable, ProgressLine, Rule, type MixRow } from "./ui";
+import { AllocationBar, ApprovalNote, EmptyLine, Loader, Logo, MixTable, ProgressLine, Rule, SignSummary, type MixRow } from "./ui";
+import { cacheGet, cacheSet } from "./lib/cache";
 
 type Health = {
   enabled: boolean;
@@ -110,7 +113,7 @@ function App() {
   const [wallet, setWallet] = useState<ConnectedWallet | null>(null);
   const [account, setAccount] = useState<Address | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
-  const [round, setRound] = useState<RoundState | null>(null);
+  const [round, setRound] = useState<RoundState | null>(() => cacheGet<RoundState>("round"));
   const [corporateActions, setCorporateActions] = useState<CorporateAction[]>([]);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -118,10 +121,10 @@ function App() {
   const [votesBurned, setVotesBurned] = useState<bigint>(0n);
   const [health, setHealth] = useState<Health | null>(null);
   const [alreadyVoted, setAlreadyVoted] = useState(false);
-  const [buyMix, setBuyMix] = useState<BuyMix | null>(null);
+  const [buyMix, setBuyMix] = useState<BuyMix | null>(() => cacheGet<BuyMix>("buyMix"));
   // "loading" until the round data has actually come back; only then can we say there is no mix.
-  const [mixLoad, setMixLoad] = useState<"loading" | "ready" | "failed">("loading");
-  const [roundHistory, setRoundHistory] = useState<RoundHistory | null>(null);
+  const [mixLoad, setMixLoad] = useState<"loading" | "ready" | "failed">(() => (cacheGet("round") ? "ready" : "loading"));
+  const [roundHistory, setRoundHistory] = useState<RoundHistory | null>(() => cacheGet<RoundHistory>("roundHistory"));
   const [tab, setTab] = useState<Tab>(() => tabFromHash());
   const [revealed, setRevealed] = useState(false);
   const [adjusting, setAdjusting] = useState(false);
@@ -129,13 +132,16 @@ function App() {
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   const [buyAmount, setBuyAmount] = useState("5");
   const [selectedAsset, setSelectedAsset] = useState<number | null>(null);
-  const [prices, setPrices] = useState<PriceMap>({});
+  const [prices, setPrices] = useState<PriceMap>(() => cacheGet<PriceMap>("prices") ?? {});
   const [plan, setPlan] = useState<BuyLeg[]>([]);
   const [sellSymbol, setSellSymbol] = useState("NVDA");
   const [sellAmount, setSellAmount] = useState("0.001");
   const [sellPlan, setSellPlan] = useState<SellLeg | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmingVote, setConfirmingVote] = useState(false);
+  const [voteStep, setVoteStep] = useState<string | null>(null);
+  const [myVote, setMyVote] = useState<{ assetIndex: number; hash: Hex } | null>(null);
+  const [confirmingUnlock, setConfirmingUnlock] = useState(false);
   const [confirmingBuy, setConfirmingBuy] = useState(false);
   const [confirmingSell, setConfirmingSell] = useState(false);
   const [submittedTx, setSubmittedTx] = useState<SubmittedTx | null>(null);
@@ -151,7 +157,10 @@ function App() {
         readVoteBurned(),
       ]);
       setRound(nextRound);
-      setBuyMix(await pickBuyMix(nextRound));
+      cacheSet("round", nextRound);
+      const nextMix = await pickBuyMix(nextRound);
+      setBuyMix(nextMix);
+      cacheSet("buyMix", nextMix);
       setMixLoad("ready");
       setVotesBurned(burned);
       setCorporateActions(await readCorporateActions(
@@ -164,7 +173,9 @@ function App() {
         ]);
         setHoldings(nextHoldings);
         setWalletState(nextWallet);
-        setAlreadyVoted(await readHasVoted(nextRound.roundId, connectedAccount));
+        const voted = await readHasVoted(nextRound.roundId, connectedAccount);
+        setAlreadyVoted(voted);
+        setMyVote(voted ? await readMyVote(nextRound.roundId, connectedAccount) : null);
         setHistory(await readHistory(connectedAccount));
         setHealth(await fetchRelayHealth(connectedAccount));
       }
@@ -221,7 +232,7 @@ function App() {
 
   useEffect(() => {
     let live = true;
-    void readRoundHistory().then((value) => { if (live) setRoundHistory(value); }).catch(() => undefined);
+    void readRoundHistory().then((value) => { if (live) { setRoundHistory(value); cacheSet("roundHistory", value); } }).catch(() => undefined);
     return () => { live = false; };
   }, []);
 
@@ -232,7 +243,7 @@ function App() {
 
   useEffect(() => {
     let live = true;
-    const load = (force: boolean) => { void readPrices(force).then((value) => { if (live) setPrices(value); }).catch(() => undefined); };
+    const load = (force: boolean) => { void readPrices(force).then((value) => { if (live) { setPrices(value); cacheSet("prices", value); } }).catch(() => undefined); };
     load(false);
     const timer = window.setInterval(() => load(true), 5 * 60 * 1000);
     return () => { live = false; window.clearInterval(timer); };
@@ -295,6 +306,31 @@ function App() {
     return () => window.clearInterval(timer);
   }, [account, refresh]);
 
+  const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+  // Poll the chain for up to ~25s: the vote may have landed even if the wallet or network reported an error.
+  const voteLanded = async (roundId: bigint, voter: Address) => {
+    for (let i = 0; i < 10; i += 1) {
+      if (await readHasVoted(roundId, voter)) return true;
+      await sleep(2500);
+    }
+    return false;
+  };
+  const userRejected = (error: unknown) => {
+    const text = `${(error as { shortMessage?: string })?.shortMessage ?? ""} ${error instanceof Error ? error.message : ""}`;
+    return (error as { code?: number })?.code === 4001 || /user rejected|user denied|rejected the request|request rejected/i.test(text);
+  };
+  const finishVote = async (roundId: bigint, voter: Address, hash?: Hex, viaRelay = false) => {
+    const found = await readMyVote(roundId, voter);
+    const txHash = hash ?? found?.hash;
+    setMyVote(found ?? (txHash ? { assetIndex: selectedAsset ?? 0, hash: txHash } : null));
+    setAlreadyVoted(true);
+    if (txHash) setSubmittedTx({ action: "vote", hash: txHash });
+    setMessage({ tone: "success", text: viaRelay ? "Vote cast. Exactly 1 $WIF was burned." : "Vote cast. Exactly 1 $WIF was burned." });
+    setRevealed(true);
+    await refresh();
+    void readRoundHistory().then((value) => { setRoundHistory(value); cacheSet("roundHistory", value); });
+  };
+
   const runVote = async () => {
     if (!wallet || !account || !round || selectedAsset === null) return;
     if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before voting.` });
@@ -302,36 +338,74 @@ function App() {
     if (await readHasVoted(round.roundId, account)) {
       setAlreadyVoted(true);
       setConfirmingVote(false);
+      setMyVote(await readMyVote(round.roundId, account));
       return setMessage({ tone: "info", text: ALREADY_VOTED_TEXT });
     }
+    const roundId = round.roundId;
     try {
       setBusy("vote");
       setConfirmingVote(false);
       setMessage(null);
       setSubmittedTx(null);
+      setVoteStep("Checking your wallet and the relay…");
       const liveHealth = await fetchRelayHealth(account);
       setHealth(liveHealth);
       const relayNow = hasSponsorLock && SIGNATURE_SAFE_WRITES_ENABLED && relayAvailable(liveHealth);
       const allowance = await readAllowance(addresses.wif, account, addresses.votes);
-      if (allowance < ONE_WIF) {
-        await sendDirect(wallet, account, addresses.wif, buildApprove(addresses.votes, addresses.votes, ONE_WIF));
+      const needsApproval = allowance < ONE_WIF;
+      if (needsApproval) {
+        setVoteStep("Step 1 of 2: approve 1 $WIF. Confirm in your wallet. Take your time.");
+        await sendDirect(wallet, account, addresses.wif, buildApprove(addresses.votes, addresses.votes, ONE_WIF), () => setVoteStep("Step 1 of 2: approval sent. Waiting for confirmation…"));
       }
+      setVoteStep(needsApproval
+        ? `Step 2 of 2: confirm your vote. ${relayNow ? "Sign" : "Confirm"} in your wallet. Take your time.`
+        : `Confirm your vote. ${relayNow ? "Sign" : "Confirm"} in your wallet. Take your time.`);
+      const burning = () => setVoteStep("Burning 1 $WIF… waiting for confirmation. You can leave this page open.");
       let voteHash: Hex;
       if (relayNow) {
-        voteHash = await signMetaVote(wallet, account, round.roundId, selectedAsset);
+        voteHash = await signMetaVote(wallet, account, roundId, selectedAsset, burning);
       } else {
-        const vote = encodeFunctionData({ abi: votesAbi, functionName: "vote", args: [round.roundId, selectedAsset] });
-        voteHash = await sendDirect(wallet, account, addresses.votes, vote);
+        const vote = encodeFunctionData({ abi: votesAbi, functionName: "vote", args: [roundId, selectedAsset] });
+        voteHash = await sendDirect(wallet, account, addresses.votes, vote, burning);
       }
-      setSubmittedTx({ action: "vote", hash: voteHash });
-      setMessage({ tone: "success", text: relayNow
-        ? "Vote signature relayed. Exactly 1 WIF was burned."
-        : "Vote submitted from your wallet. Exactly 1 WIF was burned." });
-      setRevealed(true);
-      await refresh();
-      void readRoundHistory().then(setRoundHistory);
+      await finishVote(roundId, account, voteHash, relayNow);
     } catch (error) {
-      setMessage({ tone: "error", text: friendlyError(error, "Vote cancelled or failed.") });
+      // Never trust the error alone: if the vote landed on-chain, it is a success.
+      setVoteStep("Checking whether your vote landed…");
+      const landed = userRejected(error) ? await readHasVoted(roundId, account) : await voteLanded(roundId, account);
+      if (landed) {
+        await finishVote(roundId, account, undefined);
+      } else if (userRejected(error)) {
+        setMessage({ tone: "error", text: "You cancelled in your wallet. Nothing was sent. If you already approved 1 $WIF, that approval stays in place and your next vote will not ask again." });
+      } else {
+        setMessage({ tone: "error", text: `${friendlyError(error, "The vote did not go through.")} I checked the chain and no vote from this wallet is recorded for this round, so no $WIF was burned.` });
+      }
+    } finally {
+      setVoteStep(null);
+      setBusy(null);
+    }
+  };
+
+  const runUnlock = async () => {
+    if (!wallet || !account || !walletState) return;
+    if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before unlocking.` });
+    const amount = walletState.locked;
+    if (amount <= 0n) return;
+    try {
+      setBusy("unlock");
+      setConfirmingUnlock(false);
+      setMessage(null);
+      await sendDirect(wallet, account, addresses.lock, encodeFunctionData({ abi: lockAbi, functionName: "unlock", args: [amount] }));
+      setMessage({ tone: "success", text: `${formatWif(amount)} unlocked and returned to your wallet. Free gas is off until you lock 10 $WIF again.` });
+      await refresh();
+    } catch (error) {
+      const state = await readWalletState(account).catch(() => null);
+      if (state && state.locked === 0n) {
+        setMessage({ tone: "success", text: "Unlocked. Your $WIF is back in your wallet. Free gas is off until you lock 10 $WIF again." });
+        await refresh();
+      } else {
+        setMessage({ tone: "error", text: friendlyError(error, "Unlock cancelled or failed.") });
+      }
     } finally {
       setBusy(null);
     }
@@ -355,7 +429,7 @@ function App() {
       ];
       await sendDirect(wallet, account, addresses.wif, calls[0].data);
       await sendDirect(wallet, account, addresses.lock, calls[1].data);
-      setMessage({ tone: "success", text: "10 WIF locked. Signature-relayed actions are available when the new contracts are configured." });
+      setMessage({ tone: "success", text: "10 $WIF locked. Free gas is active for your votes, buys and sells." });
       await refresh();
     } catch (error) {
       setMessage({ tone: "error", text: friendlyError(error, "Lock cancelled or failed.") });
@@ -561,6 +635,13 @@ function App() {
       {gasBadge}
     </span>
   );
+  const goLock = () => { goTab("portfolio"); window.setTimeout(() => document.getElementById("lock")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80); };
+  const gasBlock = (
+    <div className="gas-wrap">
+      {gasPill}
+      {connected && !hasSponsorLock && <button className="lock-link" onClick={goLock}>Lock 10 $WIF for free gas →</button>}
+    </div>
+  );
 
   return (
     <div className="app">
@@ -633,7 +714,7 @@ function App() {
               <div className="buy-main">
                 <div className="row-between">
                   <h2>Buy the mix</h2>
-                  {gasPill}
+                  {gasBlock}
                 </div>
                 {mixLoad === "loading" ? (
                   <Loader label="Loading the mix to buy" />
@@ -674,7 +755,14 @@ function App() {
                   <button className="btn ghost full" disabled={!MIX_RULES_ENABLED || chainId !== chain.id || busy !== null || !(buyTotal >= MIN_BUY_USDG)} onClick={() => void previewBuy()}>{busy === "quote" ? "Checking prices..." : buyTotal >= MIN_BUY_USDG ? "Check prices" : `Minimum buy is $${MIN_BUY_USDG}`}</button>
                   {plan.length > 0 && <ul className="quotes">{plan.map((leg) => <li key={leg.symbol}><b>{leg.symbol}</b><span className="mono">${leg.quotePrice.toFixed(2)} vs ${leg.chainlinkPrice.toFixed(2)}</span><span className="mono good-text">{(leg.differenceBps / 100).toFixed(2)}%</span></li>)}</ul>}
                   <button className="btn primary full" disabled={!MIX_RULES_ENABLED || !SIGNATURE_SAFE_WRITES_ENABLED || !walletReady || plan.length === 0 || busy !== null} onClick={requestBuy}>{busy === "buy" ? "Waiting for wallet signature..." : !MIX_RULES_ENABLED || !SIGNATURE_SAFE_WRITES_ENABLED ? "Buying is being configured" : !connected ? "Connect to buy" : chainId !== chain.id ? "Switch network to buy" : plan.length === 0 ? "Check prices first" : "Review this mix"}</button>
-                  {confirmingBuy && <div className="confirm"><strong>{useRelay ? "Sign this mix" : "Confirm wallet mix"}</strong><p>This spends {buyAmount} USDG and sends the Stock Tokens directly to your wallet. {useRelay ? "Your wallet signs the exact legs, minimum outputs, amount, nonce and deadline. A separate USDG permit lets the relayer pull only this amount and pay the gas." : "Your wallet signs the one-transaction mix and you pay the ETH gas."} The price guard passed for every leg.</p><div className="cta-row"><button className="btn primary" disabled={busy !== null} onClick={() => void runBuy()}>Sign and submit</button><button className="btn ghost" disabled={busy !== null} onClick={() => setConfirmingBuy(false)}>Cancel</button></div></div>}
+                  {confirmingBuy && <div className="confirm"><strong>{useRelay ? "Sign this mix" : "Confirm wallet mix"}</strong><p>This spends {buyAmount} USDG and sends the Stock Tokens directly to your wallet. {useRelay ? "Your wallet signs the exact legs, minimum outputs, amount, nonce and deadline. A separate USDG permit lets the relayer pull only this amount and pay the gas." : "Your wallet signs the one-transaction mix and you pay the ETH gas."} The price guard passed for every leg.</p>
+                    <SignSummary lines={[
+                      ...(useRelay ? [<>Permit: allow the Flatstock Router to pull exactly <b>{buyAmount} USDG</b> from you</>] : [<>Approve exactly <b>{buyAmount} USDG</b> to the Flatstock Router (only if not already approved)</>]),
+                      <>Buy the mix: <b>{plan.map((leg) => leg.symbol).join(", ")}</b>, split as {plan.map((leg) => `${leg.symbol} ${Number(leg.amountIn) / 1e6} USDG`).join(", ")}</>,
+                      "The Stock Tokens go straight to your wallet, with a minimum for each stock so a bad price cancels the whole buy",
+                      useRelay ? "Valid for 15 minutes and can be used once. Gas is paid by Flatstock" : "You pay the ETH gas",
+                    ]} />
+                    <div className="cta-row"><button className="btn primary" disabled={busy !== null} onClick={() => void runBuy()}>Sign and submit</button><button className="btn ghost" disabled={busy !== null} onClick={() => setConfirmingBuy(false)}>Cancel</button></div></div>}
                   {submittedTx?.action === "buy" && !submittedTx.finality && <div className="proof"><strong>Buy submitted. Waiting for finality confirmation.</strong><a href={txLink(submittedTx.hash)} target="_blank" rel="noreferrer">View transaction</a></div>}
                   <p className="helper">Safety check: every price must be within 2% of Chainlink, or the whole purchase is blocked. 0% trading fee.</p>
                 </aside>
@@ -689,13 +777,15 @@ function App() {
               <p className="eyebrow mono">Vote for next week{round ? ` · Round ${round.roundId}` : ""}</p>
               <h1>Pick the stock you want <em>more of.</em></h1>
               <p className="lede">One vote per wallet per round. Each vote burns 1 $WIF. Tap a stock to choose.</p>
+              {round && <p className="votes-line mono">{round.totalVotes.toString()} vote{round.totalVotes === 1n ? "" : "s"} · {round.totalVotes.toString()} $WIF burned this round</p>}
+              <div className="row-between">{gasBlock}</div>
             </header>
             {!round ? <Loader label="Loading the round" /> : !voteRoundOpen ? (
               <EmptyLine>No round is open for voting right now. The next round opens soon, and buying keeps working in the meantime.</EmptyLine>
             ) : revealed && submittedTx?.action === "vote" ? (
               <section className="moment mint" role="status">
-                <p className="eyebrow mono">Vote cast</p>
-                <h2>1 $WIF burned.</h2>
+                <p className="eyebrow mono">Vote cast · 1 $WIF burned</p>
+                <h2>Vote cast.</h2>
                 <p>Your vote for {picked?.symbol} is in. This is how next week's mix looks now:</p>
                 <AllocationBar rows={toMix(voteRows)} />
                 <MixTable rows={toMix(voteRows)} market={false} selected={selectedAsset} label="Next week's mix" />
@@ -703,11 +793,18 @@ function App() {
               </section>
             ) : (
               <>
+                {alreadyVoted && (
+                  <div className="voted-banner" role="status">
+                    <strong>{myVote ? `You voted for ${assets[myVote.assetIndex]?.symbol ?? "a stock"} in Round ${round.roundId}` : `You voted in Round ${round.roundId}`} · 1 $WIF burned</strong>
+                    {myVote && <a href={txLink(myVote.hash)} target="_blank" rel="noreferrer">View transaction on Blockscout</a>}
+                  </div>
+                )}
+                {voteStep && <div className="stepbox" role="status" aria-live="polite"><strong>{voteStep}</strong><span className="mono">Do not close this page. A pause is fine: nothing here times out.</span></div>}
                 <AllocationBar rows={toMix(voteRows)} />
-                <MixTable rows={toMix(voteRows)} selected={selectedAsset} onPick={(index) => setSelectedAsset(index)} disabled={alreadyVoted} label="Pick a stock to vote for" />
+                <MixTable rows={toMix(voteRows)} selected={alreadyVoted ? (myVote?.assetIndex ?? null) : selectedAsset} mine={alreadyVoted ? (myVote?.assetIndex ?? null) : null} onPick={(index) => setSelectedAsset(index)} disabled={alreadyVoted} label="Pick a stock to vote for" />
                 <p className="source mono">Price: Chainlink</p>
                 <div className="pick">
-                  {picked && selectedAsset !== null ? (
+                  {alreadyVoted ? null : picked && selectedAsset !== null ? (
                     <>
                       <div><span className="mono k">You are voting for</span><strong className="pick-name">{picked.symbol}</strong><small>{assetLabel(picked)}</small></div>
                       <div className="mono pick-weight">{formatWeightBps(round.weights[selectedAsset] || 0n)}<small>now</small></div>
@@ -719,8 +816,12 @@ function App() {
                     {busy === "vote" ? "Waiting for wallet signature..." : alreadyVoted ? "You already voted this round" : voteNeedsWallet || (selectedAsset === null ? "Pick a stock to vote" : `Review vote for ${picked?.symbol}: burn 1 $WIF`)}
                   </button>
                 </div>
-                {alreadyVoted && <p className="helper">{ALREADY_VOTED_TEXT}</p>}
-                {confirmingVote && <div className="confirm"><strong>{useRelay ? "Sign this vote" : "Confirm wallet vote"}</strong><p>This spends exactly 1 $WIF and burns it. {useRelay ? "Your wallet signs the exact round, stock, nonce and deadline. The relayer submits only that and pays the gas." : "Your wallet sends the vote and you pay the ETH gas."} A first vote may also ask for a one-time $WIF approval.</p><div className="cta-row"><button className="btn primary" disabled={busy !== null} onClick={() => void runVote()}>Sign and submit</button><button className="btn ghost" disabled={busy !== null} onClick={() => setConfirmingVote(false)}>Cancel</button></div></div>}
+                {alreadyVoted && <p className="helper">One vote per wallet per round, so no more $WIF can be spent here. Use a different wallet or wait for the next round.</p>}
+                {confirmingVote && picked && <div className="confirm"><strong>{useRelay ? "Sign this vote" : "Confirm wallet vote"}</strong><p>This spends exactly 1 $WIF and burns it. {useRelay ? "The relayer submits only what you sign and pays the gas for the vote." : "Your wallet sends the vote and you pay the ETH gas."}</p>
+                  <ApprovalNote amount="1" contract="Votes" verified={contractVerified.votes} link={addressLink(addresses.votes)} />
+                  {useRelay
+                    ? <SignSummary lines={[<>Vote in <b>Round {round.roundId.toString()}</b> for <b>{picked.symbol}</b></>, "Costs 1 $WIF, burned", "Valid for 15 minutes and can be used once", "Gas for the vote is paid by Flatstock. A one-time approval of 1 $WIF may come first, and you pay that small gas"]} />
+                    : <SignSummary lines={[<>Approve exactly 1 $WIF to the Flatstock Votes contract (only if not already approved)</>, <>Vote in <b>Round {round.roundId.toString()}</b> for <b>{picked.symbol}</b>, which burns 1 $WIF</>, "You pay the ETH gas for both"]} />}<div className="cta-row"><button className="btn primary" disabled={busy !== null} onClick={() => void runVote()}>Sign and submit</button><button className="btn ghost" disabled={busy !== null} onClick={() => setConfirmingVote(false)}>Cancel</button></div></div>}
                 {submittedTx?.action === "vote" && !revealed && <div className="proof"><strong>Vote submitted and 1 $WIF burned.</strong><a href={txLink(submittedTx.hash)} target="_blank" rel="noreferrer">View transaction</a></div>}
               </>
             )}
@@ -752,11 +853,29 @@ function App() {
                 {connected && <p className="source mono">Price: Chainlink · Balances: Robinhood Chain</p>}
               </div>
 
-              <div className="lockbox">
+              <div className="lockbox" id="lock">
                 <div className="row-between"><h2>Free gas</h2>{gasPill}</div>
-                <p className="muted">Lock 10 $WIF and we pay the gas for your votes and buys, up to {health?.dailyCap ?? 3} sponsored actions a day.</p>
+                <p className="muted">Lock 10 $WIF and we pay the gas for your votes and buys, up to {health?.dailyCap ?? 3} sponsored actions a day. You can unlock any time, with no waiting period.</p>
                 {connected && <ul className="kv"><li><span>ETH balance</span><b className="mono">{formatEth(walletState?.eth || 0n)}</b></li><li><span>$WIF balance</span><b className="mono">{formatWif(walletState?.wif || 0n)}</b></li><li><span>Locked</span><b className="mono">{walletState && walletState.locked > 0n ? formatWif(walletState.locked) : "Not locked"}</b></li></ul>}
-                <button className="btn primary full" disabled={!walletReady || busy !== null || (walletState?.locked || 0n) > 0n} onClick={() => void runLock()}>{busy === "lock" ? "Waiting for confirmation..." : walletState?.locked ? "Free gas active" : !connected ? "Connect to lock" : "Lock 10 $WIF for free gas"}</button>
+                {walletState && walletState.locked > 0n ? (
+                  <>
+                    <p className="mono"><b>Free gas active</b></p>
+                    {confirmingUnlock ? (
+                      <div className="confirm">
+                        <strong>Unlock {formatWif(walletState.locked)}?</strong>
+                        <p>All of your locked $WIF returns to your wallet. You'll lose free gas until you lock 10 $WIF again.</p>
+                        <div className="cta-row"><button className="btn primary" disabled={busy !== null} onClick={() => void runUnlock()}>Unlock {formatWif(walletState.locked)}</button><button className="btn ghost" disabled={busy !== null} onClick={() => setConfirmingUnlock(false)}>Keep locked</button></div>
+                      </div>
+                    ) : (
+                      <button className="btn ghost full" disabled={!walletReady || busy !== null} onClick={() => setConfirmingUnlock(true)}>{busy === "unlock" ? "Waiting for confirmation..." : "Unlock"}</button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <button className="btn primary full" disabled={!walletReady || busy !== null} onClick={() => void runLock()}>{busy === "lock" ? "Waiting for confirmation..." : !connected ? "Connect to lock" : "Lock 10 $WIF for free gas"}</button>
+                    {connected && <ApprovalNote amount="10" contract="Lock" verified={contractVerified.lock} link={addressLink(addresses.lock)} />}
+                  </>
+                )}
                 {connected && !hasSponsorLock && <p className="helper">No $WIF is locked, so this wallet pays its own ETH gas.</p>}
                 {connected && hasSponsorLock && !SIGNATURE_SAFE_WRITES_ENABLED && <p className="helper">Free gas is being configured. Until then this wallet pays its own gas.</p>}
                 {health && <p className="helper">{sponsorshipPaused ? SPONSORSHIP_PAUSED_MESSAGE : `Free gas: ${health.enabled ? `${health.usage || 0} of ${health.dailyCap} sponsored actions used today` : "offline"}.`}</p>}
@@ -773,7 +892,14 @@ function App() {
             </div>
             {sellPlan && <ul className="quotes"><li><b>{sellPlan.symbol}</b><span className="mono">${sellPlan.quotePrice.toFixed(2)} vs ${sellPlan.chainlinkPrice.toFixed(2)}</span><span className="mono good-text">{(sellPlan.differenceBps / 100).toFixed(2)}%</span></li></ul>}
             <button className="btn primary" disabled={!walletReady || !sellPlan || busy !== null} onClick={requestSell}>{busy === "sell" ? "Submitting permit and sell..." : sellPlan ? `Review ${sellPlan.symbol} sell` : "Check sell price first"}</button>
-            {confirmingSell && sellPlan && <div className="confirm"><strong>{useRelay ? `Sign ${sellPlan.symbol} sell` : `Confirm ${sellPlan.symbol} sell`}</strong><p>This sells {sellAmount} shares back to USDG and sends the output to your wallet. {useRelay ? "You sign two exact messages: a Stock Token permit for this token and amount, then the sell. The relayer submits both and pays the gas. Both signatures expire in 5 minutes." : "Your wallet signs the exact transaction and you pay the ETH gas."} The price guard passed.</p><div className="cta-row"><button className="btn primary" disabled={busy !== null} onClick={() => void runSell()}>Sign and submit</button><button className="btn ghost" disabled={busy !== null} onClick={() => setConfirmingSell(false)}>Cancel</button></div></div>}
+            {confirmingSell && sellPlan && <div className="confirm"><strong>{useRelay ? `Sign ${sellPlan.symbol} sell` : `Confirm ${sellPlan.symbol} sell`}</strong><p>This sells {sellAmount} shares back to USDG and sends the output to your wallet. {useRelay ? "You sign two exact messages: a Stock Token permit for this token and amount, then the sell. The relayer submits both and pays the gas. Both signatures expire in 5 minutes." : "Your wallet signs the exact transaction and you pay the ETH gas."} The price guard passed.</p>
+              <SignSummary lines={[
+                ...(useRelay ? [<>Permit: allow the Flatstock Router to pull exactly <b>{sellAmount} {sellPlan.symbol}</b> from you</>] : [<>Approve exactly <b>{sellAmount} {sellPlan.symbol}</b> to the Flatstock Router (only if not already approved)</>]),
+                <>Sell <b>{sellAmount} {sellPlan.symbol}</b> for USDG, at least {(Number(sellPlan.minOut) / 1e6).toFixed(2)} USDG</>,
+                "The USDG goes straight to your wallet",
+                useRelay ? "Valid for 5 minutes and can be used once. Gas is paid by Flatstock" : "You pay the ETH gas",
+              ]} />
+              <div className="cta-row"><button className="btn primary" disabled={busy !== null} onClick={() => void runSell()}>Sign and submit</button><button className="btn ghost" disabled={busy !== null} onClick={() => setConfirmingSell(false)}>Cancel</button></div></div>}
             {submittedTx?.action === "sell" && <div className="proof"><strong>Sell submitted.</strong><a href={txLink(submittedTx.hash)} target="_blank" rel="noreferrer">View transaction</a></div>}
             <p className="helper">Safety check: the price must be fresh and within 2% of Chainlink.</p>
 

@@ -765,15 +765,43 @@ export function hashMetaLegs(legs: MetaLeg[]): Hex {
   ));
 }
 
+// A slow person or a slow chain is never a failure: wait up to 15 minutes for the receipt, and tell the
+// caller as soon as the wallet has returned a hash so the UI can show "waiting for confirmation".
+const RECEIPT_TIMEOUT_MS = 15 * 60 * 1000;
+export function waitForReceipt(hash: Hex) {
+  return publicClient.waitForTransactionReceipt({ hash, timeout: RECEIPT_TIMEOUT_MS, pollingInterval: 2_000 });
+}
+
 export async function sendDirect(
   wallet: ConnectedWallet,
   account: Address,
   target: Address,
   data: Hex,
+  onSent?: (hash: Hex) => void,
 ) {
   const hash = await wallet.sendTransaction({ account, to: target, data, chain });
-  await publicClient.waitForTransactionReceipt({ hash });
+  onSent?.(hash);
+  const receipt = await waitForReceipt(hash);
+  if (receipt.status !== "success") throw new Error("The transaction was mined but reverted. Nothing was spent except gas.");
   return hash;
+}
+
+// The vote this wallet cast in a round, from the VoteCast event (null if none can be found).
+export async function readMyVote(roundId: bigint, voter: Address): Promise<{ assetIndex: number; hash: Hex } | null> {
+  try {
+    const logs = await publicClient.getLogs({
+      address: addresses.votes,
+      event: voteCastEvent,
+      args: { roundId },
+      fromBlock: STATS_FROM_BLOCK,
+      toBlock: "latest",
+    });
+    const mine = logs.find((log) => log.args.voter?.toLowerCase() === voter.toLowerCase() && log.transactionHash);
+    if (!mine || mine.transactionHash === null) return null;
+    return { assetIndex: Number(mine.args.assetIndex ?? 0), hash: mine.transactionHash };
+  } catch {
+    return null;
+  }
 }
 
 export async function readPermitNonce(account: Address) {
@@ -798,6 +826,7 @@ export async function signMetaVote(
   account: Address,
   roundId: bigint,
   assetIndex: number,
+  onSent?: (hash: Hex) => void,
 ) {
   if (!metaVotesAddress || !SIGNATURE_SAFE_WRITES_ENABLED) throw new Error("Signature-safe vote contract is not configured.");
   const nonce = await publicClient.readContract({
@@ -827,7 +856,8 @@ export async function signMetaVote(
   });
   const payload = await response.json() as { txHash?: Hex; error?: string };
   if (!response.ok || !payload.txHash) throw new Error(payload.error || "The signature relay rejected this vote.");
-  await publicClient.waitForTransactionReceipt({ hash: payload.txHash });
+  onSent?.(payload.txHash);
+  await waitForReceipt(payload.txHash);
   return payload.txHash;
 }
 
@@ -884,7 +914,7 @@ export async function signMetaBuy(
   });
   const payload = await response.json() as { txHash?: Hex; error?: string };
   if (!response.ok || !payload.txHash) throw new Error(payload.error || "The signature relay rejected this buy.");
-  await publicClient.waitForTransactionReceipt({ hash: payload.txHash });
+  await waitForReceipt(payload.txHash);
   return payload.txHash;
 }
 
@@ -947,7 +977,7 @@ export async function signMetaSell(wallet: ConnectedWallet, account: Address, le
   });
   const payload = await response.json() as { txHash?: Hex; error?: string };
   if (!response.ok || !payload.txHash) throw new Error(payload.error || "The signature relay rejected this sell.");
-  await publicClient.waitForTransactionReceipt({ hash: payload.txHash });
+  await waitForReceipt(payload.txHash);
   return payload.txHash;
 }
 

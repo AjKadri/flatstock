@@ -153,6 +153,7 @@ export const votesAbi = parseAbi([
 
 export const lockAbi = parseAbi([
   "function lock(uint256 amount)",
+  "function unlock(uint256 amount)",
   "function locked(address account) view returns (uint256)",
   "function isLocked(address account) view returns (bool)",
 ]);
@@ -192,3 +193,7 @@ export const tradeExecutedEvent = parseAbiItem(
 export const mixBoughtEvent = parseAbiItem(
   "event MixBought(address indexed account, address indexed sellToken, address indexed buyToken, uint256 amountIn, uint256 amountOut, bool lockedAccount)",
 );
+
+// Which Flatstock contracts have verified source on Blockscout/Sourcify. The approval notice only says
+// "verified" for contracts where this is true. Set `lock` to true once its source is verified.
+export const contractVerified = { votes: true, router: true, lock: false } as const;
