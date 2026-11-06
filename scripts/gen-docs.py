@@ -179,7 +179,7 @@ def page(slug, title, body):
 <div class="layout"><details class="side" open><summary>Docs menu</summary><nav aria-label="Docs">{nav}</nav></details>
 <main><p class="eyebrow">Docs</p><h1>{html.escape(title)}</h1>{body}
 <p class="notice"><b>Notice</b> {NOTICE}</p></main></div>
-<footer><span>Flatstock is independent and not affiliated with Robinhood.</span><a href="/docs/terms">Terms</a><a href="/docs/privacy">Privacy</a><a href="/docs/credits">Credits</a></footer>
+<footer><span>Flatstock is independent and not affiliated with Robinhood.</span><a href="/docs/terms">Terms</a><a href="/docs/privacy">Privacy</a><a href="/docs/credits">Credits</a><a href="https://x.com/flatstockapp" target="_blank" rel="noopener noreferrer">X</a></footer>
 <script>if(matchMedia("(max-width:860px)").matches){{var d=document.querySelector(".side");if(d)d.removeAttribute("open");}}</script>
 </body></html>"""
 os.makedirs(OUT, exist_ok=True)
