@@ -48,7 +48,7 @@ export function Spark({ values, up }: { values: number[]; up?: boolean }) {
 export function ChangeCell({ price }: { price?: StockPrice }) {
   if (!price || price.changePct === null) return <span className="mono muted">n/a</span>;
   const up = price.changePct >= 0;
-  return <span className={`mono ${up ? "up" : "down"}`}>{up ? "+" : "−"}{Math.abs(price.changePct).toFixed(2)}%</span>;
+  return <span className={`mono ${up ? "up" : "down"}`}>{up ? "+" : "−"}{Math.abs(price.changePct).toFixed(2)}%{price.stale && <small className="since">since last close</small>}</span>;
 }
 
 // Holdings-style table. market=false (past rounds) shows only stock and weight, with no live prices.
@@ -109,9 +109,14 @@ export function MixTable({ rows, market = true, selected, onPick, disabled, lead
   );
 }
 
-// Loading state: a dot moving along the line (progress).
-export function Loader({ label = "Loading" }: { label?: string }) {
-  return <div className="loader" role="status" aria-label={label}><span className="loader-rail" /><span className="loader-dot" /></div>;
+// Loading state: a grey bar and grey rows in the shape of the real layout.
+export function Loader({ label = "Loading", rows = 3 }: { label?: string; rows?: number }) {
+  return (
+    <div className="skel" role="status" aria-label={label} aria-busy="true">
+      <div className="skel-bar" />
+      {Array.from({ length: rows }, (_, i) => <div className="skel-row" key={i} />)}
+    </div>
+  );
 }
 
 // Divider: a plain line.
@@ -119,13 +124,13 @@ export function Rule() {
   return <hr className="rule" />;
 }
 
-// Round progress: the line from open to close with a dot at "now".
+// Round progress: a plain filled line from open to close.
 export function ProgressLine({ opensAt, closesAt, now, label }: { opensAt: number; closesAt: number; now: number; label?: ReactNode }) {
   const total = Math.max(closesAt - opensAt, 1);
   const done = Math.min(Math.max((now - opensAt) / total, 0), 1);
   return (
     <div className="progress">
-      <div className="progress-track"><span className="progress-fill" style={{ width: `${done * 100}%` }} /><span className="progress-dot" style={{ left: `${done * 100}%` }} /></div>
+      <div className="progress-track"><span className="progress-fill" style={{ width: `${done * 100}%` }} /></div>
       {label && <div className="progress-label mono">{label}</div>}
     </div>
   );

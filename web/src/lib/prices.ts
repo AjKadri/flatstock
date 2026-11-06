@@ -15,7 +15,8 @@ const feedAbi = parseAbi([
 const client = createPublicClient({ chain, transport: http(RPC_URL) });
 const LOOKBACK_ROUNDS = 72; // how many earlier rounds to read; the 24h window is cut from these
 const WINDOW_SECONDS = 24 * 60 * 60;
-const CACHE_KEY = "flatstock-prices-v3";
+const STALE_SECONDS = 3 * 60 * 60;
+const CACHE_KEY = "flatstock-prices-v4";
 const CACHE_MS = 10 * 60 * 1000;
 
 export type StockPrice = {
@@ -23,14 +24,15 @@ export type StockPrice = {
   price: number | null;
   updatedAt: number | null;
   history: number[]; // oldest -> newest, within 24h of the latest update
-  changePct: number | null; // latest vs the price 24h earlier (or the oldest round we could read)
+  changePct: number | null; // latest vs the price at or before 24h earlier (or the oldest round we could read)
+  stale: boolean; // feed has not updated for 3h+ (markets shut): the change is "since last close"
 };
 export type PriceMap = Record<string, StockPrice>;
 
 type Round = readonly [bigint, bigint, bigint, bigint, bigint];
 
 async function loadFresh(): Promise<PriceMap> {
-  const empty = (symbol: string): StockPrice => ({ symbol, price: null, updatedAt: null, history: [], changePct: null });
+  const empty = (symbol: string): StockPrice => ({ symbol, price: null, updatedAt: null, history: [], changePct: null, stale: false });
   const out: PriceMap = Object.fromEntries(assets.map((asset) => [asset.symbol, empty(asset.symbol)]));
 
   // Request 1: decimals and latest round for every feed.
@@ -51,7 +53,7 @@ async function loadFresh(): Promise<PriceMap> {
     return { asset, scale, latestId: round[0], price: Number(round[1]) / scale, updatedAt: Number(round[3]) };
   });
   base.forEach((entry) => {
-    if (entry) out[entry.asset.symbol] = { symbol: entry.asset.symbol, price: entry.price, updatedAt: entry.updatedAt, history: [entry.price], changePct: null };
+    if (entry) out[entry.asset.symbol] = { symbol: entry.asset.symbol, price: entry.price, updatedAt: entry.updatedAt, history: [entry.price], changePct: null, stale: false };
   });
 
   // Request 2: the earlier rounds of every feed (failures allowed).
@@ -75,13 +77,18 @@ async function loadFresh(): Promise<PriceMap> {
     base.forEach((entry) => {
       if (!entry) return;
       const earlier = (rounds[entry.asset.symbol] ?? []).sort((a, b) => a.t - b.t); // oldest first
-      const cutoff = entry.updatedAt - WINDOW_SECONDS;
+      // Live feed: compare with the last round at or before now-24h. Markets shut (no update for 3h+):
+      // compare with the last round at or before (last update - 24h) and call it "since last close",
+      // so a stale round never makes the 24h window look empty or flat.
+      const nowSec = Math.floor(Date.now() / 1000);
+      const stale = nowSec - entry.updatedAt > STALE_SECONDS;
+      const cutoff = (stale ? entry.updatedAt : nowSec) - WINDOW_SECONDS;
       const inWindow = earlier.filter((point) => point.t >= cutoff);
       // The price 24h earlier: the last round at or before the cutoff, otherwise the oldest round we have.
       const before = earlier.filter((point) => point.t < cutoff);
       const anchor = before.length ? before[before.length - 1].v : (inWindow[0]?.v ?? null);
       const history = [...inWindow.map((point) => point.v), entry.price];
-      out[entry.asset.symbol] = { ...out[entry.asset.symbol], history, changePct: anchor ? (entry.price / anchor - 1) * 100 : null };
+      out[entry.asset.symbol] = { ...out[entry.asset.symbol], history, changePct: anchor ? (entry.price / anchor - 1) * 100 : null, stale };
     });
   } catch {
     // Prices still show without a chart.

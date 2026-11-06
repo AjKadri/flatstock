@@ -119,6 +119,8 @@ function App() {
   const [health, setHealth] = useState<Health | null>(null);
   const [alreadyVoted, setAlreadyVoted] = useState(false);
   const [buyMix, setBuyMix] = useState<BuyMix | null>(null);
+  // "loading" until the round data has actually come back; only then can we say there is no mix.
+  const [mixLoad, setMixLoad] = useState<"loading" | "ready" | "failed">("loading");
   const [roundHistory, setRoundHistory] = useState<RoundHistory | null>(null);
   const [tab, setTab] = useState<Tab>(() => tabFromHash());
   const [revealed, setRevealed] = useState(false);
@@ -150,6 +152,7 @@ function App() {
       ]);
       setRound(nextRound);
       setBuyMix(await pickBuyMix(nextRound));
+      setMixLoad("ready");
       setVotesBurned(burned);
       setCorporateActions(await readCorporateActions(
         assets.slice(0, nextRound.assetCount).map((asset) => asset.symbol),
@@ -166,6 +169,7 @@ function App() {
         setHealth(await fetchRelayHealth(connectedAccount));
       }
     } catch (error) {
+      setMixLoad((state) => (state === "ready" ? state : "failed"));
       setMessage({ tone: "error", text: friendlyError(error, "Could not refresh chain state.") });
     }
   }, [account]);
@@ -516,7 +520,9 @@ function App() {
   });
   const voteRoundOpen = Boolean(round?.isOpen);
   const mixRound = buyMix?.round ?? null;
-  const mixLabel = !mixRound
+  const mixLabel = mixLoad !== "ready"
+    ? ""
+    : !mixRound
     ? "This week's mix"
     : buyMix?.kind === "final"
       ? `This week · Round ${mixRound.roundId} final`
@@ -598,7 +604,7 @@ function App() {
             </header>
 
             {mixRows.length === 0 ? (
-              !round ? <Loader label="Loading the mix" /> : <EmptyLine>No mix yet: the first round has not closed and has no votes.</EmptyLine>
+              mixLoad === "loading" ? <Loader label="Loading the mix" /> : mixLoad === "failed" ? <EmptyLine>Could not load the mix. Check your connection and reload.</EmptyLine> : <EmptyLine>No mix yet: the first round has not closed and has no votes.</EmptyLine>
             ) : (
               <AllocationBar rows={toMix(communityRows)} />
             )}
@@ -629,8 +635,10 @@ function App() {
                   <h2>Buy the mix</h2>
                   {gasPill}
                 </div>
-                {!buyMix ? (
-                  <EmptyLine>There is no mix to buy yet. The first round closes Mon 9 Nov 15:00 WAT; after that buys use its final mix.</EmptyLine>
+                {mixLoad === "loading" ? (
+                  <Loader label="Loading the mix to buy" />
+                ) : !buyMix ? (
+                  <EmptyLine>{mixLoad === "failed" ? "Could not load the mix. Check your connection and reload." : "There is no mix to buy yet. The first round closes Mon 9 Nov 15:00 WAT; after that buys use its final mix."}</EmptyLine>
                 ) : (
                   <>
                     {buyMix.kind === "preview" && <p className="helper">Round {buyMix.round.roundId.toString()} is still open, so this is the live preview. After it closes, buys use its final mix.</p>}
@@ -728,7 +736,7 @@ function App() {
 
             <div className="two">
               <div>
-                <div className="row-between"><h2>Holdings</h2><strong className="mono total">${totalValue.toFixed(2)}</strong></div>
+                <div className="row-between"><h2>Holdings</h2><strong className="mono total">{connected ? `$${totalValue.toFixed(2)}` : "—"}</strong></div>
                 {!connected ? <EmptyLine>Connect a wallet to see the Stock Tokens it holds.</EmptyLine> : (
                   <>
                     {totalValue > 0 ? <AllocationBar rows={holdingRows} /> : <EmptyLine>No Stock Tokens in this wallet yet. Buy the mix on This week.</EmptyLine>}
@@ -838,13 +846,14 @@ function App() {
           <span>Self-custody only. Live data from {NETWORK_LABEL} (4663).</span>
         </div>
         <nav className="foot-links" aria-label="Footer">
+          <a href="https://flatstock.ajkadri.dev" target="_blank" rel="noopener noreferrer">Website</a>
           <a href="https://flatstock.ajkadri.dev/docs" target="_blank" rel="noopener noreferrer">Docs</a>
           <a href={addressLink(addresses.votes)} target="_blank" rel="noopener noreferrer">Votes contract</a>
           <a href={addressLink(addresses.buyRouter)} target="_blank" rel="noopener noreferrer">Router</a>
           <a href={addressLink(addresses.lock)} target="_blank" rel="noopener noreferrer">Lock</a>
           <button className="link" onClick={() => void addChain()}>Add {NETWORK_LABEL}</button>
           <a href="https://github.com/AjKadri/flatstock" target="_blank" rel="noopener noreferrer">GitHub</a>
-          <a href="https://x.com/flatstock_" target="_blank" rel="noopener noreferrer">X @flatstock_</a>
+          <a href="https://x.com/flatstockapp" target="_blank" rel="noopener noreferrer">X</a>
         </nav>
       </footer>
 

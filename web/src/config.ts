@@ -18,10 +18,10 @@ export const STATS_FROM_BLOCK = BigInt(
 );
 export const MIX_VOTE_SHARE_BPS = BigInt(import.meta.env.VITE_VOTE_SHARE_BPS || "5000");
 export const MIX_MAX_WEIGHT_BPS = 5000n;
-export const MIX_RULES_ENABLED = Boolean(import.meta.env.VITE_VOTES_ADDRESS);
-export const SIGNATURE_SAFE_WRITES_ENABLED = Boolean(
-  import.meta.env.VITE_META_VOTES_ADDRESS && import.meta.env.VITE_META_ROUTER_ADDRESS,
-);
+// The deployed contract addresses are public, so they are the defaults. The app no longer depends
+// on VITE_* flags being set in Vercel for buying to work.
+export const MIX_RULES_ENABLED = true;
+export const SIGNATURE_SAFE_WRITES_ENABLED = true;
 export const LEGAL_NOTICE =
   "Not available to US persons, or in Canada, the UK, Switzerland or other restricted jurisdictions. Not investment advice.";
 export const RESTRICTED_JURISDICTIONS_URL = "https://docs.robinhood.com/rhj/restricted-jurisdictions";
@@ -45,12 +45,8 @@ export const addresses = {
   uniswap: "0xCaf681a66D020601342297493863E78C959E5cb2" as Address,
 };
 export const legacyBuyRouterAddress = "0x5B08a91F8C8666C85e636bbE61Aed3b059B61FfA" as Address;
-export const metaVotesAddress = import.meta.env.VITE_META_VOTES_ADDRESS
-  ? import.meta.env.VITE_META_VOTES_ADDRESS as Address
-  : null;
-export const metaRouterAddress = import.meta.env.VITE_META_ROUTER_ADDRESS
-  ? import.meta.env.VITE_META_ROUTER_ADDRESS as Address
-  : null;
+export const metaVotesAddress = (import.meta.env.VITE_META_VOTES_ADDRESS || addresses.votes) as Address;
+export const metaRouterAddress = (import.meta.env.VITE_META_ROUTER_ADDRESS || addresses.buyRouter) as Address;
 export const legacyVotesAddress = "0xEDB1FC3e26a53a2CC023e131A2D6c4B6F526B8E9" as Address;
 export const previousReplacementVotesAddress = "0xD49249D2a5CffBCF35B6560857d1d1C703802e78" as Address;
 export const retiredVotes68d2Address = "0x68d2622f3bbf6BE80CdfED679489de344410C7Db" as Address;
