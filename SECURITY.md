@@ -1,6 +1,6 @@
 # Flatstock security review
 
-Reviewed 6 Nov 2026 by reading the code only. No mainnet transaction was sent for this review. This is a self-review by the author's coding agent, **not an independent audit**. Flatstock is hackathon software: use small amounts.
+Reviewed 6 Nov 2026 by reading the code. No mainnet transaction was sent for this review. The two Medium findings that could be fixed in the relayer (F1, F3) were fixed the same day; see below. This is a self-review by the author's coding agent, **not an independent audit**. Flatstock is hackathon software: use small amounts.
 
 Scope: `src/FlatstockRouter.sol`, `src/FlatstockLock.sol`, `src/FlatstockVotes.sol`, `src/FlatstockEIP712.sol`, `web/relayer/server.ts` (and its sponsorship guard), and the app's signing code in `web/src/lib/chain.ts`.
 
@@ -11,7 +11,7 @@ Scope: `src/FlatstockRouter.sol`, `src/FlatstockLock.sol`, `src/FlatstockVotes.s
 - **Router and Lock have no owner** and no admin function. **Votes has one immutable owner (the relayer hot wallet); it can only open rounds.**
 - Approvals are exact. The app approves 1 $WIF (vote), 10 $WIF (lock), or the exact USDG / Stock Token amount of the action in progress.
 - Signed actions use EIP-712 with chain ID and contract address in the domain, a per-user nonce that is consumed on use, and a deadline. Signatures with a high `s` value are rejected.
-- No High or Critical issue was found. The findings below are Medium, Low and Info, with mitigations.
+- No High or Critical issue was found. The findings below are Medium, Low and Info, with mitigations. F1 and F3 are **fixed** (relayer only, no contract change); F2 remains as a bounded Medium.
 
 ## What the contracts can and cannot do
 
@@ -30,13 +30,16 @@ Scope: `src/FlatstockRouter.sol`, `src/FlatstockLock.sol`, `src/FlatstockVotes.s
 
 Severity is for this product at its current scale. "Mitigated" says what limits the damage today.
 
-### F1 · Medium · The 2% Chainlink check is enforced by the app, not the contract
+### F1 · Medium · FIXED · The 2% Chainlink check was enforced by the app, not the relayer
 
-The contract enforces only that each leg's `amountOutMinimum` is non-zero and that the legs sum to the signed amount. The 2% bound against Chainlink is computed **in the app** when it builds the plan (`buildBuyPlan`, `buildSellPlan`), and the user signs the resulting minimums. The relayer checks the signature and that the minimum is positive; it does **not** re-check the minimum against Chainlink. (An earlier note in the project said the relayer computes it. It does not.)
+The contract enforces only that each leg's `amountOutMinimum` is non-zero and that the legs sum to the signed amount. The 2% bound against Chainlink was computed **only in the app**; the relayer checked the signature and that the minimum was positive. A modified website could have asked a user to sign a poor minimum, which the relayer would have paid gas to submit.
 
-- Impact: if the website itself were compromised and served a modified app, it could ask a user to sign a plan with a poor minimum. The wallet shows raw typed data, so the user would not easily notice. Funds can only be sent to the user's own wallet, but a bad minimum allows a bad price.
-- Mitigated by: the app is static and served from Vercel at a fixed tag (`submission`); the signed minimums are shown in plain English before signing; the contract cannot be pointed anywhere else.
-- Possible later hardening (no contract change): have the relayer reject buys and sells whose minimums are more than 2% below its own Chainlink read.
+- **Fix (`web/relayer/price-guard.ts`, wired into `relayBuy` and `relaySell`):** before it relays any `buyMixBySig` or `sellBySig`, the relayer reads each leg's Chainlink feed and rejects the action if the signed `amountOutMinimum` is more than 2% below the Chainlink-implied output. Integer maths, rounded in the user's favour. For a sell the check runs before the permit transaction, so no gas is spent on a refused sell.
+- **Fails closed:** unknown token (no feed), feed price zero or negative, feed update older than 24 hours or in the future, unreadable feed, QuickNode oracle health not `OK`/`MARKET_CLOSED`, stale or paused, or the health service unavailable. The user sees a plain message such as "NVDA: the minimum you signed (…) is more than 2% below the Chainlink price (at least … expected), so this buy was not relayed. Nothing was spent."
+- **App change that goes with it:** the app now signs `max(quote − 2%, Chainlink-implied − 2%)`, using the same integer maths (imported from the relayer module), so a normal plan is never refused. This can only make the signed minimum stricter.
+- **Side effect:** this also closes the "buy legs are not allow-listed" point in F7. A buy leg for a token with no Flatstock feed is now refused.
+- **Direct wallet transactions are unaffected.** Someone who sends a trade from their own wallet pays their own gas and the relayer is not involved; the contract still requires a non-zero minimum.
+- **Tests:** `relayer/price-guard.test.ts` (10 unit tests: good leg passes, exactly 2% passes, 3% and 2.01% below are rejected for buy and sell, stale / future / zero / negative price, unknown token, unreadable feed, paused or unhealthy oracle, multi-leg with one bad leg, and a check that the relayer's feed table equals `web/src/config.ts`). `relayer/price-guard.fork.test.ts` runs on a local anvil fork against the **real** Chainlink feeds, Stock Tokens and Uniswap quoter for AAPL, NVDA and MSFT: a leg 1.5% below Chainlink passes, a leg 3% below is rejected (buy and sell), a feed more than 24h old rejects a perfect leg, and the implied output is within 5% of the live pool quote (a check on decimals). Run: `bash web/relayer/run-fork-test.sh`.
 
 ### F2 · Medium · Relayer drain by many wallets
 
@@ -45,13 +48,20 @@ The daily cap (3 per wallet) is per wallet, and a wallet needs only 10 $WIF lock
 - Mitigated by: each action costs the abuser real $WIF and a signature; the relayer pauses automatically when its balance drops below 0.0003 ETH; there is a kill switch; the relayer holds only gas ETH; losing it costs gas money, not user funds.
 - Possible later hardening: a global daily cap, and a minimum lock age (can be added in the relayer without any contract change).
 
-### F3 · Medium · Open RPC proxy, no rate limiting or body limit in the relayer
+### F3 · Medium · FIXED (relayer) · Open RPC proxy, no rate limiting or body limit
 
-`POST /api/rpc` forwards any JSON-RPC call to the paid QuickNode endpoint (falling back to the public RPC). The relayer has no rate limit and no request-size limit. Anyone who can reach the server can burn the QuickNode quota or send a very large body. The `Origin` check is a browser/CORS control only: requests with **no** `Origin` header (curl, scripts) are accepted by design.
+`POST /api/rpc` forwarded any JSON-RPC call to the paid QuickNode endpoint with no rate limit and no size limit, and the `Origin` check is a browser/CORS control only (requests with no `Origin` header, such as curl, are accepted by design).
 
-- Impact: availability and quota, not funds. The relayer's key is never exposed through this route.
-- Mitigated by: the key lives only in the server environment; the app falls back to the public RPC in the proxy; the service runs with `NoNewPrivileges` and a read-only filesystem.
-- To do at the edge (Caddy or the host), not in the contracts: a request rate limit and a body-size limit on `api.flatstock.ajkadri.dev`.
+- **Fix (`web/relayer/rpc-policy.ts`, `rate-limit.ts`, `server.ts`):**
+  - **Method allow-list:** `eth_call`, `eth_getLogs`, `eth_blockNumber`, `eth_chainId`, `net_version`, `eth_getTransactionReceipt`, `eth_getTransactionByHash`, `eth_getBalance`, `eth_getCode`, `eth_getBlockByNumber`, `eth_getBlockByHash`, `eth_estimateGas`, `eth_gasPrice`, `eth_maxPriorityFeePerGas`, `eth_feeHistory`, `eth_getTransactionCount`. Everything else is refused, including `eth_sendRawTransaction`, `eth_sendTransaction`, `eth_sign`, `eth_getStorageAt`, `debug_*`, `trace_*`, `admin_*`, subscriptions and filters. Nothing the app needs sends a transaction through the proxy: the wallet sends its own.
+  - **`eth_getLogs`:** the filter must name Flatstock contracts only (the current and retired vote contracts, the router, the old buy router), may not use `blockHash`, may not start before block 101,593,767 (the app's first block) or at `earliest`, and may span at most 25 million blocks (the app reads from its first block to the latest, about 6 million today).
+  - **`eth_call` / `eth_estimateGas`:** at most two params, so no state-override sets.
+  - **Batches:** at most 20 calls per request; one disallowed call rejects the whole batch.
+  - **Body limit:** 512 KB for `/api/rpc` (the app's Multicall price request is about 220 KB), 64 KB for the relay routes; larger gets HTTP 413.
+  - **Rate limit:** per client IP, 600 requests a minute (`M3_RPC_RATE_PER_MINUTE`), then HTTP 429 with `Retry-After`. A single page load makes roughly 100 to 150 requests, so this leaves room for a few reloads. The IP is the last `X-Forwarded-For` entry, which Caddy sets.
+- **Verified with the real app:** the mix, the live prices and the 24h change load through the new proxy (the Multicall price request passes the body limit); no request was refused by the policy.
+- **Tests:** `relayer/rpc-policy.test.ts` (allowed methods, 13 refused methods, batch bounds, `eth_getLogs` address / range / `blockHash` / `earliest` cases, rate limiter) and `relayer/rpc-proxy.test.ts`, which starts the real `server.ts` against a stub upstream and checks: allowed reads and batches are forwarded; `eth_sendRawTransaction` (alone or inside a batch) is refused and **never reaches the upstream**; an unbounded `eth_getLogs` is refused; an oversize body gets 413; a realistic 220 KB price request passes; the 9th request in a minute from one IP gets 429 while another IP is unaffected.
+- **Remaining, at the edge:** a Caddy-level connection limit is still sensible but no longer required to protect the quota. The relay routes (`/api/meta/*`) have a body limit and the daily cap but no per-IP rate limit.
 
 ### F4 · Low · `sqrtPriceLimitX96` is not part of the signed sell message
 
@@ -77,7 +87,7 @@ The relayer key also owns the Votes contract. If the key were stolen, an attacke
 
 - **Admin route:** `POST /api/relay/kill-switch` requires `Authorization: Bearer <token>`. The token is compared with `!==` (not constant time) and there is no attempt limit. The route can only switch relaying on or off; it cannot move funds. The token is on the server only. A long random token and an edge rate limit make guessing impractical.
 - **Daily cap in memory:** counters reset when the service restarts, and the check and the increment are not atomic, so parallel requests for one wallet could exceed the cap by a few actions. Bounded by the balance guard.
-- **Buy legs are not allow-listed in the relayer.** A user can sign a buy of any token through the sponsored path (sells are allow-listed). It only affects the signer, and each use counts toward the cap.
+- **Buy legs:** previously not allow-listed in the relayer. Fixed with F1: a buy leg must be one of the eight Stock Tokens that have a Chainlink feed.
 - **Health endpoint** shows the relayer address and ETH balance. Both are public on chain anyway.
 - **Kill switch default:** the relayer starts with the kill switch **on** unless `M3_RELAYER_KILL_SWITCH=0` is set (fails closed).
 
@@ -90,37 +100,24 @@ The relayer key also owns the Votes contract. If the key were stolen, an attacke
 ### F9 · Info · Frontend and wallets
 
 - Zerion and MetaMask (Blockaid) may flag approvals of $WIF to new contracts. The app now shows the exact amount and the contract before each approval, and a plain-English summary before each signature. A false-positive report is drafted in `WALLET-WARNING-REPORT.md` (local, not committed).
-- Free gas covers the vote, buy and sell transactions the relayer submits. A vote needs a one-time $WIF approval that the user's own wallet sends, so the user pays the gas for that small approval.
+- Free gas covers the vote, buy and sell transactions the relayer submits. Each vote needs its own exact 1 $WIF approval (the vote consumes it), which the user's own wallet sends, so the user pays the gas for that small approval on every vote, even with free gas.
 
 ## Source verification status
 
 | Contract | Address | Sourcify | Blockscout |
 | --- | --- | --- | --- |
-| FlatstockVotes | `0x4BB9…A968` | exact match (verified 3 Nov) | exact match (CHECKS.md) |
-| FlatstockRouter | `0x8799…dbe7` | exact match (verified 3 Nov) | exact match as noted in the docs; recheck |
-| FlatstockLock | `0x2421…E121` | **not verified** (no record) | not recorded; verify |
+| FlatstockVotes | `0x4BB9…A968` | exact match (3 Nov) | exact match (CHECKS.md) |
+| FlatstockRouter | `0x8799…dbe7` | exact match (3 Nov) | recorded as exact in the docs; recheck |
+| FlatstockLock | `0x2421…E121` | **exact match, creation and runtime (6 Nov)** | not confirmed; recheck |
 
-I could not query Blockscout from the review environment (it served a bot check), so the Blockscout column comes from `CHECKS.md`. To verify the Lock contract (deployed with WIF `0x5173…4773` and a 10 WIF minimum), run from the repo root:
-
-```bash
-forge verify-contract --chain-id 4663 --verifier sourcify \
-  0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121 src/FlatstockLock.sol:FlatstockLock \
-  --constructor-args $(cast abi-encode "constructor(address,uint256)" 0x5173b8eA6923c2d40267890D45C46a3480954773 10000000000000000000)
-```
-
-```bash
-forge verify-contract --chain-id 4663 --verifier blockscout --verifier-url https://robinhoodchain.blockscout.com/api/ \
-  0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121 src/FlatstockLock.sol:FlatstockLock \
-  --constructor-args $(cast abi-encode "constructor(address,uint256)" 0x5173b8eA6923c2d40267890D45C46a3480954773 10000000000000000000)
-```
-
-Both publish the source, which is already in the public repository. If the compile output differs from the deployed bytecode (the Lock was deployed before a rename), the result may be a "partial match".
+The Lock source was published to Sourcify on 6 Nov (no transaction; the source is already in the public repository) with constructor arguments WIF `0x5173…4773` and a 10 WIF minimum. The Blockscout API sits behind a Cloudflare challenge that the command-line tool cannot pass, so the Blockscout column for Router and Lock is unconfirmed: open the Code tab of each address on Blockscout to check it. If a contract shows as unverified there, Blockscout can import it from Sourcify, or use its "Verify & publish" page.
 
 ## What is mitigated, in one list
 
 - Funds: no owner or upgrade path on Router or Lock; Votes owner can only open rounds.
 - Replay: nonces, deadlines, chain ID and contract address in every signature.
-- Slippage: a signed minimum on every leg, plus the 2% Chainlink guard, oracle freshness and health checks in the app.
+- Slippage: a signed minimum on every leg, the 2% Chainlink guard, oracle freshness and health checks in the app, and the same 2% Chainlink check repeated by the relayer before it pays gas.
+- RPC proxy abuse: read-method allow-list, bounded `eth_getLogs`, batch / body limits and a per-IP rate limit.
 - Gas abuse: 3 per wallet per day, automatic low-balance pause, kill switch, $5 minimum sponsored buy.
 - Key exposure: the relayer key and RPC URL live only in `/etc/flatstock/flatstock.env` on the server; Vercel holds only public `VITE_*` values.
 
