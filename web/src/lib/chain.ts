@@ -880,6 +880,12 @@ export async function signMetaVote(
   return payload.txHash;
 }
 
+// The signature router's nonce for this wallet. It goes up by one only when a relayed buy or sell really executed,
+// so the app can tell "it landed" from "it failed" even when the relayer's reply was lost.
+export async function readRouterNonce(kind: "buy" | "sell", account: Address) {
+  return await publicClient.readContract({ address: metaRouterAddress, abi: routerAbi, functionName: kind === "buy" ? "buyNonces" : "sellNonces", args: [account] }) as bigint;
+}
+
 export async function signMetaBuy(
   wallet: ConnectedWallet,
   account: Address,

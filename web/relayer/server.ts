@@ -24,6 +24,7 @@ import {
 import { createPriceGuard, PriceGuardError, type OracleHealth } from "./price-guard.ts";
 import { checkRpcPayload, RpcPolicyError } from "./rpc-policy.ts";
 import { createRateLimiter } from "./rate-limit.ts";
+import { createRelayedSender } from "./safe-send.ts";
 import { buildProviders, createProviderPool, ProvidersFailedError } from "./rpc-providers.ts";
 
 const host = process.env.M3_RELAYER_HOST || "127.0.0.1";
@@ -58,6 +59,8 @@ const account = privateKeyToAccount(relayerKey);
 const readTransport = fallback(rpcProviders.map((provider) => viemHttp(provider.url, { timeout: 8_000 })));
 const publicClient = createPublicClient({ chain, transport: readTransport });
 const walletClient = createWalletClient({ account, chain, transport: readTransport });
+// Every relayed write is signed once locally, then broadcast; a broadcast error is double-checked on chain by hash.
+const relayedSender = createRelayedSender({ walletClient, publicClient });
 // Stop sponsoring when the relayer's own ETH is below this (default 0.0003 ETH).
 const minRelayerBalanceWei = process.env.M3_MIN_RELAYER_BALANCE_WEI
   ? BigInt(process.env.M3_MIN_RELAYER_BALANCE_WEI)
@@ -271,7 +274,7 @@ async function relayVote(payload: Record<string, unknown>) {
     signature,
   });
   if (!valid) fail("Vote signature is invalid.");
-  const txHash = await walletClient.writeContract({
+  const txHash = await relayedSender.writeContract({
     address: metaVotesAddress,
     abi: votesAbi,
     functionName: "voteBySig",
@@ -328,7 +331,7 @@ async function relayBuy(payload: Record<string, unknown>) {
     r: (rawPermit.r || "0x0000000000000000000000000000000000000000000000000000000000000000") as Hex,
     s: (rawPermit.s || "0x0000000000000000000000000000000000000000000000000000000000000000") as Hex,
   };
-  const txHash = await walletClient.writeContract({
+  const txHash = await relayedSender.writeContract({
     address: metaRouterAddress,
     abi: routerAbi,
     functionName: "buyMixBySig",
@@ -393,7 +396,7 @@ async function relaySell(payload: Record<string, unknown>) {
   if (!permitValid) fail("Stock Token permit signature is invalid.");
   await priceGuard.assertSell(sellToken, amountIn, amountOutMinimum); // before any gas is spent on the permit
 
-  const permitTxHash = await walletClient.writeContract({
+  const permitTxHash = await relayedSender.writeContract({
     address: sellToken,
     abi: permitAbi,
     functionName: "permit",
@@ -403,7 +406,7 @@ async function relaySell(payload: Record<string, unknown>) {
   const permitReceipt = await publicClient.waitForTransactionReceipt({ hash: permitTxHash });
   if (permitReceipt.status !== "success") fail("Stock Token permit transaction reverted.");
 
-  const txHash = await walletClient.writeContract({
+  const txHash = await relayedSender.writeContract({
     address: metaRouterAddress,
     abi: routerAbi,
     functionName: "sellBySig",

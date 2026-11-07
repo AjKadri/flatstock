@@ -11,15 +11,21 @@ const GB = "https://getblock.invalid/secret-key-gb";
 const QN = "https://quicknode.invalid/secret-key-qn";
 const PUB = "https://public.invalid";
 const providers = buildProviders({ GETBLOCK_RPC_URL: GB, QUICKNODE_RPC_URL: QN }, PUB);
+import { isProviderAuthError } from "./rpc-providers.ts";
 const ok = (result: unknown) => new Response(JSON.stringify({ jsonrpc: "2.0", id: 1, result }), { status: 200 });
 const payload = { jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] };
 
-function fakeFetch(behaviour: Record<string, "ok" | "down" | "429" | "500" | "hang" | "rpcerror">) {
+function fakeFetch(behaviour: Record<string, "ok" | "down" | "401" | "403" | "404" | "429" | "500" | "hang" | "rpcerror" | "badkey" | "badkeyrpc">) {
   const calls: string[] = [];
   const impl = (async (url: string, init?: RequestInit) => {
     calls.push(url);
     const mode = behaviour[url];
     if (mode === "down") throw new TypeError("fetch failed");
+    if (mode === "401") return new Response("unauthorized", { status: 401 });
+    if (mode === "403") return new Response("forbidden", { status: 403 });
+    if (mode === "404") return new Response("not found", { status: 404 });
+    if (mode === "badkey") return new Response(JSON.stringify({ jsonrpc: "2.0", id: 1, error: { code: -32000, message: "Invalid API key" } }), { status: 200 });
+    if (mode === "badkeyrpc") return new Response(JSON.stringify([{ jsonrpc: "2.0", id: 1, error: { code: -32001, message: "request rejected" } }]), { status: 200 });
     if (mode === "429") return new Response("rate limited", { status: 429 });
     if (mode === "500") return new Response("oops", { status: 500 });
     if (mode === "rpcerror") return new Response(JSON.stringify({ jsonrpc: "2.0", id: 1, error: { code: -32000, message: "nope" } }), { status: 200 });
@@ -127,4 +133,24 @@ test("end to end: real server with a dead GetBlock URL still serves reads and re
     child.kill();
     stub.close();
   }
+});
+
+test("a revoked or rotated GetBlock URL (401, 403, 404, or an RPC 'invalid key' error) falls back to QuickNode", async () => {
+  for (const mode of ["401", "403", "404", "badkey", "badkeyrpc"] as const) {
+    const { impl, calls } = fakeFetch({ [GB]: mode, [QN]: "ok", [PUB]: "ok" });
+    const pool = createProviderPool({ providers, fetchImpl: impl });
+    assert.equal((await pool.forward(payload)).provider, "quicknode", mode);
+    calls.length = 0;
+    await pool.forward(payload); // GetBlock is now skipped for the cool-down
+    assert.deepEqual(calls, [QN], mode);
+    assert.equal((await pool.health()).getblock, false, mode);
+  }
+});
+
+test("ordinary RPC errors (revert, bad params) are not mistaken for auth failures", () => {
+  assert.equal(isProviderAuthError({ error: { code: 3, message: "execution reverted" } }), false);
+  assert.equal(isProviderAuthError({ error: { code: -32602, message: "invalid argument 0: hex string without 0x prefix" } }), false);
+  assert.equal(isProviderAuthError({ error: { code: -32000, message: "nonce too low" } }), false);
+  assert.equal(isProviderAuthError({ result: "0x1" }), false);
+  assert.equal(isProviderAuthError({ error: { code: -32000, message: "API key is invalid" } }), true);
 });

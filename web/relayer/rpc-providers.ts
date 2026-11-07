@@ -19,6 +19,21 @@ export function buildProviders(env: { GETBLOCK_RPC_URL?: string; QUICKNODE_RPC_U
   return list;
 }
 
+// A provider-level failure that is not an outage: the key was revoked, rotated, disabled or is over quota. These come
+// back as HTTP 401/403/404 (handled as "not ok") or as a JSON-RPC error with HTTP 200. Treated like an outage:
+// skip the provider for the cool-down and use the next one.
+const AUTH_MESSAGE = /(unauthori[sz]ed|forbidden|access denied|not authori[sz]ed|authentication|invalid[ _-]?(api[ _-]?)?(key|token)|(api[ _-]?)?(key|token)[^.]{0,30}(invalid|revoked|expired|disabled|not found|missing|rotated)|(invalid|missing|expired|revoked|unknown|disabled)[^.]{0,20}(api[ _-]?)?(key|token|credential))/i;
+const AUTH_CODES = new Set([401, 403, -32001, -32401, -32403]);
+export function isProviderAuthError(result: unknown): boolean {
+  const items = Array.isArray(result) ? result : [result];
+  return items.some((item) => {
+    if (typeof item !== "object" || item === null || !("error" in item)) return false;
+    const error = (item as { error?: { code?: unknown; message?: unknown } }).error;
+    if (typeof error !== "object" || error === null) return false;
+    return (typeof error.code === "number" && AUTH_CODES.has(error.code)) || (typeof error.message === "string" && AUTH_MESSAGE.test(error.message));
+  });
+}
+
 export class ProvidersFailedError extends Error {}
 
 type Options = {
@@ -69,6 +84,11 @@ export function createProviderPool({ providers, fetchImpl = fetch, timeoutMs = 8
           failed.push(`${provider.name} HTTP ${status}`);
           continue;
         }
+        if (isProviderAuthError(result)) {
+          downUntil.set(provider.name, now() + cooldownMs);
+          failed.push(`${provider.name} rejected the key`);
+          continue;
+        }
         if (hasRpcError(result)) {
           // The provider answered; a JSON-RPC error is not an outage, but try the next one in case it is provider-specific.
           failed.push(`${provider.name} returned an RPC error`);
@@ -93,7 +113,7 @@ export function createProviderPool({ providers, fetchImpl = fetch, timeoutMs = 8
       let ok = false;
       try {
         const { transportOk, result } = await send(provider, { jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] });
-        ok = transportOk && !hasRpcError(result) && (result as { result?: string })?.result === "0x1237";
+        ok = transportOk && !hasRpcError(result) && !isProviderAuthError(result) && (result as { result?: string })?.result === "0x1237";
       } catch { ok = false; }
       probe.set(provider.name, { ok, at: now() });
       out[provider.name] = ok;

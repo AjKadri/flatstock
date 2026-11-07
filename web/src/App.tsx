@@ -38,6 +38,7 @@ import {
   readRound,
   readVoteBurned,
   readWalletState,
+  readRouterNonce,
   signMetaBuy,
   signMetaSell,
   signMetaVote,
@@ -315,6 +316,15 @@ function App() {
     }
     return false;
   };
+  // Relayed buys and sells: the router's nonce for this wallet rises only when the action executed. Poll it for ~25s
+  // before reporting a failure, because the relayer's reply can be lost even though the transaction landed.
+  const tradeLanded = async (kind: "buy" | "sell", voter: Address, before: bigint, patient: boolean) => {
+    for (let i = 0; i < (patient ? 10 : 1); i += 1) {
+      try { if ((await readRouterNonce(kind, voter)) > before) return true; } catch { /* keep polling */ }
+      if (patient && i < 9) await sleep(2500);
+    }
+    return false;
+  };
   const userRejected = (error: unknown) => {
     const text = `${(error as { shortMessage?: string })?.shortMessage ?? ""} ${error instanceof Error ? error.message : ""}`;
     return (error as { code?: number })?.code === 4001 || /user rejected|user denied|rejected the request|request rejected/i.test(text);
@@ -463,6 +473,7 @@ function App() {
     if (!wallet || !account || !buyMix) return;
     if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before buying.` });
     if (plan.length === 0) return setMessage({ tone: "info", text: "Check prices before buying." });
+    let nonceBefore: bigint | null = null; // set only for a relayed buy
     try {
       setBusy("buy");
       setConfirmingBuy(false);
@@ -475,6 +486,7 @@ function App() {
       const relayNow = hasSponsorLock && relayAvailable(liveHealth);
       let buyHash: Hex;
       if (relayNow) {
+        nonceBefore = await readRouterNonce("buy", account);
         buyHash = await signMetaBuy(wallet, account, nextPlan);
       } else {
         const totalIn = nextPlan.reduce((sum, leg) => sum + leg.amountIn, 0n);
@@ -489,7 +501,14 @@ function App() {
       setPlan([]);
       await refresh();
     } catch (error) {
-      setMessage({ tone: "error", text: friendlyError(error, "Buy cancelled or failed.") });
+      // Never trust the error alone: if the relayed buy executed on chain, it is a success.
+      if (nonceBefore !== null && await tradeLanded("buy", account, nonceBefore, !userRejected(error))) {
+        setMessage({ tone: "success", text: "Buy complete. The relayer's reply was lost, but the chain shows your buy went through and the tokens were sent directly to your wallet." });
+        setPlan([]);
+        await refresh();
+      } else {
+        setMessage({ tone: "error", text: friendlyError(error, "Buy cancelled or failed.") + (nonceBefore !== null && !userRejected(error) ? " I checked the chain and this buy is not recorded, so nothing was bought." : "") });
+      }
     } finally {
       setBusy(null);
     }
@@ -515,6 +534,7 @@ function App() {
   const runSell = async () => {
     if (!wallet || !account || !sellPlan) return;
     if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before selling.` });
+    let nonceBefore: bigint | null = null; // set only for a relayed sell
     try {
       setBusy("sell");
       setConfirmingSell(false);
@@ -526,6 +546,7 @@ function App() {
       const relayNow = hasSponsorLock && relayAvailable(liveHealth);
       let sellHash: Hex;
       if (relayNow) {
+        nonceBefore = await readRouterNonce("sell", account);
         sellHash = await signMetaSell(wallet, account, sellPlan);
       } else {
         const allowance = await readAllowance(sellPlan.token, account, addresses.buyRouter);
@@ -537,7 +558,14 @@ function App() {
       setSellPlan(null);
       await refresh();
     } catch (error) {
-      setMessage({ tone: "error", text: friendlyError(error, "Sell cancelled or failed.") });
+      // Never trust the error alone: if the relayed sell executed on chain, it is a success.
+      if (nonceBefore !== null && await tradeLanded("sell", account, nonceBefore, !userRejected(error))) {
+        setMessage({ tone: "success", text: `${sellPlan.symbol} sold. The relayer's reply was lost, but the chain shows your sell went through and the USDG was sent directly to your wallet.` });
+        setSellPlan(null);
+        await refresh();
+      } else {
+        setMessage({ tone: "error", text: friendlyError(error, "Sell cancelled or failed.") + (nonceBefore !== null && !userRejected(error) ? " I checked the chain and this sell is not recorded, so nothing was sold." : "") });
+      }
     } finally {
       setBusy(null);
     }
