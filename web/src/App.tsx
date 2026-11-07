@@ -57,6 +57,7 @@ import { renormaliseWeights } from "./lib/rounds-logic";
 import { readPrices, type PriceMap } from "./lib/prices";
 import { AllocationBar, ApprovalNote, EmptyLine, Loader, Logo, MixTable, ProgressLine, Rule, SignSummary, type MixRow } from "./ui";
 import { cacheGet, cacheSet } from "./lib/cache";
+import { gasState, sponsorshipOn } from "./lib/gas";
 
 type Health = {
   enabled: boolean;
@@ -68,7 +69,6 @@ type Health = {
   sponsorshipPausedReason?: string | null;
 };
 
-const SPONSORSHIP_PAUSED_MESSAGE = "Gas sponsorship paused, you can still buy and pay your own gas.";
 
 async function fetchRelayHealth(wallet: string): Promise<Health | null> {
   try {
@@ -81,7 +81,7 @@ async function fetchRelayHealth(wallet: string): Promise<Health | null> {
 
 // Gasless only when the relayer answered and is neither switched off nor low on ETH.
 function relayAvailable(health: Health | null) {
-  return Boolean(health && health.enabled && !health.killSwitch && !health.sponsorshipPaused);
+  return sponsorshipOn(health);
 }
 type SubmittedTx = { action: "vote" | "buy" | "sell"; hash: Hex; finality?: string };
 
@@ -147,8 +147,8 @@ function App() {
   const [submittedTx, setSubmittedTx] = useState<SubmittedTx | null>(null);
   const [message, setMessage] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
   const hasSponsorLock = walletState?.locked !== undefined && walletState.locked >= 10n * ONE_WIF;
-  const sponsorshipPaused = Boolean(health && (health.killSwitch || health.sponsorshipPaused));
-  const useRelay = hasSponsorLock && SIGNATURE_SAFE_WRITES_ENABLED && !sponsorshipPaused;
+  const gas = gasState({ connected: Boolean(account), locked: walletState?.locked, lockedLabel: walletState ? formatWif(walletState.locked) : "", health, signatureWrites: SIGNATURE_SAFE_WRITES_ENABLED });
+  const useRelay = gas.useRelay;
 
   const refresh = useCallback(async (connectedAccount = account) => {
     try {
@@ -570,7 +570,6 @@ function App() {
 
 
   const connected = Boolean(account);
-  const gasBadge = !connected ? "Connect to see gas" : useRelay ? "Free gas" : "You pay gas";
   const totalValue = useMemo(
     () => holdings.reduce((sum, holding) => sum + (holding.value || 0), 0),
     [holdings],
@@ -631,8 +630,8 @@ function App() {
   const currentRoundCard = roundHistory?.main.find((item) => round && item.roundId === round.roundId) ?? null;
 
   const gasPill = (
-    <span className={`gas ${connected ? (useRelay ? "free" : "pay") : "idle"}`} title={sponsorshipPaused ? SPONSORSHIP_PAUSED_MESSAGE : undefined}>
-      {gasBadge}
+    <span className={`gas ${connected ? (useRelay ? "free" : "pay") : "idle"}`} title={gas.title}>
+      {gas.badge}
     </span>
   );
   const goLock = () => { goTab("portfolio"); window.setTimeout(() => document.getElementById("lock")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80); };
@@ -859,7 +858,7 @@ function App() {
                 {connected && <ul className="kv"><li><span>ETH balance</span><b className="mono">{formatEth(walletState?.eth || 0n)}</b></li><li><span>$WIF balance</span><b className="mono">{formatWif(walletState?.wif || 0n)}</b></li><li><span>Locked</span><b className="mono">{walletState && walletState.locked > 0n ? formatWif(walletState.locked) : "Not locked"}</b></li></ul>}
                 {walletState && walletState.locked > 0n ? (
                   <>
-                    <p className="mono"><b>Free gas active</b></p>
+                    <p className="mono"><b>{gas.status}</b></p>
                     {confirmingUnlock ? (
                       <div className="confirm">
                         <strong>Unlock {formatWif(walletState.locked)}?</strong>
@@ -877,8 +876,7 @@ function App() {
                   </>
                 )}
                 {connected && !hasSponsorLock && <p className="helper">No $WIF is locked, so this wallet pays its own ETH gas.</p>}
-                {connected && hasSponsorLock && !SIGNATURE_SAFE_WRITES_ENABLED && <p className="helper">Free gas is being configured. Until then this wallet pays its own gas.</p>}
-                {health && <p className="helper">{sponsorshipPaused ? SPONSORSHIP_PAUSED_MESSAGE : `Free gas: ${health.enabled ? `${health.usage || 0} of ${health.dailyCap} sponsored actions used today` : "offline"}.`}</p>}
+                {gas.helper && <p className="helper">{gas.helper}</p>}
               </div>
             </div>
 
