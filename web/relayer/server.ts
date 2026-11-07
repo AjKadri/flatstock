@@ -24,16 +24,21 @@ import {
 import { createPriceGuard, PriceGuardError, type OracleHealth } from "./price-guard.ts";
 import { checkRpcPayload, RpcPolicyError } from "./rpc-policy.ts";
 import { createRateLimiter } from "./rate-limit.ts";
+import { buildProviders, createProviderPool, ProvidersFailedError } from "./rpc-providers.ts";
 
 const host = process.env.M3_RELAYER_HOST || "127.0.0.1";
 const port = Number(process.env.M3_RELAYER_PORT || 8787);
 const publicRpcUrl = process.env.RPC_URL || "https://rpc.mainnet.chain.robinhood.com";
 const quickNodeRpcUrl = process.env.QUICKNODE_RPC_URL?.trim();
+// General reads: GetBlock first, then QuickNode, then the public RPC (and the reverse when GetBlock is down).
+// The Stock Token API (qn_*) stays QuickNode-only. GETBLOCK_RPC_URL is a secret: never logged or returned.
+const rpcProviders = buildProviders(process.env, publicRpcUrl);
+const providerPool = createProviderPool({ providers: rpcProviders });
 const chain = defineChain({
   id: 4663,
   name: "Robinhood Chain",
   nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-  rpcUrls: { default: { http: [quickNodeRpcUrl || publicRpcUrl] } },
+  rpcUrls: { default: { http: [rpcProviders[0]?.url || publicRpcUrl] } },
 });
 
 const metaVotesAddress = (process.env.META_VOTES_ADDRESS || process.env.VOTE_CONTRACT_ADDRESS || "") as Address;
@@ -50,9 +55,7 @@ const allowedOrigin = process.env.M3_ALLOWED_ORIGIN || "https://app.flatstock.aj
 if (!relayerKey) throw new Error("M1_RELAYER_PRIVATE_KEY is required in the environment.");
 
 const account = privateKeyToAccount(relayerKey);
-const readTransport = quickNodeRpcUrl
-  ? fallback([viemHttp(quickNodeRpcUrl), viemHttp(publicRpcUrl)])
-  : viemHttp(publicRpcUrl);
+const readTransport = fallback(rpcProviders.map((provider) => viemHttp(provider.url, { timeout: 8_000 })));
 const publicClient = createPublicClient({ chain, transport: readTransport });
 const walletClient = createWalletClient({ account, chain, transport: readTransport });
 // Stop sponsoring when the relayer's own ETH is below this (default 0.0003 ETH).
@@ -428,30 +431,17 @@ async function proxyRpc(request: http.IncomingMessage, response: http.ServerResp
   }
   const payload = await body(request, RPC_BODY_LIMIT);
   await checkRpcPayload(payload, latestBlockNumber, MIN_LOG_BLOCK);
-  const upstreams = [quickNodeRpcUrl, publicRpcUrl].filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index);
-  let lastError = "RPC proxy failed.";
-  for (const upstream of upstreams) {
-    try {
-      const upstreamResponse = await fetch(upstream, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const raw = await upstreamResponse.text();
-      const result = JSON.parse(raw) as unknown;
-      const hasRpcError = Array.isArray(result)
-        ? result.some((item) => typeof item === "object" && item !== null && "error" in item)
-        : typeof result === "object" && result !== null && "error" in result;
-      if (!upstreamResponse.ok || hasRpcError) {
-        lastError = `Upstream returned HTTP ${upstreamResponse.status}.`;
-        continue;
-      }
-      return json(response, 200, result);
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : lastError;
-    }
+  try {
+    const { result } = await providerPool.forward(payload);
+    return json(response, 200, result);
+  } catch (error) {
+    return json(response, 502, { error: error instanceof ProvidersFailedError ? error.message : "RPC proxy failed." });
   }
-  return json(response, 502, { error: lastError });
+}
+
+async function providerHealth() {
+  const health = await providerPool.health();
+  return { getblock: health.getblock, rpcProviders: { getblock: health.getblock, quicknode: health.quicknode, public: health.public } };
 }
 
 const server = http.createServer(async (request, response) => {
@@ -481,6 +471,7 @@ const server = http.createServer(async (request, response) => {
         usage: current?.day === dayKey() ? current.count : 0,
         relayer: account.address,
         quickNode: Boolean(quickNodeRpcUrl),
+        ...await providerHealth(),
         signatureRelay: Boolean(metaVotesAddress && metaRouterAddress),
       });
     }
