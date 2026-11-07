@@ -15,10 +15,11 @@ The frontend is static in `web/dist` and belongs on Vercel. The relayer runs
 separately and reads all secrets from `/etc/flatstock/flatstock.env` through
 systemd.
 
-`QUICKNODE_RPC_URL` is optional. When set, relayer read calls prefer it and
-fall back to `RPC_URL`. Stock Token API proxy routes stay disabled until the
-variable is set. The relayer submits transactions through `RPC_URL` so a
-QuickNode read outage cannot silently change the transaction provider.
+`GETBLOCK_RPC_URL` and `QUICKNODE_RPC_URL` are optional. General reads (the `/api/rpc` proxy and the relayer's own
+reads) try GetBlock first, then QuickNode, then `RPC_URL` (the public Robinhood Chain RPC), skipping a provider that
+fails for 30 seconds. The Stock Token API routes (`/api/stock-token/*`) use QuickNode only and stay disabled until
+`QUICKNODE_RPC_URL` is set. Relayed transactions are signed once, then broadcast through the same ordered providers; if a
+send errors, the relayer looks the transaction up by hash before reporting failure.
 
 ## Ubuntu process manager
 
