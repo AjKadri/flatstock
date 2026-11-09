@@ -1,5 +1,10 @@
 # Monday 9 Nov: close round 4, open round 5 (draft, needs your approval for every transaction)
 
+> **Update 9 Nov:** this manual runbook was used for round 4 and round 5. From round 5 on, the round bot
+> (`web/relayer/close-round.ts`, see "Round bot" in `deploy/HOSTING.md`) closes each round and opens the next one
+> every Monday 15:00 WAT once `CLOSE_ROUND_ENABLED=1` and `AUTO_OPEN_ENABLED=1` are set on the VPS. Keep this file
+> as the manual fallback (the `cast` commands below still work, and `closeRound` stays permissionless).
+
 Read with `ROUND4-CLOSE.md` (the close itself). Nothing here is run without your yes.
 
 ## Facts
@@ -33,7 +38,11 @@ Read with `ROUND4-CLOSE.md` (the close itself). Nothing here is run without your
    ```
    Replace `8` with the final `assetCount` and `5000` with `7500` if you pick 75%. Use the 4-argument form so the vote share is explicit. The relayer wallet pays about 0.0000016 ETH (75,363 gas estimated read-only on 5 Nov), from the same balance that sponsors gas.
 6. **Verify (read-only, I run it):** `rounds(5)` shows 8 assets and `closesAt` 1794837600; `voteShareBps(5)` matches; the app header reads "This week: Round 4 final mix (3 stocks). Voting now: Round 5, 8 stocks, for next week."; I record both transactions in `CHECKS.md`.
-7. **Round 5 close (Mon 16 Nov 15:00 WAT):** same as step 2, then open round 6 with `closesAt` 1795442400 after the same study.
+7. **Round 5 close (Mon 16 Nov 15:00 WAT) and later weeks:** done by the round bot, no input needed. At the first
+   run after `closesAt` it simulates and sends `closeRound(5)`, then opens round 6 with the same `assetCount` (8) and
+   `voteShareBps` (5000) and `closesAt` 1795442400 (Mon 23 Nov 15:00 WAT). If the bot is off or fails, use the manual
+   commands above (`closeRound` is permissionless; `openRound` needs the owner key). Note: the bot keeps the same
+   stock list every week. If a stock must be dropped (stock study), turn `AUTO_OPEN_ENABLED` off first and open by hand.
 
 ## Pre-flight (before Monday)
 - The new app, landing and relayer are deployed (new tokens in the relayer sell allow-list).

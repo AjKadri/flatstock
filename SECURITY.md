@@ -70,12 +70,18 @@ The daily cap (3 per wallet) is per wallet, and a wallet needs only 10 $WIF lock
 - Mitigated by: the signature is seen only by the relayer before the transaction is mined, and the relayer rejects any sell whose price limit is not zero (`relaySell`). After inclusion the nonce is spent. It would take a malicious operator, and the loss is limited to the unsold remainder of one sell.
 - Not fixable without redeploying the Router. Documented here so it is not a surprise.
 
-### F5 · Low · Votes owner is a hot wallet
+### F5 · Low · Votes owner is a hot wallet, and it now opens rounds automatically
 
-The relayer key also owns the Votes contract. If the key were stolen, an attacker could open rounds with arbitrary IDs, asset counts and vote shares. Because `latestRoundId` only goes up, a bogus high round ID would stay "latest" and the real round would have to use a higher ID. This is a griefing and availability risk; the attacker cannot touch any $WIF, votes or user funds.
+The relayer key also owns the Votes contract. From round 6 on, the round bot on the VPS signs `openRound` with that key by itself every week (and `closeRound`, which anyone can call). If the key were stolen, an attacker could open rounds with arbitrary IDs, asset counts and vote shares. Because `latestRoundId` only goes up, a bogus high round ID would stay "latest" and the real round would have to use a higher ID. This is a griefing and availability risk; the attacker cannot touch any $WIF, votes or user funds.
 
 - Mitigated by: the key exists only on the server; the wallet holds only gas ETH; the app reads asset lists from its own fixed config, not from the contract.
-- Possible later hardening: move ownership to a cold wallet or multisig and open each round from there.
+- The bot itself can only call `closeRound` and `openRound` (one guarded write path, checked by a unit test) and it fails closed on every doubt:
+  - it opens a round only when its signer address equals `owner()`, otherwise it only closes;
+  - the new round copies the previous round's `assetCount` and `voteShareBps` (so at most 8 assets and at most 10000 bps) and its `closesAt` is the previous one plus 7 days, which must be a Monday 14:00:00 UTC, in the future and no more than 8 days ahead;
+  - it simulates every call with `eth_call` first and sends nothing if the simulation fails or any RPC call errors;
+  - it skips when the signer holds under 0.00005 ETH or has a transaction pending, and a second run in a row sends nothing;
+  - it is off unless `CLOSE_ROUND_ENABLED=1` and `AUTO_OPEN_ENABLED=1` are set in the VPS-only env file.
+- These guards limit what the bot does, not what a thief with the key could do by hand: the key can still call `openRound` directly. Possible later hardening: move ownership to a cold wallet or multisig and open each round from there.
 
 ### F6 · Low · Permit front-running and signature lifetime
 

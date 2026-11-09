@@ -1,5 +1,10 @@
 # Round 4 close: exact steps (draft, needs user approval)
 
+> **Update 9 Nov:** this manual runbook was used for round 4 and round 5. From round 5 on, the round bot
+> (`web/relayer/close-round.ts`, see "Round bot" in `deploy/HOSTING.md`) closes each round and opens the next one
+> every Monday 15:00 WAT once `CLOSE_ROUND_ENABLED=1` and `AUTO_OPEN_ENABLED=1` are set on the VPS. Keep this file
+> as the manual fallback (the `cast` commands below still work, and `closeRound` stays permissionless).
+
 Contract: FlatstockVotes `0x4BB945800d588E6B4DB287b3fCe9C13f7825A968`, chain 4663.
 Round 4 `closesAt` = 1794232800 = Mon 9 Nov 2026 14:00 UTC = **15:00 WAT**.
 

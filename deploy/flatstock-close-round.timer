@@ -2,7 +2,7 @@
 Description=Run Flatstock vote close bot periodically
 
 [Timer]
-OnBootSec=2min
+OnBootSec=1min
 OnUnitActiveSec=5min
 RandomizedDelaySec=30s
 Persistent=true

@@ -41,9 +41,12 @@ sudo systemctl status flatstock-relayer
 The initial kill switch is on. Flip it only after the app, domain, funding,
 daily cap, and mainnet approval process have been checked.
 
-The close bot is disabled by default with `CLOSE_ROUND_ENABLED=0`. After the
-operator has approved the specific round close, set it to `1` for that run and
-enable the timer:
+The round bot is disabled by default with `CLOSE_ROUND_ENABLED=0` and `AUTO_OPEN_ENABLED=0`. With both off,
+running `npm run close-round --prefix /opt/flatstock/web` prints the contract, the latest round, `closesAt` and the
+decision without sending anything. With `CLOSE_ROUND_ENABLED=1` it closes a round once its `closesAt` has passed; with
+`AUTO_OPEN_ENABLED=1` as well it then opens the next weekly round. It can only call `closeRound` and `openRound`,
+and it opens only when its signer is the contract `owner()`. Full behaviour and guards are in `deploy/HOSTING.md`
+("Round bot"). To arm it after you have approved the automation:
 
 ```sh
 sudo systemctl enable --now flatstock-close-round.timer
@@ -51,14 +54,7 @@ sudo systemctl start flatstock-close-round.service
 sudo journalctl -u flatstock-close-round.service -n 50 --no-pager
 ```
 
-With `CLOSE_ROUND_ENABLED=0` the bot is read-only: running
-`npm run close-round --prefix /opt/flatstock/web` prints the contract, round,
-`closesAt` and the decision without sending anything. The bot can only call
-`closeRound`; it never opens a round. It refuses any round whose on-chain
-`closesAt` differs from `CLOSE_ROUND_EXPECTED_CLOSES_AT`.
-
-Keep the timer disabled until the round and close transaction have been
-explicitly approved. The bot reads through QuickNode when configured, falls
+Keep the timer disabled until you have explicitly approved the automation. The bot reads through QuickNode when configured, falls
 back to `RPC_URL`, and submits the close through `RPC_URL`.
 
 ## Caddy and TLS

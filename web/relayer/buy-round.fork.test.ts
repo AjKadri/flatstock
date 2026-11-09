@@ -17,7 +17,7 @@ const abi = parseAbi([
   "function latestRoundId() view returns (uint256)",
 ]);
 
-test("buys use round 4's final weights after round 5 opens", { skip: !forkUrl }, async () => {
+test("buys use round 4's final weights after round 5 opens", { skip: !forkUrl }, async (t) => {
   assert.ok(forkUrl && /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?\/?$/.test(forkUrl), "FORK_RPC_URL must be a local anvil fork");
   const pub = createPublicClient({ transport: http(forkUrl) });
   const test_ = createTestClient({ mode: "anvil", transport: http(forkUrl) });
@@ -35,6 +35,12 @@ test("buys use round 4's final weights after round 5 opens", { skip: !forkUrl },
 
   // Before the close: round 4 open, 1 vote -> labelled preview only.
   const before = await read(4n);
+  // Mainnet already made this transition on 9 Nov (round 4 closed, round 5 opened), so the rehearsal cannot run any more.
+  // The close-then-open path is covered by close-round.fork.test.ts and by the live app check recorded in CHECKS.md.
+  if (before?.closed) {
+    t.skip("round 4 is already closed on mainnet (9 Nov); rehearsal no longer applicable");
+    return;
+  }
   assert.ok(before && !before.closed);
   const preview = await selectBuyMix(before, read, 4n);
   console.log(`before close: kind=${preview?.kind} round=${preview?.round.roundId} weights=${preview?.round.weights}`);

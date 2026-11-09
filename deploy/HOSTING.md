@@ -110,7 +110,8 @@ sudo systemctl daemon-reload
 
 Before starting anything, fill `/etc/flatstock/flatstock.env` with the VPS-only
 values. Set `M3_ALLOWED_ORIGIN=https://app.flatstock.ajkadri.dev`. Keep
-`CLOSE_ROUND_ENABLED=0` until the specific close transaction is approved. Keep
+`CLOSE_ROUND_ENABLED=0` and `AUTO_OPEN_ENABLED=0` until you have approved the weekly automation
+(see "Round bot" below). Keep
 `M3_RELAYER_KILL_SWITCH=1` until the app and HTTPS API have been checked and
 you explicitly confirm signature relaying can resume. Put `QUICKNODE_RPC_URL` only in
 this VPS file when available.
@@ -164,3 +165,33 @@ The browser uses `/api/rpc` through this VPS. The proxy prefers
 endpoint is never sent to the browser. The relayer submits only the new EIP-712
 signature-authorized vote and trade calls. `/api/relay` is retired and returns
 HTTP 410, so an old EIP-7702 client cannot submit arbitrary delegated batches.
+
+## Round bot (closes and opens the weekly rounds)
+
+`flatstock-close-round.timer` runs `npm run close-round` one minute after boot and then every 5 minutes. Each run
+reads `latestRoundId` N and `rounds(N)` and decides from chain state alone:
+
+1. N open and `closesAt` not reached: logs `not-due` and exits.
+2. N open and `closesAt` reached: simulates `closeRound(N)` with `eth_call`, sends it, waits for the receipt.
+3. N closed and round N+1 does not exist: opens N+1 with N's `assetCount` and `voteShareBps(N)` (the 4-argument
+   `openRound`) and `closesAt = N.closesAt + 604800` (more whole weeks if that is already past). Simulated first.
+4. Otherwise logs `nothing-to-do` and exits.
+
+Modes (both in `/etc/flatstock/flatstock.env`):
+
+| `CLOSE_ROUND_ENABLED` | `AUTO_OPEN_ENABLED` | Behaviour |
+|---|---|---|
+| 0 | any | status only, never sends |
+| 1 | 0 | closes the current round when due, never opens (the old `VOTE_ROUND_ID` / `CLOSE_ROUND_EXPECTED_CLOSES_AT` pins still apply) |
+| 1 | 1 | closes when due, then opens the next weekly round; the pins are ignored and logged |
+
+Guards, all fail closed and each logged as one JSON line (`action`): only `closeRound` and `openRound` can be called;
+nothing is sent without a successful simulation; opening happens only when the signer address equals `owner()` (else
+`not-owner`, close only); the new round must have 2 to 8 assets, a `closesAt` on a Monday 14:00:00 UTC that is in the
+future and at most 8 days ahead, and `voteShareBps` at most 10000 (else `sanity-failed`); a signer balance under
+0.00005 ETH gives `low-balance`; a pending transaction from the signer gives `pending-tx`; any RPC error gives
+`rpc-error` and nothing is sent. Running the bot twice in a row never sends twice, because the second run sees the
+new on-chain state. Tests: `node --test web/relayer/close-round-logic.test.ts` and `bash web/relayer/run-fork-test.sh`
+(`close-round.fork.test.ts`, local anvil fork only).
+
+Read the log: `sudo journalctl -u flatstock-close-round.service -n 30 --no-pager`.
