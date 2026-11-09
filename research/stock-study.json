@@ -1,255 +1,209 @@
 {
- "at": "2026-11-05T14:49:59.880Z",
+ "at": "2026-11-09T20:33:48.589Z",
  "session": {
   "name": "REGULAR",
-  "nextChangeAt": 1793912400,
+  "nextChangeAt": 1794258000,
   "mintWindowOpen": true,
-  "nextMintWindowChangeAt": 1794013200,
+  "nextMintWindowChangeAt": 1794618000,
   "calendarCovered": true
  },
  "sequencer": {
   "status": "OPERATIONAL",
   "source": "status.robinhoodchain.offchain.io",
-  "observedAt": 1793890126
+  "observedAt": 1794256396
  },
  "rows": [
   {
    "symbol": "AAPL",
    "token": "0xaF3D76f1834A1d425780943C99Ea8A608f8a93f9",
    "feed": "0x6B22A786bAa607d76728168703a39Ea9C99f2cD0",
-   "chainlink": 352.83812162,
-   "ageSeconds": 1009,
+   "chainlink": 352.29931678,
+   "ageSeconds": 3143,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
    "best": {
-    "fee": 500,
+    "fee": 3000,
     "depth": {
      "1": {
-      "price": 353.1626632411083,
-      "diffBps": 9
+      "price": 352.22132042876893,
+      "diffBps": -2
      },
      "10": {
-      "price": 353.163745146179,
-      "diffBps": 9
+      "price": 352.2254243782057,
+      "diffBps": -2
      },
      "50": {
-      "price": 353.16855361316027,
-      "diffBps": 9
+      "price": 352.24366415348004,
+      "diffBps": -2
      },
      "100": {
-      "price": 353.1745641968869,
-      "diffBps": 10
+      "price": 352.266463872573,
+      "diffBps": -1
      }
     },
-    "diff1Bps": 9,
-    "price1": 353.1626632411083
+    "diff1Bps": -2,
+    "price1": 352.22132042876893
    },
    "tiers": [
-    {
-     "fee": 500,
-     "depth": {
-      "1": {
-       "price": 353.1626632411083,
-       "diffBps": 9
-      },
-      "10": {
-       "price": 353.163745146179,
-       "diffBps": 9
-      },
-      "50": {
-       "price": 353.16855361316027,
-       "diffBps": 9
-      },
-      "100": {
-       "price": 353.1745641968869,
-       "diffBps": 10
-      }
-     },
-     "diff1Bps": 9,
-     "price1": 353.1626632411083
-    },
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 353.2578378537431,
-       "diffBps": 12
+       "price": 352.22132042876893,
+       "diffBps": -2
       },
       "10": {
-       "price": 353.2644814347977,
-       "diffBps": 12
+       "price": 352.2254243782057,
+       "diffBps": -2
       },
       "50": {
-       "price": 353.29400846170694,
-       "diffBps": 13
+       "price": 352.24366415348004,
+       "diffBps": -2
       },
       "100": {
-       "price": 353.33091724534347,
-       "diffBps": 14
+       "price": 352.266463872573,
+       "diffBps": -1
       }
      },
-     "diff1Bps": 12,
-     "price1": 353.2578378537431
+     "diff1Bps": -2,
+     "price1": 352.22132042876893
     },
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 354.7508956194368,
-       "diffBps": 54
+       "price": 351.93486551838936,
+       "diffBps": -10
       },
       "10": {
-       "price": 354.92570699444417,
-       "diffBps": 59
+       "price": 352.10898166129897,
+       "diffBps": -5
       },
       "50": {
-       "price": 355.7026464389216,
-       "diffBps": 81
+       "price": 352.8828311853421,
+       "diffBps": 17
       },
       "100": {
-       "price": 356.6759153664811,
-       "diffBps": 109
+       "price": 353.85014309039605,
+       "diffBps": 44
       }
      },
-     "diff1Bps": 54,
-     "price1": 354.7508956194368
-    }
-   ],
-   "bestDepth": {
-    "fee": 500,
-    "depth": {
-     "1": {
-      "price": 353.1626632411083,
-      "diffBps": 9
-     },
-     "10": {
-      "price": 353.163745146179,
-      "diffBps": 9
-     },
-     "50": {
-      "price": 353.16855361316027,
-      "diffBps": 9
-     },
-     "100": {
-      "price": 353.1745641968869,
-      "diffBps": 10
-     }
+     "diff1Bps": -10,
+     "price1": 351.93486551838936
     },
-    "diff1Bps": 9,
-    "price1": 353.1626632411083
-   }
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 351.0608192371587,
+       "diffBps": -35
+      },
+      "10": {
+       "price": 351.06243805001895,
+       "diffBps": -35
+      },
+      "50": {
+       "price": 351.0696327738429,
+       "diffBps": -35
+      },
+      "100": {
+       "price": 351.07862617862287,
+       "diffBps": -35
+      }
+     },
+     "diff1Bps": -35,
+     "price1": 351.0608192371587
+    }
+   ]
   },
   {
    "symbol": "AMD",
    "token": "0x86923f96303D656E4aa86D9d42D1e57ad2023fdC",
    "feed": "0x943A29E7ae51A4798823ca9eEd2ed533B2A22C72",
-   "chainlink": 431.7722,
-   "ageSeconds": 117,
+   "chainlink": 512.92,
+   "ageSeconds": 1070,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
    "best": {
-    "fee": 3000,
+    "fee": 10000,
     "depth": {
      "1": {
-      "price": 433.7907044838718,
-      "diffBps": 47
+      "price": 514.1371283625076,
+      "diffBps": 24
      },
      "10": {
-      "price": 433.8018998133158,
-      "diffBps": 47
+      "price": 514.714469045088,
+      "diffBps": 35
      },
      "50": {
-      "price": 433.85165683306707,
-      "diffBps": 48
+      "price": 517.2804276343343,
+      "diffBps": 85
      },
      "100": {
-      "price": 433.91385310775627,
-      "diffBps": 50
+      "price": 520.4878758708923,
+      "diffBps": 148
      }
     },
-    "diff1Bps": 47,
-    "price1": 433.7907044838718
+    "diff1Bps": 24,
+    "price1": 514.1371283625076
    },
    "tiers": [
-    {
-     "fee": 3000,
-     "depth": {
-      "1": {
-       "price": 433.7907044838718,
-       "diffBps": 47
-      },
-      "10": {
-       "price": 433.8018998133158,
-       "diffBps": 47
-      },
-      "50": {
-       "price": 433.85165683306707,
-       "diffBps": 48
-      },
-      "100": {
-       "price": 433.91385310775627,
-       "diffBps": 50
-      }
-     },
-     "diff1Bps": 47,
-     "price1": 433.7907044838718
-    },
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 446.4457934534022,
-       "diffBps": 340
+       "price": 514.1371283625076,
+       "diffBps": 24
       },
       "10": {
-       "price": 463.09475880960287,
-       "diffBps": 725
+       "price": 514.714469045088,
+       "diffBps": 35
       },
       "50": {
-       "price": 466.7780355861208,
-       "diffBps": 811
+       "price": 517.2804276343343,
+       "diffBps": 85
       },
       "100": {
-       "price": 469.3469205378733,
-       "diffBps": 870
+       "price": 520.4878758708923,
+       "diffBps": 148
       }
      },
-     "diff1Bps": 340,
-     "price1": 446.4457934534022
-    }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 433.7907044838718,
-      "diffBps": 47
-     },
-     "10": {
-      "price": 433.8018998133158,
-      "diffBps": 47
-     },
-     "50": {
-      "price": 433.85165683306707,
-      "diffBps": 48
-     },
-     "100": {
-      "price": 433.91385310775627,
-      "diffBps": 50
-     }
+     "diff1Bps": 24,
+     "price1": 514.1371283625076
     },
-    "diff1Bps": 47,
-    "price1": 433.7907044838718
-   }
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 514.9091483203938,
+       "diffBps": 39
+      },
+      "10": {
+       "price": 514.9129787508949,
+       "diffBps": 39
+      },
+      "50": {
+       "price": 514.930002886456,
+       "diffBps": 39
+      },
+      "100": {
+       "price": 514.9512830559074,
+       "diffBps": 40
+      }
+     },
+     "diff1Bps": 39,
+     "price1": 514.9091483203938
+    }
+   ]
   },
   {
    "symbol": "AMZN",
    "token": "0x12f190a9F9d7D37a250758b26824B97CE941bF54",
    "feed": "0xD5a1508ceD74c084eBf3cBe853e2C968fB2a651C",
-   "chainlink": 266.5625,
-   "ageSeconds": 291,
+   "chainlink": 268.1402,
+   "ageSeconds": 15325,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -257,80 +211,57 @@
     "fee": 3000,
     "depth": {
      "1": {
-      "price": 266.73638689607196,
-      "diffBps": 7
+      "price": 269.06889532715866,
+      "diffBps": 35
      },
      "10": {
-      "price": 266.7368875382267,
-      "diffBps": 7
+      "price": 269.06912827415863,
+      "diffBps": 35
      },
      "50": {
-      "price": 266.73911261447023,
-      "diffBps": 7
+      "price": 269.0701635941588,
+      "diffBps": 35
      },
      "100": {
-      "price": 266.7418939597746,
-      "diffBps": 7
+      "price": 269.07145774415903,
+      "diffBps": 35
      }
     },
-    "diff1Bps": 7,
-    "price1": 266.73638689607196
+    "diff1Bps": 35,
+    "price1": 269.06889532715866
    },
    "tiers": [
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 266.73638689607196,
-       "diffBps": 7
+       "price": 269.06889532715866,
+       "diffBps": 35
       },
       "10": {
-       "price": 266.7368875382267,
-       "diffBps": 7
+       "price": 269.06912827415863,
+       "diffBps": 35
       },
       "50": {
-       "price": 266.73911261447023,
-       "diffBps": 7
+       "price": 269.0701635941588,
+       "diffBps": 35
       },
       "100": {
-       "price": 266.7418939597746,
-       "diffBps": 7
+       "price": 269.07145774415903,
+       "diffBps": 35
       }
      },
-     "diff1Bps": 7,
-     "price1": 266.73638689607196
+     "diff1Bps": 35,
+     "price1": 269.06889532715866
     }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 266.73638689607196,
-      "diffBps": 7
-     },
-     "10": {
-      "price": 266.7368875382267,
-      "diffBps": 7
-     },
-     "50": {
-      "price": 266.73911261447023,
-      "diffBps": 7
-     },
-     "100": {
-      "price": 266.7418939597746,
-      "diffBps": 7
-     }
-    },
-    "diff1Bps": 7,
-    "price1": 266.73638689607196
-   }
+   ]
   },
   {
    "symbol": "ASML",
    "token": "0x47F93d52cBeC7C6D2CfC080e154002370a60dAEA",
    "feed": "0xB4106147E8cce40b7d46124090d373A71b70f87D",
-   "chainlink": 1421.75219155,
-   "ageSeconds": 170,
+   "chainlink": 1522.8458731,
+   "ageSeconds": 3281,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -338,103 +269,80 @@
     "fee": 3000,
     "depth": {
      "1": {
-      "price": 1434.0824683812527,
-      "diffBps": 87
+      "price": 1520.5685690245652,
+      "diffBps": -15
      },
      "10": {
-      "price": 1454.5301680272876,
-      "diffBps": 231
+      "price": 1538.49014134054,
+      "diffBps": 103
      },
      "50": {
-      "price": 1520.9282409143434,
-      "diffBps": 698
+      "price": 1573.7327341336807,
+      "diffBps": 334
      },
      "100": {
-      "price": 1553.1613430672899,
-      "diffBps": 924
+      "price": 1581.7663628741147,
+      "diffBps": 387
      }
     },
-    "diff1Bps": 87,
-    "price1": 1434.0824683812527
+    "diff1Bps": -15,
+    "price1": 1520.5685690245652
    },
    "tiers": [
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 1434.0824683812527,
-       "diffBps": 87
+       "price": 1520.5685690245652,
+       "diffBps": -15
       },
       "10": {
-       "price": 1454.5301680272876,
-       "diffBps": 231
+       "price": 1538.49014134054,
+       "diffBps": 103
       },
       "50": {
-       "price": 1520.9282409143434,
-       "diffBps": 698
+       "price": 1573.7327341336807,
+       "diffBps": 334
       },
       "100": {
-       "price": 1553.1613430672899,
-       "diffBps": 924
+       "price": 1581.7663628741147,
+       "diffBps": 387
       }
      },
-     "diff1Bps": 87,
-     "price1": 1434.0824683812527
+     "diff1Bps": -15,
+     "price1": 1520.5685690245652
     },
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 1447.7043281309177,
-       "diffBps": 183
+       "price": 1525.0984000759554,
+       "diffBps": 15
       },
       "10": {
-       "price": 1448.6872570697335,
-       "diffBps": 189
+       "price": 1525.2136119314398,
+       "diffBps": 16
       },
       "50": {
-       "price": 1452.7083283587217,
-       "diffBps": 218
+       "price": 1525.7256646224862,
+       "diffBps": 19
       },
       "100": {
-       "price": 1456.4757433966206,
-       "diffBps": 244
+       "price": 1526.365730486294,
+       "diffBps": 23
       }
      },
-     "diff1Bps": 183,
-     "price1": 1447.7043281309177
+     "diff1Bps": 15,
+     "price1": 1525.0984000759554
     }
-   ],
-   "bestDepth": {
-    "fee": 10000,
-    "depth": {
-     "1": {
-      "price": 1447.7043281309177,
-      "diffBps": 183
-     },
-     "10": {
-      "price": 1448.6872570697335,
-      "diffBps": 189
-     },
-     "50": {
-      "price": 1452.7083283587217,
-      "diffBps": 218
-     },
-     "100": {
-      "price": 1456.4757433966206,
-      "diffBps": 244
-     }
-    },
-    "diff1Bps": 183,
-    "price1": 1447.7043281309177
-   }
+   ]
   },
   {
    "symbol": "BABA",
    "token": "0xad25Ac6C84D497db898fa1E8387bf6Af3532a1c4",
    "feed": "0x62Cc8F9b5f56a33c9C8A60c8B92779f523c4E984",
-   "chainlink": 107.655875,
-   "ageSeconds": 762,
+   "chainlink": 105.575975,
+   "ageSeconds": 15846,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -442,126 +350,103 @@
     "fee": 3000,
     "depth": {
      "1": {
-      "price": 107.84349116166103,
-      "diffBps": 17
+      "price": 105.86332932399459,
+      "diffBps": 27
      },
      "10": {
-      "price": 107.84543766503329,
-      "diffBps": 18
+      "price": 105.86641079076502,
+      "diffBps": 28
      },
      "50": {
-      "price": 107.85408879113231,
-      "diffBps": 18
+      "price": 105.88010619863358,
+      "diffBps": 29
      },
      "100": {
-      "price": 107.86490269875607,
-      "diffBps": 19
+      "price": 105.8972254584693,
+      "diffBps": 30
      }
     },
-    "diff1Bps": 17,
-    "price1": 107.84349116166103
+    "diff1Bps": 27,
+    "price1": 105.86332932399459
    },
    "tiers": [
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 107.84349116166103,
-       "diffBps": 17
+       "price": 105.86332932399459,
+       "diffBps": 27
       },
       "10": {
-       "price": 107.84543766503329,
-       "diffBps": 18
+       "price": 105.86641079076502,
+       "diffBps": 28
       },
       "50": {
-       "price": 107.85408879113231,
-       "diffBps": 18
+       "price": 105.88010619863358,
+       "diffBps": 29
       },
       "100": {
-       "price": 107.86490269875607,
-       "diffBps": 19
+       "price": 105.8972254584693,
+       "diffBps": 30
       }
      },
-     "diff1Bps": 17,
-     "price1": 107.84349116166103
+     "diff1Bps": 27,
+     "price1": 105.86332932399459
     },
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 109.42132273077132,
-       "diffBps": 164
+       "price": 107.33604241536526,
+       "diffBps": 167
       },
       "10": {
-       "price": 109.48091982938134,
-       "diffBps": 170
+       "price": 107.39506888369031,
+       "diffBps": 172
       },
       "50": {
-       "price": 109.74579582320371,
-       "diffBps": 194
+       "price": 107.65740874291286,
+       "diffBps": 197
       },
       "100": {
-       "price": 110.30833560312665,
-       "diffBps": 246
+       "price": 107.98533356694107,
+       "diffBps": 228
       }
      },
-     "diff1Bps": 164,
-     "price1": 109.42132273077132
+     "diff1Bps": 167,
+     "price1": 107.33604241536526
     },
     {
      "fee": 500,
      "depth": {
       "1": {
-       "price": 191.64436010839364,
-       "diffBps": 7802
+       "price": 182.97286737433544,
+       "diffBps": 7331
       },
       "10": {
-       "price": 1916.4436010839363,
-       "diffBps": 168016
+       "price": 1829.7286737433544,
+       "diffBps": 163309
       },
       "50": {
-       "price": 9582.218005419682,
-       "diffBps": 880079
+       "price": 9148.643368716772,
+       "diffBps": 856546
       },
       "100": {
-       "price": 19164.436010839363,
-       "diffBps": 1770157
+       "price": 18297.286737433544,
+       "diffBps": 1723092
       }
      },
-     "diff1Bps": 7802,
-     "price1": 191.64436010839364
+     "diff1Bps": 7331,
+     "price1": 182.97286737433544
     }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 107.84349116166103,
-      "diffBps": 17
-     },
-     "10": {
-      "price": 107.84543766503329,
-      "diffBps": 18
-     },
-     "50": {
-      "price": 107.85408879113231,
-      "diffBps": 18
-     },
-     "100": {
-      "price": 107.86490269875607,
-      "diffBps": 19
-     }
-    },
-    "diff1Bps": 17,
-    "price1": 107.84349116166103
-   }
+   ]
   },
   {
    "symbol": "CLSK",
    "token": "0xcBB95BBF36099d34dA091dc6Fa6F49EfA257Cee3",
    "feed": "0x810c12D3a554Bc47fd39597Fe3b3AAC4941F50eF",
-   "chainlink": 6.31499999,
-   "ageSeconds": 124,
+   "chainlink": 6.9067,
+   "ageSeconds": 890,
    "status": "OK",
    "heartbeat": 86400,
    "pool": false,
@@ -572,8 +457,8 @@
    "symbol": "COIN",
    "token": "0x6330D8C3178a418788dF01a47479c0ce7CCF450b",
    "feed": "0xA3a468A452940B7D6b69991207B508c609a98Ef2",
-   "chainlink": 143.8726,
-   "ageSeconds": 273,
+   "chainlink": 137.95875,
+   "ageSeconds": 3270,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -581,80 +466,57 @@
     "fee": 500,
     "depth": {
      "1": {
-      "price": 144.03426097553108,
-      "diffBps": 11
+      "price": 137.48795316421766,
+      "diffBps": -34
      },
      "10": {
-      "price": 144.0554394438015,
-      "diffBps": 13
+      "price": 137.49192794963383,
+      "diffBps": -34
      },
      "50": {
-      "price": 144.1495659694479,
-      "diffBps": 19
+      "price": 137.50959366259465,
+      "diffBps": -33
      },
      "100": {
-      "price": 144.2672241265059,
-      "diffBps": 27
+      "price": 137.53167580379568,
+      "diffBps": -31
      }
     },
-    "diff1Bps": 11,
-    "price1": 144.03426097553108
+    "diff1Bps": -34,
+    "price1": 137.48795316421766
    },
    "tiers": [
     {
      "fee": 500,
      "depth": {
       "1": {
-       "price": 144.03426097553108,
-       "diffBps": 11
+       "price": 137.48795316421766,
+       "diffBps": -34
       },
       "10": {
-       "price": 144.0554394438015,
-       "diffBps": 13
+       "price": 137.49192794963383,
+       "diffBps": -34
       },
       "50": {
-       "price": 144.1495659694479,
-       "diffBps": 19
+       "price": 137.50959366259465,
+       "diffBps": -33
       },
       "100": {
-       "price": 144.2672241265059,
-       "diffBps": 27
+       "price": 137.53167580379568,
+       "diffBps": -31
       }
      },
-     "diff1Bps": 11,
-     "price1": 144.03426097553108
+     "diff1Bps": -34,
+     "price1": 137.48795316421766
     }
-   ],
-   "bestDepth": {
-    "fee": 500,
-    "depth": {
-     "1": {
-      "price": 144.03426097553108,
-      "diffBps": 11
-     },
-     "10": {
-      "price": 144.0554394438015,
-      "diffBps": 13
-     },
-     "50": {
-      "price": 144.1495659694479,
-      "diffBps": 19
-     },
-     "100": {
-      "price": 144.2672241265059,
-      "diffBps": 27
-     }
-    },
-    "diff1Bps": 11,
-    "price1": 144.03426097553108
-   }
+   ]
   },
   {
    "symbol": "CRCL",
    "token": "0xdF0992E440dD0be65BD8439b609d6D4366bf1CB5",
    "feed": "0x6652eDf64bA3731C4F2D3ce821A0Fb1f1f6b482a",
-   "chainlink": 70.0695,
-   "ageSeconds": 86,
+   "chainlink": 67.948175,
+   "ageSeconds": 81,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -662,80 +524,57 @@
     "fee": 3000,
     "depth": {
      "1": {
-      "price": 70.24287732533713,
-      "diffBps": 25
+      "price": 68.24558026400256,
+      "diffBps": 44
      },
      "10": {
-      "price": 70.24299105747825,
-      "diffBps": 25
+      "price": 68.24564579672423,
+      "diffBps": 44
      },
      "50": {
-      "price": 70.243496533661,
-      "diffBps": 25
+      "price": 68.24593705326505,
+      "diffBps": 44
      },
      "100": {
-      "price": 70.24412837888946,
-      "diffBps": 25
+      "price": 68.24630112394107,
+      "diffBps": 44
      }
     },
-    "diff1Bps": 25,
-    "price1": 70.24287732533713
+    "diff1Bps": 44,
+    "price1": 68.24558026400256
    },
    "tiers": [
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 70.24287732533713,
-       "diffBps": 25
+       "price": 68.24558026400256,
+       "diffBps": 44
       },
       "10": {
-       "price": 70.24299105747825,
-       "diffBps": 25
+       "price": 68.24564579672423,
+       "diffBps": 44
       },
       "50": {
-       "price": 70.243496533661,
-       "diffBps": 25
+       "price": 68.24593705326505,
+       "diffBps": 44
       },
       "100": {
-       "price": 70.24412837888946,
-       "diffBps": 25
+       "price": 68.24630112394107,
+       "diffBps": 44
       }
      },
-     "diff1Bps": 25,
-     "price1": 70.24287732533713
+     "diff1Bps": 44,
+     "price1": 68.24558026400256
     }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 70.24287732533713,
-      "diffBps": 25
-     },
-     "10": {
-      "price": 70.24299105747825,
-      "diffBps": 25
-     },
-     "50": {
-      "price": 70.243496533661,
-      "diffBps": 25
-     },
-     "100": {
-      "price": 70.24412837888946,
-      "diffBps": 25
-     }
-    },
-    "diff1Bps": 25,
-    "price1": 70.24287732533713
-   }
+   ]
   },
   {
    "symbol": "CRWV",
    "token": "0x5f10A1C971B69e47e059e1dC91901B59b3fB49C3",
    "feed": "0xe1b3aABCAFAd1c94708dc1367dcfF8Aa4407487C",
-   "chainlink": 44.8875,
-   "ageSeconds": 93,
+   "chainlink": 49.07,
+   "ageSeconds": 200,
    "status": "OK",
    "heartbeat": 86400,
    "pool": false,
@@ -746,8 +585,8 @@
    "symbol": "DELL",
    "token": "0x941AE714EC6D8130c7B75d67160Ca08f1e7d11Dd",
    "feed": "0x1C6c8cADBe02E19129c39dDB92281cE4c0bf206b",
-   "chainlink": 340.0264547,
-   "ageSeconds": 120,
+   "chainlink": 350.02163883,
+   "ageSeconds": 1021,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -755,80 +594,57 @@
     "fee": 10000,
     "depth": {
      "1": {
-      "price": 340.6946258140771,
-      "diffBps": 20
+      "price": 353.4333514534978,
+      "diffBps": 97
      },
      "10": {
-      "price": 340.7175579761492,
-      "diffBps": 20
+      "price": 353.4354628241488,
+      "diffBps": 98
      },
      "50": {
-      "price": 340.8194786964701,
-      "diffBps": 23
+      "price": 353.444846693709,
+      "diffBps": 98
      },
      "100": {
-      "price": 340.9468795968713,
-      "diffBps": 27
+      "price": 353.4565765306592,
+      "diffBps": 98
      }
     },
-    "diff1Bps": 20,
-    "price1": 340.6946258140771
+    "diff1Bps": 97,
+    "price1": 353.4333514534978
    },
    "tiers": [
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 340.6946258140771,
-       "diffBps": 20
+       "price": 353.4333514534978,
+       "diffBps": 97
       },
       "10": {
-       "price": 340.7175579761492,
-       "diffBps": 20
+       "price": 353.4354628241488,
+       "diffBps": 98
       },
       "50": {
-       "price": 340.8194786964701,
-       "diffBps": 23
+       "price": 353.444846693709,
+       "diffBps": 98
       },
       "100": {
-       "price": 340.9468795968713,
-       "diffBps": 27
+       "price": 353.4565765306592,
+       "diffBps": 98
       }
      },
-     "diff1Bps": 20,
-     "price1": 340.6946258140771
+     "diff1Bps": 97,
+     "price1": 353.4333514534978
     }
-   ],
-   "bestDepth": {
-    "fee": 10000,
-    "depth": {
-     "1": {
-      "price": 340.6946258140771,
-      "diffBps": 20
-     },
-     "10": {
-      "price": 340.7175579761492,
-      "diffBps": 20
-     },
-     "50": {
-      "price": 340.8194786964701,
-      "diffBps": 23
-     },
-     "100": {
-      "price": 340.9468795968713,
-      "diffBps": 27
-     }
-    },
-    "diff1Bps": 20,
-    "price1": 340.6946258140771
-   }
+   ]
   },
   {
    "symbol": "EWY",
    "token": "0x7f0aBeF0C07280F82c6a08ead09dEd6BAE2C13Fc",
    "feed": "0xEFdf54610B62A7753Ec30bDc380847c12D32e1D1",
-   "chainlink": 143.23725,
-   "ageSeconds": 286,
+   "chainlink": 142.95125,
+   "ageSeconds": 727,
    "status": "OK",
    "heartbeat": 86400,
    "pool": false,
@@ -839,135 +655,112 @@
    "symbol": "GME",
    "token": "0x1b0E319c6A659F002271B69dB8A7df2F911c153E",
    "feed": "0x27C71df6A64fB476468EdF256CF72c038baB5B67",
-   "chainlink": 24.633,
-   "ageSeconds": 22,
+   "chainlink": 25.9355,
+   "ageSeconds": 1738,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
    "best": {
-    "fee": 500,
+    "fee": 3000,
     "depth": {
      "1": {
-      "price": 24.654675424063317,
-      "diffBps": 9
+      "price": 25.962895238602503,
+      "diffBps": 11
      },
      "10": {
-      "price": 24.654996994955173,
-      "diffBps": 9
+      "price": 25.985723915804172,
+      "diffBps": 19
      },
      "50": {
-      "price": 24.656426198918982,
-      "diffBps": 10
+      "price": 26.08718470336713,
+      "diffBps": 58
      },
      "100": {
-      "price": 24.65821270387374,
-      "diffBps": 10
+      "price": 26.21401068782083,
+      "diffBps": 107
      }
     },
-    "diff1Bps": 9,
-    "price1": 24.654675424063317
+    "diff1Bps": 11,
+    "price1": 25.962895238602503
    },
    "tiers": [
-    {
-     "fee": 500,
-     "depth": {
-      "1": {
-       "price": 24.654675424063317,
-       "diffBps": 9
-      },
-      "10": {
-       "price": 24.654996994955173,
-       "diffBps": 9
-      },
-      "50": {
-       "price": 24.656426198918982,
-       "diffBps": 10
-      },
-      "100": {
-       "price": 24.65821270387374,
-       "diffBps": 10
-      }
-     },
-     "diff1Bps": 9,
-     "price1": 24.654675424063317
-    },
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 24.785367091160726,
-       "diffBps": 62
+       "price": 25.962895238602503,
+       "diffBps": 11
       },
       "10": {
-       "price": 24.799618975486563,
-       "diffBps": 68
+       "price": 25.985723915804172,
+       "diffBps": 19
       },
       "50": {
-       "price": 24.8629606836014,
-       "diffBps": 93
+       "price": 26.08718470336713,
+       "diffBps": 58
       },
       "100": {
-       "price": 24.942164515364162,
-       "diffBps": 126
+       "price": 26.21401068782083,
+       "diffBps": 107
       }
      },
-     "diff1Bps": 62,
-     "price1": 24.785367091160726
+     "diff1Bps": 11,
+     "price1": 25.962895238602503
+    },
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 25.900426641090107,
+       "diffBps": -14
+      },
+      "10": {
+       "price": 25.90087913452007,
+       "diffBps": -13
+      },
+      "50": {
+       "price": 25.90289021643101,
+       "diffBps": -13
+      },
+      "100": {
+       "price": 25.905404068819685,
+       "diffBps": -12
+      }
+     },
+     "diff1Bps": -14,
+     "price1": 25.900426641090107
     },
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 25.12119702094609,
-       "diffBps": 198
+       "price": 25.987274763182327,
+       "diffBps": 20
       },
       "10": {
-       "price": 25.12124292654561,
-       "diffBps": 198
+       "price": 25.98735329571322,
+       "diffBps": 20
       },
       "50": {
-       "price": 25.12144695143235,
-       "diffBps": 198
+       "price": 25.98770232918385,
+       "diffBps": 20
       },
       "100": {
-       "price": 25.12170198254078,
-       "diffBps": 198
+       "price": 25.988138621022138,
+       "diffBps": 20
       }
      },
-     "diff1Bps": 198,
-     "price1": 25.12119702094609
+     "diff1Bps": 20,
+     "price1": 25.987274763182327
     }
-   ],
-   "bestDepth": {
-    "fee": 500,
-    "depth": {
-     "1": {
-      "price": 24.654675424063317,
-      "diffBps": 9
-     },
-     "10": {
-      "price": 24.654996994955173,
-      "diffBps": 9
-     },
-     "50": {
-      "price": 24.656426198918982,
-      "diffBps": 10
-     },
-     "100": {
-      "price": 24.65821270387374,
-      "diffBps": 10
-     }
-    },
-    "diff1Bps": 9,
-    "price1": 24.654675424063317
-   }
+   ]
   },
   {
    "symbol": "GOOGL",
    "token": "0x2e0847E8910a9732eB3fb1bb4b70a580ADAD4FE3",
    "feed": "0xF6f373a037c30F0e5010d854385cA89185AE638b",
-   "chainlink": 288.6772207,
-   "ageSeconds": 323,
+   "chainlink": 288.8788598,
+   "ageSeconds": 2348,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -975,103 +768,80 @@
     "fee": 500,
     "depth": {
      "1": {
-      "price": 288.37217514303927,
-      "diffBps": -11
+      "price": 289.9864271580023,
+      "diffBps": 38
      },
      "10": {
-      "price": 288.3731800290438,
-      "diffBps": -11
+      "price": 289.9871720560802,
+      "diffBps": 38
      },
      "50": {
-      "price": 288.3448798281171,
-      "diffBps": -12
+      "price": 289.99048271420435,
+      "diffBps": 38
      },
      "100": {
-      "price": 288.3504622109682,
-      "diffBps": -11
+      "price": 289.99462103685954,
+      "diffBps": 39
      }
     },
-    "diff1Bps": -11,
-    "price1": 288.37217514303927
+    "diff1Bps": 38,
+    "price1": 289.9864271580023
    },
    "tiers": [
     {
      "fee": 500,
      "depth": {
       "1": {
-       "price": 288.37217514303927,
-       "diffBps": -11
+       "price": 289.9864271580023,
+       "diffBps": 38
       },
       "10": {
-       "price": 288.3731800290438,
-       "diffBps": -11
+       "price": 289.9871720560802,
+       "diffBps": 38
       },
       "50": {
-       "price": 288.3448798281171,
-       "diffBps": -12
+       "price": 289.99048271420435,
+       "diffBps": 38
       },
       "100": {
-       "price": 288.3504622109682,
-       "diffBps": -11
+       "price": 289.99462103685954,
+       "diffBps": 39
       }
      },
-     "diff1Bps": -11,
-     "price1": 288.37217514303927
+     "diff1Bps": 38,
+     "price1": 289.9864271580023
     },
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 290.2812383836253,
-       "diffBps": 56
+       "price": 291.0568988649395,
+       "diffBps": 75
       },
       "10": {
-       "price": 290.54436285526174,
-       "diffBps": 65
+       "price": 291.3203746671823,
+       "diffBps": 85
       },
       "50": {
-       "price": 291.71380495142387,
-       "diffBps": 105
+       "price": 292.5286769955336,
+       "diffBps": 126
       },
       "100": {
-       "price": 293.4971620027243,
-       "diffBps": 167
+       "price": 294.47850361834696,
+       "diffBps": 194
       }
      },
-     "diff1Bps": 56,
-     "price1": 290.2812383836253
+     "diff1Bps": 75,
+     "price1": 291.0568988649395
     }
-   ],
-   "bestDepth": {
-    "fee": 500,
-    "depth": {
-     "1": {
-      "price": 288.37217514303927,
-      "diffBps": -11
-     },
-     "10": {
-      "price": 288.3731800290438,
-      "diffBps": -11
-     },
-     "50": {
-      "price": 288.3448798281171,
-      "diffBps": -12
-     },
-     "100": {
-      "price": 288.3504622109682,
-      "diffBps": -11
-     }
-    },
-    "diff1Bps": -11,
-    "price1": 288.37217514303927
-   }
+   ]
   },
   {
    "symbol": "INTC",
    "token": "0xc72b96e0E48ecd4DC75E1e45396e26300BC39681",
    "feed": "0x3f390C5C24628Ac7C489515402235FeAD71D1913",
-   "chainlink": 54.0875,
-   "ageSeconds": 127,
+   "chainlink": 59.8375,
+   "ageSeconds": 105,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -1079,80 +849,57 @@
     "fee": 3000,
     "depth": {
      "1": {
-      "price": 54.35216285771215,
-      "diffBps": 49
+      "price": 59.83926320054789,
+      "diffBps": 0
      },
      "10": {
-      "price": 54.353865133806856,
-      "diffBps": 49
+      "price": 59.84012106705319,
+      "diffBps": 0
      },
      "50": {
-      "price": 54.361430805338905,
-      "diffBps": 51
+      "price": 59.84393380707671,
+      "diffBps": 1
      },
      "100": {
-      "price": 54.37088789475396,
-      "diffBps": 52
+      "price": 59.8486997321061,
+      "diffBps": 2
      }
     },
-    "diff1Bps": 49,
-    "price1": 54.35216285771215
+    "diff1Bps": 0,
+    "price1": 59.83926320054789
    },
    "tiers": [
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 54.35216285771215,
-       "diffBps": 49
+       "price": 59.83926320054789,
+       "diffBps": 0
       },
       "10": {
-       "price": 54.353865133806856,
-       "diffBps": 49
+       "price": 59.84012106705319,
+       "diffBps": 0
       },
       "50": {
-       "price": 54.361430805338905,
-       "diffBps": 51
+       "price": 59.84393380707671,
+       "diffBps": 1
       },
       "100": {
-       "price": 54.37088789475396,
-       "diffBps": 52
+       "price": 59.8486997321061,
+       "diffBps": 2
       }
      },
-     "diff1Bps": 49,
-     "price1": 54.35216285771215
+     "diff1Bps": 0,
+     "price1": 59.83926320054789
     }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 54.35216285771215,
-      "diffBps": 49
-     },
-     "10": {
-      "price": 54.353865133806856,
-      "diffBps": 49
-     },
-     "50": {
-      "price": 54.361430805338905,
-      "diffBps": 51
-     },
-     "100": {
-      "price": 54.37088789475396,
-      "diffBps": 52
-     }
-    },
-    "diff1Bps": 49,
-    "price1": 54.35216285771215
-   }
+   ]
   },
   {
    "symbol": "IONQ",
    "token": "0x558378E000D634A36593E338eBacdd6207640EfE",
    "feed": "0x22EfeC4919baf55F360E0EDee4AbEB26DE4971eb",
-   "chainlink": 27.0191,
-   "ageSeconds": 126,
+   "chainlink": 36.195,
+   "ageSeconds": 346,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -1161,22 +908,22 @@
     "depth": {
      "1": {
       "price": 46.355056744372824,
-      "diffBps": 7156
+      "diffBps": 2807
      },
      "10": {
       "price": 448.5457414087808,
-      "diffBps": 156011
+      "diffBps": 113925
      },
      "50": {
       "price": 2242.7287070439043,
-      "diffBps": 820053
+      "diffBps": 609624
      },
      "100": {
       "price": 4485.4574140878085,
-      "diffBps": 1650106
+      "diffBps": 1229248
      }
     },
-    "diff1Bps": 7156,
+    "diff1Bps": 2807,
     "price1": 46.355056744372824
    },
    "tiers": [
@@ -1185,55 +932,32 @@
      "depth": {
       "1": {
        "price": 46.355056744372824,
-       "diffBps": 7156
+       "diffBps": 2807
       },
       "10": {
        "price": 448.5457414087808,
-       "diffBps": 156011
+       "diffBps": 113925
       },
       "50": {
        "price": 2242.7287070439043,
-       "diffBps": 820053
+       "diffBps": 609624
       },
       "100": {
        "price": 4485.4574140878085,
-       "diffBps": 1650106
+       "diffBps": 1229248
       }
      },
-     "diff1Bps": 7156,
+     "diff1Bps": 2807,
      "price1": 46.355056744372824
     }
-   ],
-   "bestDepth": {
-    "fee": 10000,
-    "depth": {
-     "1": {
-      "price": 46.355056744372824,
-      "diffBps": 7156
-     },
-     "10": {
-      "price": 448.5457414087808,
-      "diffBps": 156011
-     },
-     "50": {
-      "price": 2242.7287070439043,
-      "diffBps": 820053
-     },
-     "100": {
-      "price": 4485.4574140878085,
-      "diffBps": 1650106
-     }
-    },
-    "diff1Bps": 7156,
-    "price1": 46.355056744372824
-   }
+   ]
   },
   {
    "symbol": "META",
    "token": "0xc0D6457C16Cc70d6790Dd43521C899C87ce02f35",
    "feed": "0x7C38C00C30BEe9378381E7B6135d7283356D71b1",
-   "chainlink": 616.39179581,
-   "ageSeconds": 131,
+   "chainlink": 646.21721133,
+   "ageSeconds": 3039,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -1241,103 +965,80 @@
     "fee": 3000,
     "depth": {
      "1": {
-      "price": 617.7247787469385,
-      "diffBps": 22
+      "price": 647.2845891854679,
+      "diffBps": 17
      },
      "10": {
-      "price": 617.726950620006,
-      "diffBps": 22
+      "price": 647.2880338430737,
+      "diffBps": 17
      },
      "50": {
-      "price": 617.736603389197,
-      "diffBps": 22
+      "price": 647.3033434324336,
+      "diffBps": 17
      },
      "100": {
-      "price": 617.7486693506855,
-      "diffBps": 22
+      "price": 647.3224804191335,
+      "diffBps": 17
      }
     },
-    "diff1Bps": 22,
-    "price1": 617.7247787469385
+    "diff1Bps": 17,
+    "price1": 647.2845891854679
    },
    "tiers": [
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 617.7247787469385,
-       "diffBps": 22
+       "price": 647.2845891854679,
+       "diffBps": 17
       },
       "10": {
-       "price": 617.726950620006,
-       "diffBps": 22
+       "price": 647.2880338430737,
+       "diffBps": 17
       },
       "50": {
-       "price": 617.736603389197,
-       "diffBps": 22
+       "price": 647.3033434324336,
+       "diffBps": 17
       },
       "100": {
-       "price": 617.7486693506855,
-       "diffBps": 22
+       "price": 647.3224804191335,
+       "diffBps": 17
       }
      },
-     "diff1Bps": 22,
-     "price1": 617.7247787469385
+     "diff1Bps": 17,
+     "price1": 647.2845891854679
     },
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 628.2180542618223,
-       "diffBps": 192
+       "price": 648.4566771327684,
+       "diffBps": 35
       },
       "10": {
-       "price": 631.412965989622,
-       "diffBps": 244
+       "price": 706.4401532905122,
+       "diffBps": 932
       },
       "50": {
-       "price": 758.4370838064352,
-       "diffBps": 2304
+       "price": 964.1445127424396,
+       "diffBps": 4920
       },
       "100": {
-       "price": 1101.6260844177598,
-       "diffBps": 7872
+       "price": 1591.8430484628482,
+       "diffBps": 14633
       }
      },
-     "diff1Bps": 192,
-     "price1": 628.2180542618223
+     "diff1Bps": 35,
+     "price1": 648.4566771327684
     }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 617.7247787469385,
-      "diffBps": 22
-     },
-     "10": {
-      "price": 617.726950620006,
-      "diffBps": 22
-     },
-     "50": {
-      "price": 617.736603389197,
-      "diffBps": 22
-     },
-     "100": {
-      "price": 617.7486693506855,
-      "diffBps": 22
-     }
-    },
-    "diff1Bps": 22,
-    "price1": 617.7247787469385
-   }
+   ]
   },
   {
    "symbol": "MSFT",
    "token": "0xe93237C50D904957Cf27E7B1133b510C669c2e74",
    "feed": "0x45C3C877C15E6BA2EBB19eA114Ea508d14C1Af2E",
-   "chainlink": 549.5477935,
-   "ageSeconds": 426,
+   "chainlink": 547.24714383,
+   "ageSeconds": 3280,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -1345,103 +1046,80 @@
     "fee": 3000,
     "depth": {
      "1": {
-      "price": 549.834920071672,
-      "diffBps": 5
+      "price": 548.1134428518819,
+      "diffBps": 16
      },
      "10": {
-      "price": 549.8357067603115,
-      "diffBps": 5
+      "price": 548.1146688484665,
+      "diffBps": 16
      },
      "50": {
-      "price": 549.8392031542649,
-      "diffBps": 5
+      "price": 548.1201177221774,
+      "diffBps": 16
      },
      "100": {
-      "price": 549.8435736467065,
-      "diffBps": 5
+      "price": 548.126928814316,
+      "diffBps": 16
      }
     },
-    "diff1Bps": 5,
-    "price1": 549.834920071672
+    "diff1Bps": 16,
+    "price1": 548.1134428518819
    },
    "tiers": [
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 549.834920071672,
-       "diffBps": 5
+       "price": 548.1134428518819,
+       "diffBps": 16
       },
       "10": {
-       "price": 549.8357067603115,
-       "diffBps": 5
+       "price": 548.1146688484665,
+       "diffBps": 16
       },
       "50": {
-       "price": 549.8392031542649,
-       "diffBps": 5
+       "price": 548.1201177221774,
+       "diffBps": 16
       },
       "100": {
-       "price": 549.8435736467065,
-       "diffBps": 5
+       "price": 548.126928814316,
+       "diffBps": 16
       }
      },
-     "diff1Bps": 5,
-     "price1": 549.834920071672
+     "diff1Bps": 16,
+     "price1": 548.1134428518819
     },
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 1316.0302930907042,
-       "diffBps": 13948
+       "price": 1210.8447884266327,
+       "diffBps": 12126
       },
       "10": {
-       "price": 13160.30293090704,
-       "diffBps": 229475
+       "price": 12108.447884266327,
+       "diffBps": 211261
       },
       "50": {
-       "price": 65801.5146545352,
-       "diffBps": 1187376
+       "price": 60542.23942133164,
+       "diffBps": 1096305
       },
       "100": {
-       "price": 131603.0293090704,
-       "diffBps": 2384751
+       "price": 121084.47884266327,
+       "diffBps": 2202611
       }
      },
-     "diff1Bps": 13948,
-     "price1": 1316.0302930907042
+     "diff1Bps": 12126,
+     "price1": 1210.8447884266327
     }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 549.834920071672,
-      "diffBps": 5
-     },
-     "10": {
-      "price": 549.8357067603115,
-      "diffBps": 5
-     },
-     "50": {
-      "price": 549.8392031542649,
-      "diffBps": 5
-     },
-     "100": {
-      "price": 549.8435736467065,
-      "diffBps": 5
-     }
-    },
-    "diff1Bps": 5,
-    "price1": 549.834920071672
-   }
+   ]
   },
   {
    "symbol": "MSTR",
    "token": "0xec262a75e413fAfD0dF80480274532C79D42da09",
    "feed": "0x396118bdFB181e6240E74D243F266B061c0edc3D",
-   "chainlink": 135.985,
-   "ageSeconds": 176,
+   "chainlink": 126.60625,
+   "ageSeconds": 85,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -1449,103 +1127,80 @@
     "fee": 3000,
     "depth": {
      "1": {
-      "price": 136.73125122270852,
-      "diffBps": 55
+      "price": 127.08376930028696,
+      "diffBps": 38
      },
      "10": {
-      "price": 136.7487529438852,
-      "diffBps": 56
+      "price": 127.1036539185976,
+      "diffBps": 39
      },
      "50": {
-      "price": 136.82653837133697,
-      "diffBps": 62
+      "price": 127.19202999997825,
+      "diffBps": 46
      },
      "100": {
-      "price": 136.92377015565165,
-      "diffBps": 69
+      "price": 127.30250010170406,
+      "diffBps": 55
      }
     },
-    "diff1Bps": 55,
-    "price1": 136.73125122270852
+    "diff1Bps": 38,
+    "price1": 127.08376930028696
    },
    "tiers": [
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 136.73125122270852,
-       "diffBps": 55
+       "price": 127.08376930028696,
+       "diffBps": 38
       },
       "10": {
-       "price": 136.7487529438852,
-       "diffBps": 56
+       "price": 127.1036539185976,
+       "diffBps": 39
       },
       "50": {
-       "price": 136.82653837133697,
-       "diffBps": 62
+       "price": 127.19202999997825,
+       "diffBps": 46
       },
       "100": {
-       "price": 136.92377015565165,
-       "diffBps": 69
+       "price": 127.30250010170406,
+       "diffBps": 55
       }
      },
-     "diff1Bps": 55,
-     "price1": 136.73125122270852
+     "diff1Bps": 38,
+     "price1": 127.08376930028696
     },
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 138.57181209978617,
-       "diffBps": 190
+       "price": 128.45704756314697,
+       "diffBps": 146
       },
       "10": {
-       "price": 138.57219437200345,
-       "diffBps": 190
+       "price": 128.4574962605857,
+       "diffBps": 146
       },
       "50": {
-       "price": 138.5738933596358,
-       "diffBps": 190
+       "price": 128.4594904714246,
+       "diffBps": 146
       },
       "100": {
-       "price": 138.57601709417625,
-       "diffBps": 191
+       "price": 128.46198323497322,
+       "diffBps": 147
       }
      },
-     "diff1Bps": 190,
-     "price1": 138.57181209978617
+     "diff1Bps": 146,
+     "price1": 128.45704756314697
     }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 136.73125122270852,
-      "diffBps": 55
-     },
-     "10": {
-      "price": 136.7487529438852,
-      "diffBps": 56
-     },
-     "50": {
-      "price": 136.82653837133697,
-      "diffBps": 62
-     },
-     "100": {
-      "price": 136.92377015565165,
-      "diffBps": 69
-     }
-    },
-    "diff1Bps": 55,
-    "price1": 136.73125122270852
-   }
+   ]
   },
   {
    "symbol": "MU",
    "token": "0xfF080c8ce2E5feadaCa0Da81314Ae59D232d4afD",
    "feed": "0x425EEFdCf05ed6526C3cE61Af99429A228a6d596",
-   "chainlink": 725.36569877,
-   "ageSeconds": 118,
+   "chainlink": 737.41025801,
+   "ageSeconds": 1061,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -1553,80 +1208,57 @@
     "fee": 3000,
     "depth": {
      "1": {
-      "price": 726.5358529300231,
-      "diffBps": 16
+      "price": 740.9039368847338,
+      "diffBps": 47
      },
      "10": {
-      "price": 726.5370654433685,
-      "diffBps": 16
+      "price": 740.9056530410346,
+      "diffBps": 47
      },
      "50": {
-      "price": 726.5424543915711,
-      "diffBps": 16
+      "price": 740.9132804023736,
+      "diffBps": 48
      },
      "100": {
-      "price": 726.5491905768243,
-      "diffBps": 16
+      "price": 740.9228146040474,
+      "diffBps": 48
      }
     },
-    "diff1Bps": 16,
-    "price1": 726.5358529300231
+    "diff1Bps": 47,
+    "price1": 740.9039368847338
    },
    "tiers": [
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 726.5358529300231,
-       "diffBps": 16
+       "price": 740.9039368847338,
+       "diffBps": 47
       },
       "10": {
-       "price": 726.5370654433685,
-       "diffBps": 16
+       "price": 740.9056530410346,
+       "diffBps": 47
       },
       "50": {
-       "price": 726.5424543915711,
-       "diffBps": 16
+       "price": 740.9132804023736,
+       "diffBps": 48
       },
       "100": {
-       "price": 726.5491905768243,
-       "diffBps": 16
+       "price": 740.9228146040474,
+       "diffBps": 48
       }
      },
-     "diff1Bps": 16,
-     "price1": 726.5358529300231
+     "diff1Bps": 47,
+     "price1": 740.9039368847338
     }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 726.5358529300231,
-      "diffBps": 16
-     },
-     "10": {
-      "price": 726.5370654433685,
-      "diffBps": 16
-     },
-     "50": {
-      "price": 726.5424543915711,
-      "diffBps": 16
-     },
-     "100": {
-      "price": 726.5491905768243,
-      "diffBps": 16
-     }
-    },
-    "diff1Bps": 16,
-    "price1": 726.5358529300231
-   }
+   ]
   },
   {
    "symbol": "NBIS",
    "token": "0x9D9c6684F596F66a64C030B93A886D51Fd4D7931",
    "feed": "0xE1D87B116Ba0fe898998f1D140339D1fA1E09705",
-   "chainlink": 125.712,
-   "ageSeconds": 106,
+   "chainlink": 142.85622499,
+   "ageSeconds": 545,
    "status": "OK",
    "heartbeat": 86400,
    "pool": false,
@@ -1637,158 +1269,135 @@
    "symbol": "NVDA",
    "token": "0xd0601CE157Db5bdC3162BbaC2a2C8aF5320D9EEC",
    "feed": "0x379EC4f7C378F34a1B47E4F3cbeBCbAC3E8E9F15",
-   "chainlink": 190.86783835,
-   "ageSeconds": 62,
+   "chainlink": 178.61081957,
+   "ageSeconds": 271,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
    "best": {
-    "fee": 500,
+    "fee": 3000,
     "depth": {
      "1": {
-      "price": 190.97420332089143,
-      "diffBps": 6
+      "price": 178.6148559872611,
+      "diffBps": 0
      },
      "10": {
-      "price": 190.97484773653633,
-      "diffBps": 6
+      "price": 178.62021454863714,
+      "diffBps": 1
      },
      "50": {
-      "price": 190.9777118060693,
-      "diffBps": 6
+      "price": 178.64403037697514,
+      "diffBps": 2
      },
      "100": {
-      "price": 190.9812918929855,
-      "diffBps": 6
+      "price": 178.67380016239764,
+      "diffBps": 4
      }
     },
-    "diff1Bps": 6,
-    "price1": 190.97420332089143
+    "diff1Bps": 0,
+    "price1": 178.6148559872611
    },
    "tiers": [
-    {
-     "fee": 500,
-     "depth": {
-      "1": {
-       "price": 190.97420332089143,
-       "diffBps": 6
-      },
-      "10": {
-       "price": 190.97484773653633,
-       "diffBps": 6
-      },
-      "50": {
-       "price": 190.9777118060693,
-       "diffBps": 6
-      },
-      "100": {
-       "price": 190.9812918929855,
-       "diffBps": 6
-      }
-     },
-     "diff1Bps": 6,
-     "price1": 190.97420332089143
-    },
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 191.79091617125147,
-       "diffBps": 48
+       "price": 178.6148559872611,
+       "diffBps": 0
       },
       "10": {
-       "price": 191.8226397220276,
-       "diffBps": 50
+       "price": 178.62021454863714,
+       "diffBps": 1
       },
       "50": {
-       "price": 191.9636332810327,
-       "diffBps": 57
+       "price": 178.64403037697514,
+       "diffBps": 2
       },
       "100": {
-       "price": 192.1398752297891,
-       "diffBps": 67
+       "price": 178.67380016239764,
+       "diffBps": 4
       }
      },
-     "diff1Bps": 48,
-     "price1": 191.79091617125147
+     "diff1Bps": 0,
+     "price1": 178.6148559872611
     },
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 194.50421869725932,
-       "diffBps": 191
+       "price": 178.6231792639816,
+       "diffBps": 1
       },
       "10": {
-       "price": 194.51514985691534,
-       "diffBps": 191
+       "price": 178.63397160524627,
+       "diffBps": 1
       },
       "50": {
-       "price": 194.56373278872002,
-       "diffBps": 194
+       "price": 178.68193756642268,
+       "diffBps": 4
       },
       "100": {
-       "price": 194.62446145347587,
-       "diffBps": 197
+       "price": 178.7418950178931,
+       "diffBps": 7
       }
      },
-     "diff1Bps": 191,
-     "price1": 194.50421869725932
+     "diff1Bps": 1,
+     "price1": 178.6231792639816
+    },
+    {
+     "fee": 500,
+     "depth": {
+      "1": {
+       "price": 178.30211376117435,
+       "diffBps": -17
+      },
+      "10": {
+       "price": 178.30245923855517,
+       "diffBps": -17
+      },
+      "50": {
+       "price": 178.30399469358113,
+       "diffBps": -17
+      },
+      "100": {
+       "price": 178.30591401236356,
+       "diffBps": -17
+      }
+     },
+     "diff1Bps": -17,
+     "price1": 178.30211376117435
     },
     {
      "fee": 100,
      "depth": {
       "1": {
-       "price": 207.04597598189514,
-       "diffBps": 848
+       "price": 207.04597548794027,
+       "diffBps": 1592
       },
       "10": {
-       "price": 207.05503346920878,
-       "diffBps": 848
+       "price": 207.05503297524308,
+       "diffBps": 1593
       },
       "50": {
-       "price": 207.09528896838046,
-       "diffBps": 850
+       "price": 207.09528847436675,
+       "diffBps": 1595
       },
       "100": {
-       "price": 251.66055386094808,
-       "diffBps": 3185
+       "price": 251.6598031801306,
+       "diffBps": 4090
       }
      },
-     "diff1Bps": 848,
-     "price1": 207.04597598189514
+     "diff1Bps": 1592,
+     "price1": 207.04597548794027
     }
-   ],
-   "bestDepth": {
-    "fee": 500,
-    "depth": {
-     "1": {
-      "price": 190.97420332089143,
-      "diffBps": 6
-     },
-     "10": {
-      "price": 190.97484773653633,
-      "diffBps": 6
-     },
-     "50": {
-      "price": 190.9777118060693,
-      "diffBps": 6
-     },
-     "100": {
-      "price": 190.9812918929855,
-      "diffBps": 6
-     }
-    },
-    "diff1Bps": 6,
-    "price1": 190.97420332089143
-   }
+   ]
   },
   {
    "symbol": "ORCL",
    "token": "0xb0992820E760d836549ba69BC7598b4af75dEE03",
    "feed": "0x0e6a64a2B58A6693a531E6c555f3A5d042eEA844",
-   "chainlink": 120.06173332,
-   "ageSeconds": 29,
+   "chainlink": 120.67956204,
+   "ageSeconds": 151,
    "status": "OK",
    "heartbeat": 86400,
    "pool": false,
@@ -1799,8 +1408,8 @@
    "symbol": "PLTR",
    "token": "0x894E1EC2D74FFE5AEF8Dc8A9e84686acCB964F2A",
    "feed": "0x820ABedFF239034956B7A9d2F0a331f9F075eB4c",
-   "chainlink": 158.9,
-   "ageSeconds": 468,
+   "chainlink": 170.5065,
+   "ageSeconds": 711,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -1808,184 +1417,138 @@
     "fee": 3000,
     "depth": {
      "1": {
-      "price": 159.58201514996313,
-      "diffBps": 43
+      "price": 170.68431219684302,
+      "diffBps": 10
      },
      "10": {
-      "price": 159.59070088507102,
-      "diffBps": 43
+      "price": 170.68743915840423,
+      "diffBps": 11
      },
      "50": {
-      "price": 159.62930415221723,
-      "diffBps": 46
+      "price": 170.70133676534306,
+      "diffBps": 11
      },
      "100": {
-      "price": 159.67755823615002,
-      "diffBps": 49
+      "price": 170.71870877401653,
+      "diffBps": 12
      }
     },
-    "diff1Bps": 43,
-    "price1": 159.58201514996313
+    "diff1Bps": 10,
+    "price1": 170.68431219684302
    },
    "tiers": [
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 159.58201514996313,
-       "diffBps": 43
+       "price": 170.68431219684302,
+       "diffBps": 10
       },
       "10": {
-       "price": 159.59070088507102,
-       "diffBps": 43
+       "price": 170.68743915840423,
+       "diffBps": 11
       },
       "50": {
-       "price": 159.62930415221723,
-       "diffBps": 46
+       "price": 170.70133676534306,
+       "diffBps": 11
       },
       "100": {
-       "price": 159.67755823615002,
-       "diffBps": 49
+       "price": 170.71870877401653,
+       "diffBps": 12
       }
      },
-     "diff1Bps": 43,
-     "price1": 159.58201514996313
+     "diff1Bps": 10,
+     "price1": 170.68431219684302
     }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 159.58201514996313,
-      "diffBps": 43
-     },
-     "10": {
-      "price": 159.59070088507102,
-      "diffBps": 43
-     },
-     "50": {
-      "price": 159.62930415221723,
-      "diffBps": 46
-     },
-     "100": {
-      "price": 159.67755823615002,
-      "diffBps": 49
-     }
-    },
-    "diff1Bps": 43,
-    "price1": 159.58201514996313
-   }
+   ]
   },
   {
    "symbol": "QQQ",
    "token": "0xD5f3879160bc7c32ebb4dC785F8a4F505888de68",
    "feed": "0x80901d846d5D7B030F26B480776EE3b29374C2ae",
-   "chainlink": 673.16641875,
-   "ageSeconds": 488,
+   "chainlink": 680.39147847,
+   "ageSeconds": 3266,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
    "best": {
-    "fee": 3000,
+    "fee": 500,
     "depth": {
      "1": {
-      "price": 673.4248036287045,
-      "diffBps": 4
+      "price": 681.7446318949125,
+      "diffBps": 20
      },
      "10": {
-      "price": 673.4910006640275,
-      "diffBps": 5
+      "price": 681.7465419337261,
+      "diffBps": 20
      },
      "50": {
-      "price": 673.7852097099078,
-      "diffBps": 9
+      "price": 681.755030995122,
+      "diffBps": 20
      },
      "100": {
-      "price": 674.1529710172582,
-      "diffBps": 15
+      "price": 681.7656423218668,
+      "diffBps": 20
      }
     },
-    "diff1Bps": 4,
-    "price1": 673.4248036287045
+    "diff1Bps": 20,
+    "price1": 681.7446318949125
    },
    "tiers": [
-    {
-     "fee": 3000,
-     "depth": {
-      "1": {
-       "price": 673.4248036287045,
-       "diffBps": 4
-      },
-      "10": {
-       "price": 673.4910006640275,
-       "diffBps": 5
-      },
-      "50": {
-       "price": 673.7852097099078,
-       "diffBps": 9
-      },
-      "100": {
-       "price": 674.1529710172582,
-       "diffBps": 15
-      }
-     },
-     "diff1Bps": 4,
-     "price1": 673.4248036287045
-    },
     {
      "fee": 500,
      "depth": {
       "1": {
-       "price": 670.7808027258827,
-       "diffBps": -35
+       "price": 681.7446318949125,
+       "diffBps": 20
       },
       "10": {
-       "price": 670.7843133274056,
-       "diffBps": -35
+       "price": 681.7465419337261,
+       "diffBps": 20
       },
       "50": {
-       "price": 670.7999160008414,
-       "diffBps": -35
+       "price": 681.755030995122,
+       "diffBps": 20
       },
       "100": {
-       "price": 670.8194193426363,
-       "diffBps": -35
+       "price": 681.7656423218668,
+       "diffBps": 20
       }
      },
-     "diff1Bps": -35,
-     "price1": 670.7808027258827
-    }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 673.4248036287045,
-      "diffBps": 4
-     },
-     "10": {
-      "price": 673.4910006640275,
-      "diffBps": 5
-     },
-     "50": {
-      "price": 673.7852097099078,
-      "diffBps": 9
-     },
-     "100": {
-      "price": 674.1529710172582,
-      "diffBps": 15
-     }
+     "diff1Bps": 20,
+     "price1": 681.7446318949125
     },
-    "diff1Bps": 4,
-    "price1": 673.4248036287045
-   }
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 682.0378179891319,
+       "diffBps": 24
+      },
+      "10": {
+       "price": 682.0592156348732,
+       "diffBps": 25
+      },
+      "50": {
+       "price": 682.1543162826132,
+       "diffBps": 26
+      },
+      "100": {
+       "price": 682.2731920922882,
+       "diffBps": 28
+      }
+     },
+     "diff1Bps": 24,
+     "price1": 682.0378179891319
+    }
+   ]
   },
   {
    "symbol": "RGTI",
    "token": "0x284358abc07F9359f19f4b5b4aC91901Be2597Ba",
    "feed": "0x2A045cF1C49c61c166C036d2f06FA2D2d984f765",
-   "chainlink": 10.22274999,
-   "ageSeconds": 131,
+   "chainlink": 13.195,
+   "ageSeconds": 368,
    "status": "OK",
    "heartbeat": 86400,
    "pool": false,
@@ -1996,8 +1559,8 @@
    "symbol": "RKLB",
    "token": "0x3b14C39E89D60D627b42a1A4CA45b5bb45Fc12e2",
    "feed": "0x045477BF65Aef6f4F2386ad0164579e48381CC74",
-   "chainlink": 47.66875,
-   "ageSeconds": 137,
+   "chainlink": 59.10875,
+   "ageSeconds": 25,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -2005,80 +1568,57 @@
     "fee": 10000,
     "depth": {
      "1": {
-      "price": 73.6669532940985,
-      "diffBps": 5454
+      "price": 88.30566184718877,
+      "diffBps": 4940
      },
      "10": {
-      "price": 704.2741891033186,
-      "diffBps": 137743
+      "price": 883.0566184718878,
+      "diffBps": 139395
      },
      "50": {
-      "price": 3521.370945516593,
-      "diffBps": 728717
+      "price": 4415.283092359438,
+      "diffBps": 736976
      },
      "100": {
-      "price": 7042.741891033186,
-      "diffBps": 1467434
+      "price": 8830.566184718877,
+      "diffBps": 1483952
      }
     },
-    "diff1Bps": 5454,
-    "price1": 73.6669532940985
+    "diff1Bps": 4940,
+    "price1": 88.30566184718877
    },
    "tiers": [
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 73.6669532940985,
-       "diffBps": 5454
+       "price": 88.30566184718877,
+       "diffBps": 4940
       },
       "10": {
-       "price": 704.2741891033186,
-       "diffBps": 137743
+       "price": 883.0566184718878,
+       "diffBps": 139395
       },
       "50": {
-       "price": 3521.370945516593,
-       "diffBps": 728717
+       "price": 4415.283092359438,
+       "diffBps": 736976
       },
       "100": {
-       "price": 7042.741891033186,
-       "diffBps": 1467434
+       "price": 8830.566184718877,
+       "diffBps": 1483952
       }
      },
-     "diff1Bps": 5454,
-     "price1": 73.6669532940985
+     "diff1Bps": 4940,
+     "price1": 88.30566184718877
     }
-   ],
-   "bestDepth": {
-    "fee": 10000,
-    "depth": {
-     "1": {
-      "price": 73.6669532940985,
-      "diffBps": 5454
-     },
-     "10": {
-      "price": 704.2741891033186,
-      "diffBps": 137743
-     },
-     "50": {
-      "price": 3521.370945516593,
-      "diffBps": 728717
-     },
-     "100": {
-      "price": 7042.741891033186,
-      "diffBps": 1467434
-     }
-    },
-    "diff1Bps": 5454,
-    "price1": 73.6669532940985
-   }
+   ]
   },
   {
    "symbol": "SGOV",
    "token": "0x92FD66527192E3e61d4DDd13322Aa222DE86F9B5",
    "feed": "0xa0DF4ee0fFf975306345875E3548Fcc519577A11",
-   "chainlink": 101.4063502,
-   "ageSeconds": 20872,
+   "chainlink": 101.44672902,
+   "ageSeconds": 70390,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -2086,103 +1626,80 @@
     "fee": 500,
     "depth": {
      "1": {
-      "price": 101.41725977032996,
-      "diffBps": 1
+      "price": 101.46355422580885,
+      "diffBps": 2
      },
      "10": {
-      "price": 101.4173749902237,
-      "diffBps": 1
+      "price": 101.46392064484508,
+      "diffBps": 2
      },
      "50": {
-      "price": 101.41788707864039,
-      "diffBps": 1
+      "price": 101.46554917389508,
+      "diffBps": 2
      },
      "100": {
-      "price": 101.41852718916124,
-      "diffBps": 1
+      "price": 101.46758483520757,
+      "diffBps": 2
      }
     },
-    "diff1Bps": 1,
-    "price1": 101.41725977032996
+    "diff1Bps": 2,
+    "price1": 101.46355422580885
    },
    "tiers": [
     {
      "fee": 500,
      "depth": {
       "1": {
-       "price": 101.41725977032996,
-       "diffBps": 1
+       "price": 101.46355422580885,
+       "diffBps": 2
       },
       "10": {
-       "price": 101.4173749902237,
-       "diffBps": 1
+       "price": 101.46392064484508,
+       "diffBps": 2
       },
       "50": {
-       "price": 101.41788707864039,
-       "diffBps": 1
+       "price": 101.46554917389508,
+       "diffBps": 2
       },
       "100": {
-       "price": 101.41852718916124,
-       "diffBps": 1
+       "price": 101.46758483520757,
+       "diffBps": 2
       }
      },
-     "diff1Bps": 1,
-     "price1": 101.41725977032996
+     "diff1Bps": 2,
+     "price1": 101.46355422580885
     },
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 101.75071273517064,
-       "diffBps": 34
+       "price": 101.7427304473865,
+       "diffBps": 29
       },
       "10": {
-       "price": 101.7507418200882,
-       "diffBps": 34
+       "price": 101.74275970000576,
+       "diffBps": 29
       },
       "50": {
-       "price": 101.75087108638854,
-       "diffBps": 34
+       "price": 101.74288971164702,
+       "diffBps": 29
       },
       "100": {
-       "price": 101.75103266926398,
-       "diffBps": 34
+       "price": 101.7430522261986,
+       "diffBps": 29
       }
      },
-     "diff1Bps": 34,
-     "price1": 101.75071273517064
+     "diff1Bps": 29,
+     "price1": 101.7427304473865
     }
-   ],
-   "bestDepth": {
-    "fee": 500,
-    "depth": {
-     "1": {
-      "price": 101.41725977032996,
-      "diffBps": 1
-     },
-     "10": {
-      "price": 101.4173749902237,
-      "diffBps": 1
-     },
-     "50": {
-      "price": 101.41788707864039,
-      "diffBps": 1
-     },
-     "100": {
-      "price": 101.41852718916124,
-      "diffBps": 1
-     }
-    },
-    "diff1Bps": 1,
-    "price1": 101.41725977032996
-   }
+   ]
   },
   {
    "symbol": "SLV",
    "token": "0x411eFb0E7f985935DAec3D4C3ebaEa0d0AD7D89f",
    "feed": "0x209b73908e92Ae021826eD79609845451Ecba2ce",
-   "chainlink": 47.125,
-   "ageSeconds": 433,
+   "chainlink": 48.0895,
+   "ageSeconds": 3282,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -2190,126 +1707,103 @@
     "fee": 500,
     "depth": {
      "1": {
-      "price": 47.159081516251426,
-      "diffBps": 7
+      "price": 48.09118528502458,
+      "diffBps": 0
      },
      "10": {
-      "price": 47.41458361494848,
-      "diffBps": 61
+      "price": 48.34524488917682,
+      "diffBps": 53
      },
      "50": {
-      "price": 48.53958435759792,
-      "diffBps": 300
+      "price": 49.47439868540901,
+      "diffBps": 288
      },
      "100": {
-      "price": 49.93862425418229,
-      "diffBps": 597
+      "price": 50.87247879346046,
+      "diffBps": 579
      }
     },
-    "diff1Bps": 7,
-    "price1": 47.159081516251426
+    "diff1Bps": 0,
+    "price1": 48.09118528502458
    },
    "tiers": [
     {
      "fee": 500,
      "depth": {
       "1": {
-       "price": 47.159081516251426,
-       "diffBps": 7
+       "price": 48.09118528502458,
+       "diffBps": 0
       },
       "10": {
-       "price": 47.41458361494848,
-       "diffBps": 61
+       "price": 48.34524488917682,
+       "diffBps": 53
       },
       "50": {
-       "price": 48.53958435759792,
-       "diffBps": 300
+       "price": 49.47439868540901,
+       "diffBps": 288
       },
       "100": {
-       "price": 49.93862425418229,
-       "diffBps": 597
+       "price": 50.87247879346046,
+       "diffBps": 579
       }
      },
-     "diff1Bps": 7,
-     "price1": 47.159081516251426
-    },
-    {
-     "fee": 3000,
-     "depth": {
-      "1": {
-       "price": 47.22071966026811,
-       "diffBps": 20
-      },
-      "10": {
-       "price": 47.220903749582625,
-       "diffBps": 20
-      },
-      "50": {
-       "price": 47.2217219243138,
-       "diffBps": 21
-      },
-      "100": {
-       "price": 47.222744642727754,
-       "diffBps": 21
-      }
-     },
-     "diff1Bps": 20,
-     "price1": 47.22071966026811
+     "diff1Bps": 0,
+     "price1": 48.09118528502458
     },
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 47.866749756351794,
-       "diffBps": 157
+       "price": 48.26535458221055,
+       "diffBps": 37
       },
       "10": {
-       "price": 47.87135432925493,
-       "diffBps": 158
+       "price": 48.26997788355463,
+       "diffBps": 38
       },
       "50": {
-       "price": 47.89181909771326,
-       "diffBps": 163
+       "price": 48.290525889528325,
+       "diffBps": 42
       },
       "100": {
-       "price": 47.9174000582862,
-       "diffBps": 168
+       "price": 48.31621089699545,
+       "diffBps": 47
       }
      },
-     "diff1Bps": 157,
-     "price1": 47.866749756351794
-    }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 47.22071966026811,
-      "diffBps": 20
-     },
-     "10": {
-      "price": 47.220903749582625,
-      "diffBps": 20
-     },
-     "50": {
-      "price": 47.2217219243138,
-      "diffBps": 21
-     },
-     "100": {
-      "price": 47.222744642727754,
-      "diffBps": 21
-     }
+     "diff1Bps": 37,
+     "price1": 48.26535458221055
     },
-    "diff1Bps": 20,
-    "price1": 47.22071966026811
-   }
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 48.27444037813768,
+       "diffBps": 38
+      },
+      "10": {
+       "price": 48.27474021677411,
+       "diffBps": 39
+      },
+      "50": {
+       "price": 48.27607283293603,
+       "diffBps": 39
+      },
+      "100": {
+       "price": 48.27773860313843,
+       "diffBps": 39
+      }
+     },
+     "diff1Bps": 38,
+     "price1": 48.27444037813768
+    }
+   ]
   },
   {
    "symbol": "SNDK",
    "token": "0xB90A19fF0Af67f7779afF50A882A9CfF42446400",
    "feed": "0xfb133Fa4B7b385802B693a293606682Df47109A3",
-   "chainlink": 904.58249999,
-   "ageSeconds": 119,
+   "chainlink": 899.255,
+   "ageSeconds": 130,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -2317,207 +1811,161 @@
     "fee": 10000,
     "depth": {
      "1": {
-      "price": 912.1502999889802,
-      "diffBps": 84
+      "price": 899.8441911947084,
+      "diffBps": 7
      },
      "10": {
-      "price": 915.6725741365879,
-      "diffBps": 123
+      "price": 899.91943169364,
+      "diffBps": 7
      },
      "50": {
-      "price": 925.1488205953294,
-      "diffBps": 227
+      "price": 900.2538339111157,
+      "diffBps": 11
      },
      "100": {
-      "price": 935.7245702652416,
-      "diffBps": 344
+      "price": 900.6718366829605,
+      "diffBps": 16
      }
     },
-    "diff1Bps": 84,
-    "price1": 912.1502999889802
+    "diff1Bps": 7,
+    "price1": 899.8441911947084
    },
    "tiers": [
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 912.1502999889802,
-       "diffBps": 84
+       "price": 899.8441911947084,
+       "diffBps": 7
       },
       "10": {
-       "price": 915.6725741365879,
-       "diffBps": 123
+       "price": 899.91943169364,
+       "diffBps": 7
       },
       "50": {
-       "price": 925.1488205953294,
-       "diffBps": 227
+       "price": 900.2538339111157,
+       "diffBps": 11
       },
       "100": {
-       "price": 935.7245702652416,
-       "diffBps": 344
+       "price": 900.6718366829605,
+       "diffBps": 16
       }
      },
-     "diff1Bps": 84,
-     "price1": 912.1502999889802
+     "diff1Bps": 7,
+     "price1": 899.8441911947084
     }
-   ],
-   "bestDepth": {
-    "fee": 10000,
-    "depth": {
-     "1": {
-      "price": 912.1502999889802,
-      "diffBps": 84
-     },
-     "10": {
-      "price": 915.6725741365879,
-      "diffBps": 123
-     },
-     "50": {
-      "price": 925.1488205953294,
-      "diffBps": 227
-     },
-     "100": {
-      "price": 935.7245702652416,
-      "diffBps": 344
-     }
-    },
-    "diff1Bps": 84,
-    "price1": 912.1502999889802
-   }
+   ]
   },
   {
    "symbol": "SPCX",
    "token": "0x4a0E65A3EcceC6dBe60AE065F2e7bb85Fae35eEa",
    "feed": "0xB265810950ba6c5C0Ff821c9963014a56fD8Bffb",
-   "chainlink": 128.04,
-   "ageSeconds": 514,
+   "chainlink": 141.18,
+   "ageSeconds": 10896,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
    "best": {
-    "fee": 3000,
+    "fee": 500,
     "depth": {
      "1": {
-      "price": 127.98294591863772,
-      "diffBps": -4
+      "price": 141.73552183866397,
+      "diffBps": 39
      },
      "10": {
-      "price": 127.98353570548342,
-      "diffBps": -4
+      "price": 141.73559062619262,
+      "diffBps": 39
      },
      "50": {
-      "price": 127.98615698035327,
-      "diffBps": -4
+      "price": 141.7358963485422,
+      "diffBps": 39
      },
      "100": {
-      "price": 127.98943357394059,
-      "diffBps": -4
+      "price": 141.7362785014792,
+      "diffBps": 39
      }
     },
-    "diff1Bps": -4,
-    "price1": 127.98294591863772
+    "diff1Bps": 39,
+    "price1": 141.73552183866397
    },
    "tiers": [
-    {
-     "fee": 3000,
-     "depth": {
-      "1": {
-       "price": 127.98294591863772,
-       "diffBps": -4
-      },
-      "10": {
-       "price": 127.98353570548342,
-       "diffBps": -4
-      },
-      "50": {
-       "price": 127.98615698035327,
-       "diffBps": -4
-      },
-      "100": {
-       "price": 127.98943357394059,
-       "diffBps": -4
-      }
-     },
-     "diff1Bps": -4,
-     "price1": 127.98294591863772
-    },
     {
      "fee": 500,
      "depth": {
       "1": {
-       "price": 127.34346614817409,
-       "diffBps": -54
+       "price": 141.73552183866397,
+       "diffBps": 39
       },
       "10": {
-       "price": 127.34364243212625,
-       "diffBps": -54
+       "price": 141.73559062619262,
+       "diffBps": 39
       },
       "50": {
-       "price": 127.34442591635819,
-       "diffBps": -54
+       "price": 141.7358963485422,
+       "diffBps": 39
       },
       "100": {
-       "price": 127.34540527164812,
-       "diffBps": -54
+       "price": 141.7362785014792,
+       "diffBps": 39
       }
      },
-     "diff1Bps": -54,
-     "price1": 127.34346614817409
+     "diff1Bps": 39,
+     "price1": 141.73552183866397
+    },
+    {
+     "fee": 3000,
+     "depth": {
+      "1": {
+       "price": 141.95420342962208,
+       "diffBps": 55
+      },
+      "10": {
+       "price": 141.95435878513257,
+       "diffBps": 55
+      },
+      "50": {
+       "price": 141.95504925406806,
+       "diffBps": 55
+      },
+      "100": {
+       "price": 141.95591234023738,
+       "diffBps": 55
+      }
+     },
+     "diff1Bps": 55,
+     "price1": 141.95420342962208
     },
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 130.72378395017074,
-       "diffBps": 210
+       "price": 142.80707985110283,
+       "diffBps": 115
       },
       "10": {
-       "price": 131.82817158416327,
-       "diffBps": 296
+       "price": 148.8294350724223,
+       "diffBps": 542
       },
       "50": {
-       "price": 132.1452656656721,
-       "diffBps": 321
+       "price": 157.75410401267897,
+       "diffBps": 1174
       },
       "100": {
-       "price": 132.42339654164206,
-       "diffBps": 342
+       "price": 217.50978830801208,
+       "diffBps": 5407
       }
      },
-     "diff1Bps": 210,
-     "price1": 130.72378395017074
+     "diff1Bps": 115,
+     "price1": 142.80707985110283
     }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 127.98294591863772,
-      "diffBps": -4
-     },
-     "10": {
-      "price": 127.98353570548342,
-      "diffBps": -4
-     },
-     "50": {
-      "price": 127.98615698035327,
-      "diffBps": -4
-     },
-     "100": {
-      "price": 127.98943357394059,
-      "diffBps": -4
-     }
-    },
-    "diff1Bps": -4,
-    "price1": 127.98294591863772
-   }
+   ]
   },
   {
    "symbol": "SPY",
    "token": "0x117cc2133c37B721F49dE2A7a74833232B3B4C0C",
    "feed": "0x319724394D3A0e3669269846abE664Cd621f9f6A",
-   "chainlink": 759.17101226,
-   "ageSeconds": 337,
+   "chainlink": 754.16843261,
+   "ageSeconds": 10778,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -2525,126 +1973,103 @@
     "fee": 500,
     "depth": {
      "1": {
-      "price": 758.8124237892021,
-      "diffBps": -5
+      "price": 756.3334212066026,
+      "diffBps": 29
      },
      "10": {
-      "price": 758.8132818486243,
-      "diffBps": -5
+      "price": 756.3342328404223,
+      "diffBps": 29
      },
      "50": {
-      "price": 758.8170954460576,
-      "diffBps": -5
+      "price": 756.337840101845,
+      "diffBps": 29
      },
      "100": {
-      "price": 758.8218624428491,
-      "diffBps": -5
+      "price": 756.3423491786235,
+      "diffBps": 29
      }
     },
-    "diff1Bps": -5,
-    "price1": 758.8124237892021
+    "diff1Bps": 29,
+    "price1": 756.3334212066026
    },
    "tiers": [
     {
      "fee": 500,
      "depth": {
       "1": {
-       "price": 758.8124237892021,
-       "diffBps": -5
+       "price": 756.3334212066026,
+       "diffBps": 29
       },
       "10": {
-       "price": 758.8132818486243,
-       "diffBps": -5
+       "price": 756.3342328404223,
+       "diffBps": 29
       },
       "50": {
-       "price": 758.8170954460576,
-       "diffBps": -5
+       "price": 756.337840101845,
+       "diffBps": 29
       },
       "100": {
-       "price": 758.8218624428491,
-       "diffBps": -5
+       "price": 756.3423491786235,
+       "diffBps": 29
       }
      },
-     "diff1Bps": -5,
-     "price1": 758.8124237892021
+     "diff1Bps": 29,
+     "price1": 756.3334212066026
     },
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 762.1722007669891,
-       "diffBps": 40
+       "price": 756.3906588667928,
+       "diffBps": 29
       },
       "10": {
-       "price": 762.1793185216809,
-       "diffBps": 40
+       "price": 756.4100489791334,
+       "diffBps": 30
       },
       "50": {
-       "price": 762.2109529869788,
-       "diffBps": 40
+       "price": 756.496227256203,
+       "diffBps": 31
       },
       "100": {
-       "price": 762.2504960686011,
-       "diffBps": 41
+       "price": 756.6032877792519,
+       "diffBps": 32
       }
      },
-     "diff1Bps": 40,
-     "price1": 762.1722007669891
+     "diff1Bps": 29,
+     "price1": 756.3906588667928
     },
     {
      "fee": 100,
      "depth": {
       "1": {
-       "price": 1474.758578024353,
-       "diffBps": 9426
+       "price": 1030.2741362628499,
+       "diffBps": 3661
       },
       "10": {
-       "price": 14747.585780243531,
-       "diffBps": 184259
+       "price": 10302.741362628498,
+       "diffBps": 126611
       },
       "50": {
-       "price": 73737.92890121766,
-       "diffBps": 961295
+       "price": 51513.70681314249,
+       "diffBps": 673053
       },
       "100": {
-       "price": 147475.85780243532,
-       "diffBps": 1932591
+       "price": 103027.41362628498,
+       "diffBps": 1356106
       }
      },
-     "diff1Bps": 9426,
-     "price1": 1474.758578024353
+     "diff1Bps": 3661,
+     "price1": 1030.2741362628499
     }
-   ],
-   "bestDepth": {
-    "fee": 500,
-    "depth": {
-     "1": {
-      "price": 758.8124237892021,
-      "diffBps": -5
-     },
-     "10": {
-      "price": 758.8132818486243,
-      "diffBps": -5
-     },
-     "50": {
-      "price": 758.8170954460576,
-      "diffBps": -5
-     },
-     "100": {
-      "price": 758.8218624428491,
-      "diffBps": -5
-     }
-    },
-    "diff1Bps": -5,
-    "price1": 758.8124237892021
-   }
+   ]
   },
   {
    "symbol": "TSLA",
    "token": "0x322F0929c4625eD5bAd873c95208D54E1c003b2d",
    "feed": "0x4A1166a659A55625345e9515b32adECea5547C38",
-   "chainlink": 351.5795,
-   "ageSeconds": 167,
+   "chainlink": 380.85,
+   "ageSeconds": 3278,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -2652,126 +2077,103 @@
     "fee": 500,
     "depth": {
      "1": {
-      "price": 351.1041073502106,
-      "diffBps": -14
+      "price": 381.04984961238716,
+      "diffBps": 5
      },
      "10": {
-      "price": 351.25083095704474,
-      "diffBps": -9
+      "price": 381.13800233434483,
+      "diffBps": 8
      },
      "50": {
-      "price": 351.90293587630765,
-      "diffBps": 9
+      "price": 381.53018053191187,
+      "diffBps": 18
      },
      "100": {
-      "price": 352.66963682467537,
+      "price": 382.02249372602546,
       "diffBps": 31
      }
     },
-    "diff1Bps": -14,
-    "price1": 351.1041073502106
+    "diff1Bps": 5,
+    "price1": 381.04984961238716
    },
    "tiers": [
     {
      "fee": 500,
      "depth": {
       "1": {
-       "price": 351.1041073502106,
-       "diffBps": -14
+       "price": 381.04984961238716,
+       "diffBps": 5
       },
       "10": {
-       "price": 351.25083095704474,
-       "diffBps": -9
+       "price": 381.13800233434483,
+       "diffBps": 8
       },
       "50": {
-       "price": 351.90293587630765,
-       "diffBps": 9
+       "price": 381.53018053191187,
+       "diffBps": 18
       },
       "100": {
-       "price": 352.66963682467537,
+       "price": 382.02249372602546,
        "diffBps": 31
       }
      },
-     "diff1Bps": -14,
-     "price1": 351.1041073502106
+     "diff1Bps": 5,
+     "price1": 381.04984961238716
     },
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 352.4235558480459,
-       "diffBps": 24
+       "price": 381.5822705813248,
+       "diffBps": 19
       },
       "10": {
-       "price": 352.4258788304473,
-       "diffBps": 24
+       "price": 381.58290646339486,
+       "diffBps": 19
       },
       "50": {
-       "price": 352.4362031966757,
-       "diffBps": 24
+       "price": 381.58573260592874,
+       "diffBps": 19
       },
       "100": {
-       "price": 352.44910865446127,
-       "diffBps": 25
+       "price": 381.5892652840962,
+       "diffBps": 19
       }
      },
-     "diff1Bps": 24,
-     "price1": 352.4235558480459
+     "diff1Bps": 19,
+     "price1": 381.5822705813248
     },
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 359.10783018221804,
-       "diffBps": 214
+       "price": 381.831514961426,
+       "diffBps": 26
       },
       "10": {
-       "price": 359.92035883038193,
-       "diffBps": 237
+       "price": 381.8454844163604,
+       "diffBps": 26
       },
       "50": {
-       "price": 363.53159726666587,
-       "diffBps": 340
+       "price": 381.9075708827356,
+       "diffBps": 28
       },
       "100": {
-       "price": 368.0456453120207,
-       "diffBps": 468
+       "price": 381.98517896570456,
+       "diffBps": 30
       }
      },
-     "diff1Bps": 214,
-     "price1": 359.10783018221804
+     "diff1Bps": 26,
+     "price1": 381.831514961426
     }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 352.4235558480459,
-      "diffBps": 24
-     },
-     "10": {
-      "price": 352.4258788304473,
-      "diffBps": 24
-     },
-     "50": {
-      "price": 352.4362031966757,
-      "diffBps": 24
-     },
-     "100": {
-      "price": 352.44910865446127,
-      "diffBps": 25
-     }
-    },
-    "diff1Bps": 24,
-    "price1": 352.4235558480459
-   }
+   ]
   },
   {
    "symbol": "TSM",
    "token": "0x58FfE4a942d3885bAa22D7520691F611EF09e7AA",
    "feed": "0x874cF94aa8eC88Fd9560094dD065f2fB3E41Fc2F",
-   "chainlink": 374.87007852,
-   "ageSeconds": 442,
+   "chainlink": 393.91440102,
+   "ageSeconds": 414,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -2779,80 +2181,57 @@
     "fee": 10000,
     "depth": {
      "1": {
-      "price": 380.7127769532899,
-      "diffBps": 156
+      "price": 394.8400220187581,
+      "diffBps": 23
      },
      "10": {
-      "price": 380.72717086069616,
-      "diffBps": 156
+      "price": 394.85017617548635,
+      "diffBps": 24
      },
      "50": {
-      "price": 380.7887593463021,
-      "diffBps": 158
+      "price": 394.89530576094523,
+      "diffBps": 25
      },
      "100": {
-      "price": 380.8643446783975,
-      "diffBps": 160
+      "price": 394.9517177427688,
+      "diffBps": 26
      }
     },
-    "diff1Bps": 156,
-    "price1": 380.7127769532899
+    "diff1Bps": 23,
+    "price1": 394.8400220187581
    },
    "tiers": [
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 380.7127769532899,
-       "diffBps": 156
+       "price": 394.8400220187581,
+       "diffBps": 23
       },
       "10": {
-       "price": 380.72717086069616,
-       "diffBps": 156
+       "price": 394.85017617548635,
+       "diffBps": 24
       },
       "50": {
-       "price": 380.7887593463021,
-       "diffBps": 158
+       "price": 394.89530576094523,
+       "diffBps": 25
       },
       "100": {
-       "price": 380.8643446783975,
-       "diffBps": 160
+       "price": 394.9517177427688,
+       "diffBps": 26
       }
      },
-     "diff1Bps": 156,
-     "price1": 380.7127769532899
+     "diff1Bps": 23,
+     "price1": 394.8400220187581
     }
-   ],
-   "bestDepth": {
-    "fee": 10000,
-    "depth": {
-     "1": {
-      "price": 380.7127769532899,
-      "diffBps": 156
-     },
-     "10": {
-      "price": 380.72717086069616,
-      "diffBps": 156
-     },
-     "50": {
-      "price": 380.7887593463021,
-      "diffBps": 158
-     },
-     "100": {
-      "price": 380.8643446783975,
-      "diffBps": 160
-     }
-    },
-    "diff1Bps": 156,
-    "price1": 380.7127769532899
-   }
+   ]
   },
   {
    "symbol": "USAR",
    "token": "0xd917B029C761D264c6A312BBbcDA868658eF86a6",
    "feed": "0xA994d3684e8400A6c8078226925779FdeE682DD9",
-   "chainlink": 7.54515,
-   "ageSeconds": 2,
+   "chainlink": 9.005,
+   "ageSeconds": 1,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -2860,80 +2239,57 @@
     "fee": 3000,
     "depth": {
      "1": {
-      "price": 7.552969093645909,
-      "diffBps": 10
+      "price": 9.060657138768068,
+      "diffBps": 62
      },
      "10": {
-      "price": 7.5566638813311915,
-      "diffBps": 15
+      "price": 9.062261948883387,
+      "diffBps": 64
      },
      "50": {
-      "price": 7.573085159932447,
-      "diffBps": 37
+      "price": 9.069394438284812,
+      "diffBps": 72
      },
      "100": {
-      "price": 7.593611758184015,
-      "diffBps": 64
+      "price": 9.078395380571239,
+      "diffBps": 82
      }
     },
-    "diff1Bps": 10,
-    "price1": 7.552969093645909
+    "diff1Bps": 62,
+    "price1": 9.060657138768068
    },
    "tiers": [
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 7.552969093645909,
-       "diffBps": 10
+       "price": 9.060657138768068,
+       "diffBps": 62
       },
       "10": {
-       "price": 7.5566638813311915,
-       "diffBps": 15
+       "price": 9.062261948883387,
+       "diffBps": 64
       },
       "50": {
-       "price": 7.573085159932447,
-       "diffBps": 37
+       "price": 9.069394438284812,
+       "diffBps": 72
       },
       "100": {
-       "price": 7.593611758184015,
-       "diffBps": 64
+       "price": 9.078395380571239,
+       "diffBps": 82
       }
      },
-     "diff1Bps": 10,
-     "price1": 7.552969093645909
+     "diff1Bps": 62,
+     "price1": 9.060657138768068
     }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 7.552969093645909,
-      "diffBps": 10
-     },
-     "10": {
-      "price": 7.5566638813311915,
-      "diffBps": 15
-     },
-     "50": {
-      "price": 7.573085159932447,
-      "diffBps": 37
-     },
-     "100": {
-      "price": 7.593611758184015,
-      "diffBps": 64
-     }
-    },
-    "diff1Bps": 10,
-    "price1": 7.552969093645909
-   }
+   ]
   },
   {
    "symbol": "USO",
    "token": "0xa30FA36Db767ad9eD3f7a60fC79526fB4d56D344",
    "feed": "0x75a9c76Ef439e2C7c2E5a34Ab105EcFe3766431c",
-   "chainlink": 147.27845,
-   "ageSeconds": 537,
+   "chainlink": 141.984375,
+   "ageSeconds": 248,
    "status": "OK",
    "heartbeat": 86400,
    "pool": true,
@@ -2941,96 +2297,73 @@
     "fee": 3000,
     "depth": {
      "1": {
-      "price": 147.6471716869954,
-      "diffBps": 25
+      "price": 142.0412816966499,
+      "diffBps": 4
      },
      "10": {
-      "price": 147.6472227352303,
-      "diffBps": 25
+      "price": 142.0413335634942,
+      "diffBps": 4
      },
      "50": {
-      "price": 147.64744961627437,
-      "diffBps": 25
+      "price": 142.0415640828022,
+      "diffBps": 4
      },
      "100": {
-      "price": 147.64773321757946,
-      "diffBps": 25
+      "price": 142.04185223193724,
+      "diffBps": 4
      }
     },
-    "diff1Bps": 25,
-    "price1": 147.6471716869954
+    "diff1Bps": 4,
+    "price1": 142.0412816966499
    },
    "tiers": [
     {
      "fee": 3000,
      "depth": {
       "1": {
-       "price": 147.6471716869954,
-       "diffBps": 25
+       "price": 142.0412816966499,
+       "diffBps": 4
       },
       "10": {
-       "price": 147.6472227352303,
-       "diffBps": 25
+       "price": 142.0413335634942,
+       "diffBps": 4
       },
       "50": {
-       "price": 147.64744961627437,
-       "diffBps": 25
+       "price": 142.0415640828022,
+       "diffBps": 4
       },
       "100": {
-       "price": 147.64773321757946,
-       "diffBps": 25
+       "price": 142.04185223193724,
+       "diffBps": 4
       }
      },
-     "diff1Bps": 25,
-     "price1": 147.6471716869954
+     "diff1Bps": 4,
+     "price1": 142.0412816966499
     },
     {
      "fee": 10000,
      "depth": {
       "1": {
-       "price": 147.95195341307428,
-       "diffBps": 46
+       "price": 142.53638463688958,
+       "diffBps": 39
       },
       "10": {
-       "price": 147.95272627281648,
-       "diffBps": 46
+       "price": 142.53719357803513,
+       "diffBps": 39
       },
       "50": {
-       "price": 147.95616120500415,
-       "diffBps": 46
+       "price": 142.5407888720154,
+       "diffBps": 39
       },
       "100": {
-       "price": 147.96045487023872,
-       "diffBps": 46
+       "price": 142.54528298949074,
+       "diffBps": 40
       }
      },
-     "diff1Bps": 46,
-     "price1": 147.95195341307428
+     "diff1Bps": 39,
+     "price1": 142.53638463688958
     }
-   ],
-   "bestDepth": {
-    "fee": 3000,
-    "depth": {
-     "1": {
-      "price": 147.6471716869954,
-      "diffBps": 25
-     },
-     "10": {
-      "price": 147.6472227352303,
-      "diffBps": 25
-     },
-     "50": {
-      "price": 147.64744961627437,
-      "diffBps": 25
-     },
-     "100": {
-      "price": 147.64773321757946,
-      "diffBps": 25
-     }
-    },
-    "diff1Bps": 25,
-    "price1": 147.6471716869954
-   }
+   ]
   }
  ]
 }

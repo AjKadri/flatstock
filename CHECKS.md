@@ -2448,3 +2448,20 @@ Scenario                  share  AAPL   NVDA   MSFT   AMZN   GOOGL  META   TSLA 
 - FlatstockLock `0x2421E6F3fbaAFB96e0987208a1f3AC51F46EE121`: `forge verify-contract --verifier sourcify` submitted (job 0aa90005-b384-4716-a546-28cc3680232a). Sourcify v2 API now reports creationMatch=match, runtimeMatch=match (matchId 58624295). Blockscout verifier failed: Cloudflare challenge on the API; Blockscout status not confirmed.
 - Relayer F1 fix: relayer re-checks signed amountOutMinimum against Chainlink (2%). `node --test web/relayer/*.test.ts`: 53 tests, 48 pass, 5 skipped (fork tests need anvil). `bash web/relayer/run-fork-test.sh`: 3/3 pass, including price-guard.fork.test.ts on real AAPL/NVDA/MSFT feeds (AAPL +0.30%, NVDA +0.06%, MSFT -0.07% pool vs Chainlink; 1.5% below passes, 3% below rejected, 25h-old feed rejected).
 - Relayer F3 fix: /api/rpc method allow-list, eth_getLogs bounds, batch 20, body 512 KB, 600 req/min/IP. rpc-proxy.test.ts (real server, stub upstream): eth_sendRawTransaction never reaches upstream; 413 and 429 verified. Local app (throwaway relayer key, public RPC) loaded mix and prices through the new proxy with no policy rejections.
+
+## 9 Nov: round 4 closed, round 5 opened (mainnet, sent by the user from the relayer/owner wallet 0x6956…75F4)
+- Before the close: `rounds(4).closed = false`, no RoundClosed event (the close bot had not fired); `closeRound(4)` simulated OK, estimate 130,606 gas.
+- First `cast send` attempt printed all-null through jq (key not in that shell); nothing was sent. The user re-ran it loading the local env in a subshell.
+- **closeRound(4):** `0x6c6bd3ec605ed5abfbdc7fd3e3237ccd151eee434fdeffa5162d5f39f9343dba`, block 110351085, status 0x1, gas 129,509, from 0x6956…75F4.
+- **openRound(5, 8, 1794837600, 5000):** `0xab155f91500df9ebd50d0f114f7d9f22dc268c96fcf99fe5435d073660f0574e`, block 110351414, status 0x1, gas 74,485 (estimate was 75,363), from 0x6956…75F4. RoundOpened emitted at 1794257433 = Mon 9 Nov 21:50 WAT.
+- Read-only verification after both txs:
+```text
+rounds(4): opensAt 1793799225, closesAt 1794232800, assetCount 3, totalVotes 4, closed true
+finalWeightBps(4, 0..2): AAPL 4167, NVDA 1666, MSFT 4167  (matches weightBps before the close); voteShareBps(4) = 5000
+rounds(5): opensAt 1794257433, closesAt 1794837600, assetCount 8, totalVotes 0, closed false
+voteShareBps(5) = 5000; latestRoundId = 5
+```
+- Round 4 votes: 4 votes from 4 distinct wallets (VoteCast logs, block 101593767 onward): AAPL 2, NVDA 0, MSFT 2. Vote txs: 0x8b11…3524, 0xcfb4…8266, 0x1905…04ac, 0xe9fe…b617.
+- Stock study (`research/stock-study.json`, 21:33 WAT, market REGULAR, sequencer OPERATIONAL): all 8 pass at the app's fee tiers (feed OK, pool exists, worst gap 0.39%). Drop rule: nothing dropped, assetCount 8. Largest gap per stock, best tier by size: AAPL 2 bps, NVDA 4, MSFT 16, AMZN 35, GOOGL 39, META 17, TSLA 31, SPY 29.
+- Live app check (https://flatstock.ajkadri.dev and https://app.flatstock.ajkadri.dev, read-only, 21:5x WAT): This week reads "THIS WEEK · ROUND 4 FINAL", AAPL 41.67 / NVDA 16.66 / MSFT 41.67, "Round 5 closes in 6d 17h", the line "This week: Round 4 final mix (3 stocks). Voting now: Round 5, 8 stocks, for next week."; Vote tab now reads "VOTE FOR NEXT WEEK · ROUND 5" with 8 stocks at 12.50% each and "0 votes"; Rounds shows Round 5 Open and Round 4 Final with Open tx / Close tx links; landing shows round 4 mix with dashed tiles for the 5 stocks joining in round 5. No label problems found.
+- GetBlock: user reported /api/health `getblock: true` on 9 Nov (relayer 0.000974564580601447 ETH, kill switch off); a live buy test including Adjust passed.
