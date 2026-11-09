@@ -14,7 +14,7 @@
 <p>The mix is a blend: <b>50% equal weight + 50% vote share</b>, then <b>no stock may exceed 50%</b> (any excess is redistributed to the others). With zero votes, every stock gets an equal share.</p>
 <table><tr><th>Example (3 stocks, 1 vote for AAPL)</th><th>Equal part (50%)</th><th>Vote part (50%)</th><th>Result</th></tr>
 <tr><td>AAPL</td><td>16.67%</td><td>50.00%</td><td>66.67% → capped at 50%</td></tr><tr><td>NVDA</td><td>16.67%</td><td>0%</td><td>25%</td></tr><tr><td>MSFT</td><td>16.67%</td><td>0%</td><td>25%</td></tr></table>
-<p class="small">The cap-excess goes to the other stocks equally, which is why round 4 shows 50 / 25 / 25.</p>
+<p class="small">That table is a made-up one-vote case, to show the cap. Round 4 is a real example: 4 votes, AAPL 2, NVDA 0, MSFT 2, so the vote shares are 50% / 0% / 50%. Half of the mix follows the votes (25% / 0% / 25%) and half is equal weight (16.67% each), which gives a final mix of <b>AAPL 41.67%, NVDA 16.66%, MSFT 41.67%</b>. No stock reached the 50% cap, so nothing was redistributed.</p>
 <h2>Vote share</h2><p>Each round stores its own vote share. Round 4 used <b>50%</b>. The vote share is the part of the mix that follows the votes; the rest is equal weight. The votes are counted as a <i>share</i>, not as a raw number: with a single vote or with ten votes all on the same stock, the mix is the same.</p>
 <p>Round 5 uses a 50% vote share. The vote share may rise to 75% once rounds regularly get 20+ voters; it's set per round and shown in the app.</p>
 <h2>Weekly schedule</h2><p>Rounds close every Monday at 15:00 WAT, and the next round opens at once. Round 5 closes Mon 16 Nov 15:00 WAT.</p>
