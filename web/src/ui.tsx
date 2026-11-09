@@ -11,6 +11,7 @@ export type MixRow = {
   name?: string;
   index: number;
   weight: number; // percent, 0-100
+  votes?: number; // votes for this stock in the round
   price?: StockPrice;
   sub?: string; // replaces the full name under the ticker (for example "12.3 shares")
   extra?: ReactNode; // optional last column value
@@ -52,9 +53,11 @@ export function ChangeCell({ price }: { price?: StockPrice }) {
 }
 
 // Holdings-style table. market=false (past rounds) shows only stock and weight, with no live prices.
-export function MixTable({ rows, market = true, selected, onPick, disabled, lead, extraHead, keepOrder, isOff, mine, label = "Stocks in the mix" }: {
+export function MixTable({ rows, market = true, showVotes = false, votesUnderStock = false, selected, onPick, disabled, lead, extraHead, keepOrder, isOff, mine, label = "Stocks in the mix" }: {
   rows: MixRow[];
   market?: boolean;
+  showVotes?: boolean; // a "Votes" column between the stock columns and Weight
+  votesUnderStock?: boolean; // "N votes" under each stock (vote tab)
   selected?: number | null;
   onPick?: (index: number) => void;
   disabled?: boolean;
@@ -76,6 +79,7 @@ export function MixTable({ rows, market = true, selected, onPick, disabled, lead
           {market && <th className="c-spark">24h</th>}
           {market && <th className="r">Price</th>}
           {market && <th className="r">24h change</th>}
+          {showVotes && <th className="r c-votes">Votes</th>}
           <th className="r">Weight</th>
           {extraHead && <th className="r">{extraHead}</th>}
         </tr>
@@ -96,10 +100,11 @@ export function MixTable({ rows, market = true, selected, onPick, disabled, lead
               onKeyDown={onPick && !disabled ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onPick(row.index); } } : undefined}
             >
               <td className="key">{lead ? lead(row) : <i style={{ background: colors.get(row.index) }} />}</td>
-              <td className="stock"><b className="mono">{row.symbol}</b>{mine === row.index && <em className="mine">Your vote</em>}<small>{row.sub ?? row.name ?? ""}</small></td>
+              <td className="stock"><b className="mono">{row.symbol}</b>{mine === row.index && <em className="mine">Your vote</em>}<small>{row.sub ?? row.name ?? ""}</small>{votesUnderStock && row.votes !== undefined && <small className="votes">{row.votes} vote{row.votes === 1 ? "" : "s"}</small>}</td>
               {market && <td className="c-spark">{p && p.price !== null ? <Spark values={p.history} up={up} /> : null}</td>}
               {market && <td className="r mono">{p && p.price !== null ? `$${formatPrice(p.price)}` : "n/a"}</td>}
               {market && <td className="r"><ChangeCell price={p} /></td>}
+              {showVotes && <td className="r mono c-votes">{row.votes ?? 0}</td>}
               <td className="r mono w">{row.weight.toFixed(2)}%</td>
               {extraHead && <td className="r mono">{row.extra}</td>}
             </tr>

@@ -635,8 +635,8 @@ function App() {
   const keep = communityRows.filter((row) => row.weight > 0n && !excluded.includes(row.index)).map((row) => row.index);
   const adjustedWeights = mixRound ? renormaliseWeights(mixRound.weights, keep) : [];
   const mixRows = communityRows.map((row) => ({ ...row, weight: adjusting ? adjustedWeights[row.index] || 0n : row.weight }));
-  const toMix = (rows: { asset: { symbol: string; name?: string }; index: number; weight: bigint }[]): MixRow[] =>
-    rows.map((row) => ({ symbol: row.asset.symbol, name: row.asset.name, index: row.index, weight: Number(row.weight) / 100, price: prices[row.asset.symbol] }));
+  const toMix = (rows: { asset: { symbol: string; name?: string }; index: number; weight: bigint; votes?: number }[]): MixRow[] =>
+    rows.map((row) => ({ symbol: row.asset.symbol, name: row.asset.name, index: row.index, weight: Number(row.weight) / 100, price: prices[row.asset.symbol], votes: row.votes }));
   const mixHeadline = buyMix && round && buyMix.round.roundId !== round.roundId && voteRoundOpen
     ? `This week: Round ${buyMix.round.roundId} ${buyMix.kind === "final" ? "final mix" : "preview"} (${buyMix.round.assetCount} stocks). Voting now: Round ${round.roundId}, ${round.assetCount} stocks, for next week.`
     : null;
@@ -650,7 +650,7 @@ function App() {
   const goTab = (next: Tab) => { window.location.hash = next; setTab(next); window.scrollTo({ top: 0 }); };
   const walletReady = connected && chainId === chain.id;
   const voteNeedsWallet = !connected ? "Connect to vote" : chainId !== chain.id ? "Switch network to vote" : null;
-  const voteRows = round ? assets.slice(0, round.assetCount).map((asset, index) => ({ asset, index, weight: round.weights[index] || 0n })) : [];
+  const voteRows = round ? assets.slice(0, round.assetCount).map((asset, index) => ({ asset, index, weight: round.weights[index] || 0n, votes: Number(round.votesByAsset?.[index] ?? 0n) })) : [];
   const picked = selectedAsset !== null ? assets[selectedAsset] : null;
   const testRounds = roundHistory?.tests ?? [];
   const testBurned = testRounds.reduce((sum, item) => sum + item.votes, 0n);
@@ -828,7 +828,7 @@ function App() {
                 )}
                 {voteStep && <div className="stepbox" role="status" aria-live="polite"><strong>{voteStep}</strong><span className="mono">Do not close this page. A pause is fine: nothing here times out.</span></div>}
                 <AllocationBar rows={toMix(voteRows)} />
-                <MixTable rows={toMix(voteRows)} selected={alreadyVoted ? (myVote?.assetIndex ?? null) : selectedAsset} mine={alreadyVoted ? (myVote?.assetIndex ?? null) : null} onPick={(index) => setSelectedAsset(index)} disabled={alreadyVoted} label="Pick a stock to vote for" />
+                <MixTable rows={toMix(voteRows)} votesUnderStock selected={alreadyVoted ? (myVote?.assetIndex ?? null) : selectedAsset} mine={alreadyVoted ? (myVote?.assetIndex ?? null) : null} onPick={(index) => setSelectedAsset(index)} disabled={alreadyVoted} label="Pick a stock to vote for" />
                 <p className="source mono">Price: Chainlink</p>
                 <div className="pick">
                   {alreadyVoted ? null : picked && selectedAsset !== null ? (
@@ -965,7 +965,7 @@ function App() {
                     {currentRoundCard.weights && (
                       <>
                         <AllocationBar rows={toMix(assets.slice(0, currentRoundCard.assetCount).map((asset, index) => ({ asset, index, weight: currentRoundCard.weights?.[index] || 0n })))} />
-                        <MixTable rows={toMix(assets.slice(0, currentRoundCard.assetCount).map((asset, index) => ({ asset, index, weight: currentRoundCard.weights?.[index] || 0n })))} label={`Round ${currentRoundCard.roundId} mix`} />
+                        <MixTable showVotes rows={toMix(assets.slice(0, currentRoundCard.assetCount).map((asset, index) => ({ asset, index, weight: currentRoundCard.weights?.[index] || 0n, votes: Number(currentRoundCard.votesByAsset[index] ?? 0n) })))} label={`Round ${currentRoundCard.roundId} mix`} />
                       </>
                     )}
                     <ProgressLine opensAt={Number(round.opensAt)} closesAt={Number(round.closesAt)} now={now} label={voteRoundOpen && closesIn !== null ? `Closes in ${formatCountdown(closesIn)} · ${formatDate(round.closesAt)}` : formatDate(round.closesAt)} />
@@ -978,6 +978,7 @@ function App() {
                 {pastRounds.length === 0 ? <EmptyLine>No closed rounds yet. The first closes Mon 9 Nov 15:00 WAT.</EmptyLine> : (
                   <ul className="past">{pastRounds.map((item) => <RoundRow key={item.key} item={item} />)}</ul>
                 )}
+                <p className="helper">Weight = half by votes, half split equally. Max 50% per stock.</p>
                 {testRounds.length > 0 && (
                   <details className="fold">
                     <summary>{testRounds.length} test round{testRounds.length === 1 ? "" : "s"} · {testBurned.toString()} $WIF burned <small>earlier contracts</small></summary>
@@ -1063,7 +1064,7 @@ function assetLabel(asset: { name?: string } | undefined) {
 function RoundRow({ item, test = false }: { item: PastRound; test?: boolean }) {
   const label = item.status === "closed" ? "Final" : item.status === "open" ? "Open" : item.status === "ended" ? "Ended" : "Unknown";
   const rows = item.weights
-    ? assets.slice(0, item.assetCount).map((asset, index) => ({ symbol: asset.symbol, name: asset.name, index, weight: Number(item.weights?.[index] || 0n) / 100 }))
+    ? assets.slice(0, item.assetCount).map((asset, index) => ({ symbol: asset.symbol, name: asset.name, index, weight: Number(item.weights?.[index] || 0n) / 100, votes: Number(item.votesByAsset[index] ?? 0n) }))
     : null;
   return (
     <li className="round">
@@ -1071,7 +1072,7 @@ function RoundRow({ item, test = false }: { item: PastRound; test?: boolean }) {
       {rows && (
         <>
           <AllocationBar rows={rows} />
-          <MixTable rows={rows} market={false} label={`Round ${item.roundId} weights`} />
+          <MixTable rows={rows} market={false} showVotes label={`Round ${item.roundId} weights`} />
         </>
       )}
       <p className="helper">{item.votes.toString()} vote{item.votes === 1n ? "" : "s"} · {item.votes.toString()} $WIF burned{item.closesAt ? ` · closes ${formatDate(item.closesAt)}` : ""}{test ? ` · ${item.contractLabel}` : ""}</p>

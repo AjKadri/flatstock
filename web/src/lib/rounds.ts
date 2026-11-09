@@ -84,7 +84,7 @@ export async function readRoundById(roundId: bigint): Promise<RoundState | null>
       : assets.map((_, index) => index < assetCount
         ? calculateMixWeights(votes, assetCount, voteShare)[index] || 0n
         : 0n);
-    return { roundId, opensAt, closesAt, assetCount, totalVotes, closed, isOpen: !closed && now < closesAt, weights };
+    return { roundId, opensAt, closesAt, assetCount, totalVotes, closed, isOpen: !closed && now < closesAt, weights, votesByAsset: votes };
   } catch {
     return null;
   }

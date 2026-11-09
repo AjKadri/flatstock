@@ -59,6 +59,8 @@ export type RoundState = {
   closed: boolean;
   isOpen: boolean;
   weights: bigint[];
+  /** votesFor(roundId, i) per stock. Optional: an older cached round may not have it. */
+  votesByAsset?: bigint[];
 };
 
 export type Holding = {
@@ -239,6 +241,7 @@ export async function readRound(): Promise<RoundState> {
     closed,
     isOpen: !closed && now < closesAt,
     weights,
+    votesByAsset: votes,
   };
 }
 
