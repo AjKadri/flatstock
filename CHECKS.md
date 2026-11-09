@@ -2465,3 +2465,10 @@ voteShareBps(5) = 5000; latestRoundId = 5
 - Stock study (`research/stock-study.json`, 21:33 WAT, market REGULAR, sequencer OPERATIONAL): all 8 pass at the app's fee tiers (feed OK, pool exists, worst gap 0.39%). Drop rule: nothing dropped, assetCount 8. Largest gap per stock, best tier by size: AAPL 2 bps, NVDA 4, MSFT 16, AMZN 35, GOOGL 39, META 17, TSLA 31, SPY 29.
 - Live app check (https://flatstock.ajkadri.dev and https://app.flatstock.ajkadri.dev, read-only, 21:5x WAT): This week reads "THIS WEEK · ROUND 4 FINAL", AAPL 41.67 / NVDA 16.66 / MSFT 41.67, "Round 5 closes in 6d 17h", the line "This week: Round 4 final mix (3 stocks). Voting now: Round 5, 8 stocks, for next week."; Vote tab now reads "VOTE FOR NEXT WEEK · ROUND 5" with 8 stocks at 12.50% each and "0 votes"; Rounds shows Round 5 Open and Round 4 Final with Open tx / Close tx links; landing shows round 4 mix with dashed tiles for the 5 stocks joining in round 5. No label problems found.
 - GetBlock: user reported /api/health `getblock: true` on 9 Nov (relayer 0.000974564580601447 ETH, kill switch off); a live buy test including Adjust passed.
+
+## 9 Nov: round bot armed on the VPS (user ran the steps; reported to the coding agent, not observed by it)
+- `/etc/flatstock/flatstock.env` backed up first, then set `CLOSE_ROUND_ENABLED=1` and `AUTO_OPEN_ENABLED=1`; the round pins (`VOTE_ROUND_ID`, `CLOSE_ROUND_EXPECTED_CLOSES_AT`) were removed.
+- First run (`sudo systemctl start flatstock-close-round.service`) printed `"mode":"auto"`, `"roundId":"5"`, `"action":"not-due"`. No transaction was sent.
+- `flatstock-close-round.timer` enabled (1 min after boot, then every 5 min).
+- Expected next: from Mon 16 Nov 15:00 WAT (closesAt 1794837600) the bot closes round 5 and opens round 6 (8 assets, closesAt 1795442400, voteShareBps 5000). Not yet observed on mainnet; check the journal after 15:05 WAT and record the two tx hashes here.
+- Code and tests for the bot: commit 40a4f7d (unit tests 22 pass; local anvil fork test covers close, open, idempotence, not-owner, low-balance, pending-tx).
