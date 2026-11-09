@@ -1,6 +1,6 @@
 # Flatstock
 
-**Buy the US stocks the community picked, in one tap, with no gas.**
+**Buy US stocks picked by the community, in one tap. Lock 10 $WIF for free gas.**
 
 $WIF holders vote each week on a mix of Stock Tokens. Each vote burns 1 $WIF. When the round closes, anyone can buy
 that mix into their own wallet in one transaction. Lock 10 $WIF and the relayer pays the gas. Flatstock is
