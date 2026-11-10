@@ -141,6 +141,11 @@ h2 { font-weight: 700; font-size: 22px; letter-spacing: -.025em; }
 
 /* Forms */
 .pct-row { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Sell row: top-aligned, compact fields side by side, "Check sell price" on the inputs' line (same label + input structure, so it lines up). */
+.form-row.sell-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 12px; }
+.pct-row { gap: 6px; } .pct-row .btn.small { padding: 0 6px; min-width: 0; flex: 1 1 0; } .sell-row .sell-check .btn { min-height: 50px; }
+.sell-row .sell-stock { width: 160px; } .sell-row .sell-shares { width: 200px; } .sell-row .sell-check { width: auto; }
+@media (max-width: 479px) { .sell-row .sell-stock, .sell-row .sell-shares, .sell-row .sell-check { width: 100%; } .sell-row .sell-check .btn { width: 100%; } .sell-row .sell-check > span { display: none; } }
 .field { display: grid; gap: 7px; color: var(--muted); font-size: 12px; margin-top: 10px; }
 input, select { width: 100%; min-height: 50px; border: 2px solid var(--field); border-radius: 14px; background: var(--mint3); padding: 12px 14px; font-size: 16px; outline: none; }
 input[type="checkbox"] { min-height: 0; width: 22px; padding: 0; }

@@ -919,11 +919,11 @@ function App() {
             <Rule />
 
             <h2>Sell a Stock Token</h2>
-            <div className="form-row">
-              <label className="field">Stock<select value={sellSymbol} onChange={(event) => chooseSellSymbol(event.target.value)} aria-label="Stock Token to sell">{assets.map((asset) => <option key={asset.symbol} value={asset.symbol}>{asset.symbol}</option>)}</select></label>
-              <label className="field">Shares<input inputMode="decimal" placeholder="0" value={sellAmount} onChange={(event) => { setSellAmount(event.target.value); setSellPlan(null); }} aria-label="Amount in shares to sell" />
+            <div className="form-row sell-row">
+              <label className="field sell-stock">Stock<select value={sellSymbol} onChange={(event) => chooseSellSymbol(event.target.value)} aria-label="Stock Token to sell">{assets.map((asset) => <option key={asset.symbol} value={asset.symbol}>{asset.symbol}</option>)}</select></label>
+              <label className="field sell-shares">Shares<input inputMode="decimal" placeholder="0" value={sellAmount} onChange={(event) => { setSellAmount(event.target.value); setSellPlan(null); }} aria-label="Amount in shares to sell" />
                 <span className="pct-row">{([25, 50, 75, 100] as const).map((percent) => <button key={percent} type="button" className="btn ghost small" disabled={!connected || sellBalance <= 0n} onClick={() => { setSellAmount(sellAmountFromPercent(sellBalance, percent)); setSellPlan(null); }}>{percent === 100 ? "Max" : `${percent}%`}</button>)}</span></label>
-              <button className="btn ghost" disabled={!walletReady || busy !== null} onClick={() => void previewSell()}>{busy === "sell-quote" ? "Checking price..." : "Check sell price"}</button>
+              <div className="field sell-check"><span aria-hidden="true">&nbsp;</span><button className="btn ghost" disabled={!walletReady || busy !== null} onClick={() => void previewSell()}>{busy === "sell-quote" ? "Checking price..." : "Check sell price"}</button></div>
             </div>
             {sellPlan && <ul className="quotes"><li><b>{sellPlan.symbol}</b><span className="mono">${sellPlan.quotePrice.toFixed(2)} vs ${sellPlan.chainlinkPrice.toFixed(2)}</span><span className="mono good-text">{(sellPlan.differenceBps / 100).toFixed(2)}%</span></li></ul>}
             <button className="btn primary" disabled={!walletReady || !sellPlan || busy !== null} onClick={requestSell}>{busy === "sell" ? "Submitting permit and sell..." : sellPlan ? `Review ${sellPlan.symbol} sell` : "Check sell price first"}</button>
