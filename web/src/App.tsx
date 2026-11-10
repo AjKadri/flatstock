@@ -516,6 +516,7 @@ function App() {
   };
 
   const sellBalance = holdings.find((holding) => holding.symbol === sellSymbol)?.balance ?? 0n;
+  const sellAmountEntered = /[1-9]/.test(sellAmount) && Number.isFinite(Number(sellAmount)); // empty, "0" and "0.000" keep the button off
   const chooseSellSymbol = (symbol: string) => {
     if (symbol !== sellSymbol) setSellAmount("");
     setSellSymbol(symbol);
@@ -923,10 +924,9 @@ function App() {
               <label className="field sell-stock">Stock<select value={sellSymbol} onChange={(event) => chooseSellSymbol(event.target.value)} aria-label="Stock Token to sell">{assets.map((asset) => <option key={asset.symbol} value={asset.symbol}>{asset.symbol}</option>)}</select></label>
               <label className="field sell-shares">Shares<input inputMode="decimal" placeholder="0" value={sellAmount} onChange={(event) => { setSellAmount(event.target.value); setSellPlan(null); }} aria-label="Amount in shares to sell" />
                 <span className="pct-row">{([25, 50, 75, 100] as const).map((percent) => <button key={percent} type="button" className="btn ghost small" disabled={!connected || sellBalance <= 0n} onClick={() => { setSellAmount(sellAmountFromPercent(sellBalance, percent)); setSellPlan(null); }}>{percent === 100 ? "Max" : `${percent}%`}</button>)}</span></label>
-              <div className="field sell-check"><span aria-hidden="true">&nbsp;</span><button className="btn ghost" disabled={!walletReady || busy !== null} onClick={() => void previewSell()}>{busy === "sell-quote" ? "Checking price..." : "Check sell price"}</button></div>
             </div>
             {sellPlan && <ul className="quotes"><li><b>{sellPlan.symbol}</b><span className="mono">${sellPlan.quotePrice.toFixed(2)} vs ${sellPlan.chainlinkPrice.toFixed(2)}</span><span className="mono good-text">{(sellPlan.differenceBps / 100).toFixed(2)}%</span></li></ul>}
-            <button className="btn primary" disabled={!walletReady || !sellPlan || busy !== null} onClick={requestSell}>{busy === "sell" ? "Submitting permit and sell..." : sellPlan ? `Review ${sellPlan.symbol} sell` : "Check sell price first"}</button>
+            <button className="btn primary" disabled={!walletReady || busy !== null || (!sellPlan && !sellAmountEntered)} onClick={() => (sellPlan ? requestSell() : void previewSell())}>{busy === "sell" ? "Submitting permit and sell..." : busy === "sell-quote" ? "Checking price..." : sellPlan ? `Sell ${sellAmount} ${sellPlan.symbol}` : "Check sell price"}</button>
             {confirmingSell && sellPlan && <div className="confirm"><strong>{useRelay ? `Sign ${sellPlan.symbol} sell` : `Confirm ${sellPlan.symbol} sell`}</strong><p>This sells {sellAmount} shares back to USDG and sends the output to your wallet. {useRelay ? "You sign two exact messages: a Stock Token permit for this token and amount, then the sell. The relayer submits both and pays the gas. Both signatures expire in 5 minutes." : "Your wallet signs the exact transaction and you pay the ETH gas."} The price guard passed.</p>
               <SignSummary lines={[
                 ...(useRelay ? [<>Permit: allow the Flatstock Router to pull exactly <b>{sellAmount} {sellPlan.symbol}</b> from you</>] : [<>Approve exactly <b>{sellAmount} {sellPlan.symbol}</b> to the Flatstock Router (only if not already approved)</>]),
