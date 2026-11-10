@@ -140,6 +140,7 @@ h2 { font-weight: 700; font-size: 22px; letter-spacing: -.025em; }
 .buy-side .proof { border-color: #2a4434; }
 
 /* Forms */
+.pct-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .field { display: grid; gap: 7px; color: var(--muted); font-size: 12px; margin-top: 10px; }
 input, select { width: 100%; min-height: 50px; border: 2px solid var(--field); border-radius: 14px; background: var(--mint3); padding: 12px 14px; font-size: 16px; outline: none; }
 input[type="checkbox"] { min-height: 0; width: 22px; padding: 0; }

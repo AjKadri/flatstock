@@ -55,6 +55,7 @@ import {
 } from "./lib/chain";
 import { addressLink, pickBuyMix, readRoundHistory, txLink, type BuyMix, type PastRound, type RoundHistory } from "./lib/rounds";
 import { renormaliseWeights } from "./lib/rounds-logic";
+import { sellAmountFromPercent } from "./lib/sell-amount";
 import { readPrices, type PriceMap } from "./lib/prices";
 import { AllocationBar, ApprovalNote, EmptyLine, Loader, Logo, MixTable, ProgressLine, Rule, SignSummary, type MixRow } from "./ui";
 import { cacheGet, cacheSet } from "./lib/cache";
@@ -136,7 +137,7 @@ function App() {
   const [prices, setPrices] = useState<PriceMap>(() => cacheGet<PriceMap>("prices") ?? {});
   const [plan, setPlan] = useState<BuyLeg[]>([]);
   const [sellSymbol, setSellSymbol] = useState("NVDA");
-  const [sellAmount, setSellAmount] = useState("0.001");
+  const [sellAmount, setSellAmount] = useState("");
   const [sellPlan, setSellPlan] = useState<SellLeg | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirmingVote, setConfirmingVote] = useState(false);
@@ -514,6 +515,13 @@ function App() {
     }
   };
 
+  const sellBalance = holdings.find((holding) => holding.symbol === sellSymbol)?.balance ?? 0n;
+  const chooseSellSymbol = (symbol: string) => {
+    if (symbol !== sellSymbol) setSellAmount("");
+    setSellSymbol(symbol);
+    setSellPlan(null);
+  };
+
   const previewSell = async () => {
     if (!account) return;
     if (chainId !== chain.id) return setMessage({ tone: "error", text: `Switch to ${NETWORK_LABEL} (4663) before checking prices.` });
@@ -872,7 +880,7 @@ function App() {
                       rows={holdingRows}
                       extraHead="Value"
                       selected={assets.findIndex((item) => item.symbol === sellSymbol)}
-                      onPick={(index) => { setSellSymbol(assets[index].symbol); setSellPlan(null); }}
+                      onPick={(index) => chooseSellSymbol(assets[index].symbol)}
                       label="Your Stock Tokens"
                     />
                   </>
@@ -912,8 +920,9 @@ function App() {
 
             <h2>Sell a Stock Token</h2>
             <div className="form-row">
-              <label className="field">Stock<select value={sellSymbol} onChange={(event) => { setSellSymbol(event.target.value); setSellPlan(null); }} aria-label="Stock Token to sell">{assets.map((asset) => <option key={asset.symbol} value={asset.symbol}>{asset.symbol}</option>)}</select></label>
-              <label className="field">Shares<input inputMode="decimal" value={sellAmount} onChange={(event) => { setSellAmount(event.target.value); setSellPlan(null); }} aria-label="Amount in shares to sell" /></label>
+              <label className="field">Stock<select value={sellSymbol} onChange={(event) => chooseSellSymbol(event.target.value)} aria-label="Stock Token to sell">{assets.map((asset) => <option key={asset.symbol} value={asset.symbol}>{asset.symbol}</option>)}</select></label>
+              <label className="field">Shares<input inputMode="decimal" placeholder="0" value={sellAmount} onChange={(event) => { setSellAmount(event.target.value); setSellPlan(null); }} aria-label="Amount in shares to sell" />
+                <span className="pct-row">{([25, 50, 75, 100] as const).map((percent) => <button key={percent} type="button" className="btn ghost small" disabled={!connected || sellBalance <= 0n} onClick={() => { setSellAmount(sellAmountFromPercent(sellBalance, percent)); setSellPlan(null); }}>{percent === 100 ? "Max" : `${percent}%`}</button>)}</span></label>
               <button className="btn ghost" disabled={!walletReady || busy !== null} onClick={() => void previewSell()}>{busy === "sell-quote" ? "Checking price..." : "Check sell price"}</button>
             </div>
             {sellPlan && <ul className="quotes"><li><b>{sellPlan.symbol}</b><span className="mono">${sellPlan.quotePrice.toFixed(2)} vs ${sellPlan.chainlinkPrice.toFixed(2)}</span><span className="mono good-text">{(sellPlan.differenceBps / 100).toFixed(2)}%</span></li></ul>}
