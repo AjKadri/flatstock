@@ -1,5 +1,5 @@
 /* Flatstock landing: light green surface, near-black ink, one green accent, shapes from the logo (a flat line with dots). */
-:root { --ink: #07110c; --ink2: #0f1f16; --mint: #e6f7d9; --mint2: #d6efc6; --green: #2bd67b; --green-d: #126b3a; --muted: #3f5a4a; --muted-d: #8fa497; }
+:root { --ink: #07110c; --ink2: #0f1f16; --mint: #e6f7d9; --mint2: #d6efc6; --green: #2bd67b; --green-d: #126b3a; --muted: #3f5a4a; --muted-d: #8fa497; --loss: #a63a2b; }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; background: var(--mint); color: var(--ink); font-family: "Inter Tight", system-ui, sans-serif; font-weight: 400; -webkit-text-size-adjust: 100%; overflow-x: hidden; }
@@ -56,6 +56,19 @@ section { position: relative; }
 @media (min-width: 980px) { .hero { padding: 120px 40px 56px; } .hero-row { grid-template-columns: .8fr 1.2fr; gap: 64px; }  }
 @media (max-width: 560px) { .live-row { grid-template-columns: 1fr 1fr; } }
 .hero-head > *, .hero-copy > *, .hero-mix > * { animation: rise .9s cubic-bezier(.2, .7, .2, 1) both; } .hero-head h1 { animation-delay: .08s; } .hero-copy .sub { animation-delay: .18s; } .hero-copy .cta { animation-delay: .26s; } .hero-mix > * { animation-delay: .32s; }
+
+/* Live price belt (under the hero, above Built on). The Built on row's own top rule closes it at the bottom. */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.belt { border-top: 1px solid var(--ink); }
+.belt-scroll { height: 40px; overflow: hidden; }
+.belt-track { display: flex; width: max-content; min-width: 200%; height: 40px; animation: belt-loop 50s linear infinite; }
+.belt:hover .belt-track { animation-play-state: paused; }
+.belt-list { display: flex; align-items: center; flex: 1 0 auto; min-width: 50%; justify-content: space-around; white-space: nowrap; }
+.belt-list li { display: flex; align-items: center; gap: 10px; padding: 0 22px; font-size: 13px; line-height: 40px; }
+.belt-list li + li::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--ink); margin-left: -22px; margin-right: 22px; opacity: .55; }
+.belt-list b { font-weight: 600; }
+.belt-list .up { color: var(--green-d); } .belt-list .down { color: var(--loss); }
+@keyframes belt-loop { to { transform: translateX(-50%); } }
 
 /* Built on */
 .builton { max-width: 1280px; margin: 0 auto; padding: 22px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
@@ -143,7 +156,7 @@ section { position: relative; }
 /* Reveal and motion */
 .js [data-r] { opacity: 0; transform: translateY(40px); }
 @keyframes rise { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .js [data-r] { opacity: 1; transform: none; } html { scroll-behavior: auto; } }
+@media (prefers-reduced-motion: reduce) { .belt-scroll { overflow-x: auto; } .belt-track { min-width: 0; width: auto; } .belt-list + .belt-list { display: none; } *, *::before, *::after { animation: none !important; transition: none !important; } .js [data-r] { opacity: 1; transform: none; } html { scroll-behavior: auto; } }
 
 .fair { margin-top: 18px; max-width: 46ch; font-size: 17px; line-height: 1.55; color: #28402f; } .fair b { color: var(--ink); } .fair a { font-weight: 600; }
 .round-list .mixbar { margin: 4px 0; }

@@ -40,7 +40,8 @@
   const logs = (address, topic0) => rpc("eth_getLogs", [{ address, topics: [topic0], fromBlock: FROM, toBlock: "latest" }]).catch(() => null);
 
   // ---------- Live Chainlink prices and a short history, in ONE Multicall3 request ----------
-  const PRICES = {}; // symbol -> { price, history[], change } ; change = latest vs 24h earlier
+  const PRICES = {}; // symbol -> { price, at, history[], change } ; change = latest vs 24h earlier; at = Chainlink updatedAt (s)
+  let pricesLoaded = false; // false until the one price request has finished (then a missing feed shows an em dash)
   const LOOKBACK = 72;
   function encodeAggregate3(calls) {
     const w32 = (hex) => hex.padStart(64, "0");
@@ -78,12 +79,34 @@
         const earlier = series[si].sort((x, y) => x.t - y.t);
         const inWindow = earlier.filter((p) => p.t >= at - 86400); const before = earlier.filter((p) => p.t < at - 86400);
         const anchor = before.length ? before[before.length - 1].v : (inWindow[0] ? inWindow[0].v : null);
-        PRICES[s] = { price, history: [...inWindow.map((p) => p.v), price], change: anchor ? (price / anchor - 1) * 100 : null };
+        PRICES[s] = { price, at, history: [...inWindow.map((p) => p.v), price], change: anchor ? (price / anchor - 1) * 100 : null };
       });
     } catch { /* prices stay unavailable; the mix still shows weights */ }
+    pricesLoaded = true; renderBelt();
     document.querySelectorAll("[data-mix]").forEach((el) => { if (el._redraw) el._redraw(); });
   }
   const fmtPrice = (v) => (v >= 1000 ? Math.round(v).toLocaleString("en-US") : v.toFixed(2));
+  // Price belt under the hero: the same PRICES as the treemap, no extra request.
+  // "…" while loading, "—" for a failed or stale feed (older than its heartbeat), never an old number.
+  const HEARTBEAT = 86400; // seconds; heartbeat of all eight Chainlink stock feeds (research/stock-study.json)
+  function renderBelt() {
+    const track = $("belt-track"); if (!track) return;
+    const now = Math.floor(Date.now() / 1000);
+    const rows = SYMBOLS.map((s) => {
+      const p = PRICES[s];
+      if (!pricesLoaded) return { s, price: "…", change: "", dir: "", say: `${s} loading` };
+      if (!p || !(p.price > 0) || now - p.at > HEARTBEAT) return { s, price: "—", change: "", dir: "", say: `${s} price unavailable` };
+      const price = `$${fmtPrice(p.price)}`;
+      if (p.change === null) return { s, price, change: "—", dir: "", say: `${s} ${price}` };
+      const flat = Math.abs(p.change) < 0.05;
+      const text = `${flat ? "" : p.change > 0 ? "+" : "−"}${Math.abs(p.change).toFixed(1)}%`;
+      return { s, price, change: text, dir: flat ? "" : p.change > 0 ? "up" : "down", say: `${s} ${price}, ${flat ? "unchanged" : p.change > 0 ? "up" : "down"} ${Math.abs(p.change).toFixed(1)} percent in 24 hours` };
+    });
+    const list = `<ul class="belt-list">${rows.map((r) => `<li><b class="mono">${r.s}</b><span class="mono">${r.price}</span>${r.change ? `<span class="mono ${r.dir}">${r.change}</span>` : ""}</li>`).join("")}</ul>`;
+    track.innerHTML = list + list; // the list twice: the CSS loop moves by exactly one copy
+    const sr = $("belt-sr");
+    if (sr) sr.textContent = pricesLoaded ? `Chainlink prices, 24 hour change: ${rows.map((r) => r.say).join("; ")}.` : "Chainlink prices are loading.";
+  }
   function spark(values, up) {
     if (!values || values.length < 2) return "";
     const min = Math.min(...values), max = Math.max(...values), span = max - min || 1;
@@ -190,6 +213,7 @@
     return d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
   }
 
+  renderBelt();
   void loadPrices();
 
   async function load() {
